@@ -20,13 +20,13 @@ class CalibrationScreen extends StatefulWidget {
   State<CalibrationScreen> createState() => _CalibrationScreenState();
 }
 
-enum _CalibrationPhase { ready, recording, complete }
+enum _CalibrationPhase { preparing, recording, complete }
 
 class _CalibrationScreenState extends State<CalibrationScreen>
     with TickerProviderStateMixin {
   static const _duration = 30; // seconds
 
-  _CalibrationPhase _phase = _CalibrationPhase.ready;
+  _CalibrationPhase _phase = _CalibrationPhase.preparing;
   int _secondsRemaining = _duration;
   Timer? _timer;
   double _baselineValue = 1.0;
@@ -56,7 +56,13 @@ class _CalibrationScreenState extends State<CalibrationScreen>
     );
 
     _initTts();
-    _startCalibration();
+    // Don't auto-start — show preparation screen first
+    _speakPrep();
+  }
+
+  Future<void> _speakPrep() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    await _tts.speak("Prepare for calibration. Sit comfortably and relax.");
   }
 
   Future<void> _initTts() async {
@@ -152,6 +158,10 @@ class _CalibrationScreenState extends State<CalibrationScreen>
   }
 
   Widget _buildCalibrationArea() {
+    if (_phase == _CalibrationPhase.preparing) {
+      return _buildPreparationView();
+    }
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -348,6 +358,233 @@ class _CalibrationScreenState extends State<CalibrationScreen>
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildPreparationView() {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Brain icon
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                ),
+                child: const Icon(
+                  Icons.psychology,
+                  size: 44,
+                  color: AppColors.primary,
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              const Text(
+                'BASELINE CALIBRATION',
+                style: TextStyle(
+                  fontFamily: 'Consolas',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 4.0,
+                  color: AppColors.primary,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              Text(
+                'We need to learn your unique brain signature',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Georgia',
+                  fontStyle: FontStyle.italic,
+                  fontSize: 20,
+                  color: AppColors.onSurface,
+                  height: 1.4,
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              Text(
+                'Everyone\'s brain waves are different. This 30-second calibration '
+                'records your personal baseline so the system can accurately detect '
+                'when your focus drifts during a session.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Georgia',
+                  fontSize: 15,
+                  color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
+                  height: 1.6,
+                ),
+              ),
+
+              const SizedBox(height: 36),
+
+              // Instructions
+              Container(
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                  border: Border.all(
+                    color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'WHAT TO DO',
+                      style: TextStyle(
+                        fontFamily: 'Consolas',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 3.0,
+                        color: AppColors.outline,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _instructionRow(
+                      Icons.chair,
+                      'Sit comfortably',
+                      'Keep your body still and relaxed',
+                    ),
+                    const SizedBox(height: 16),
+                    _instructionRow(
+                      Icons.visibility,
+                      'Focus on the dot',
+                      'A small dot will appear — gaze at it steadily',
+                    ),
+                    const SizedBox(height: 16),
+                    _instructionRow(
+                      Icons.air,
+                      'Breathe normally',
+                      'Don\'t hold your breath or breathe heavily',
+                    ),
+                    const SizedBox(height: 16),
+                    _instructionRow(
+                      Icons.do_not_touch,
+                      'Minimize blinking',
+                      'Try to blink as little as possible for 30 seconds',
+                    ),
+                    const SizedBox(height: 16),
+                    _instructionRow(
+                      Icons.timer,
+                      '30 seconds',
+                      'The calibration takes exactly 30 seconds',
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 36),
+
+              // Begin button
+              Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, AppColors.primaryContainer],
+                  ),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.25),
+                      blurRadius: 20,
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _startCalibration,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 48, vertical: 20),
+                      child: Text(
+                        'BEGIN CALIBRATION',
+                        style: TextStyle(
+                          fontFamily: 'Segoe UI',
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          letterSpacing: 3.0,
+                          color: AppColors.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              TextButton(
+                onPressed: () => context.go('/student/debug-stream'),
+                child: const Text(
+                  '← BACK TO STREAM',
+                  style: TextStyle(
+                    fontFamily: 'Segoe UI',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.5,
+                    color: AppColors.outline,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _instructionRow(IconData icon, String title, String subtitle) {
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          ),
+          child: Icon(icon, size: 20, color: AppColors.primary),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'Segoe UI',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontFamily: 'Georgia',
+                  fontSize: 13,
+                  color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
