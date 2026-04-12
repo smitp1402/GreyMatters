@@ -41,7 +41,7 @@ class _RolePickerScreenState extends State<RolePickerScreen>
   }
 
   void _handleInitialize() {
-    final route = _selectedRole == _Role.student ? '/student' : '/teacher';
+    final route = _selectedRole == _Role.student ? '/student/connect' : '/teacher';
     context.go(route);
   }
 

@@ -54,6 +54,11 @@ class WebSocketClient {
     if (!_disposed) await connect(url);
   }
 
+  /// Send a message to the daemon (e.g. calibrate command).
+  void send(String message) {
+    _channel?.sink.add(message);
+  }
+
   /// Gracefully close the connection.
   void dispose() {
     _disposed = true;
