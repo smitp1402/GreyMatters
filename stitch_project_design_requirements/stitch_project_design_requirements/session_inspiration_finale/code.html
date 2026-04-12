@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "tertiary-fixed-dim": "#fbbc00",
+                        "inverse-primary": "#005cbd",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "on-surface": "#e5e2e1",
+                        "surface": "#131313",
+                        "on-surface-variant": "#c1c6d7",
+                        "on-secondary": "#213145",
+                        "background": "#131313",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "secondary": "#b7c8e1",
+                        "on-background": "#e5e2e1",
+                        "tertiary-container": "#b88900",
+                        "on-primary-container": "#00285a",
+                        "primary-container": "#468fff",
+                        "on-secondary-container": "#a9bad3",
+                        "on-primary": "#002f67",
+                        "on-tertiary-fixed": "#261a00",
+                        "surface-dim": "#131313",
+                        "surface-container": "#201f1f",
+                        "primary": "#acc7ff",
+                        "outline": "#8b90a0",
+                        "inverse-surface": "#e5e2e1",
+                        "error-container": "#93000a",
+                        "surface-container-high": "#2a2a2a",
+                        "on-error": "#690005",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-secondary-fixed": "#0b1c30",
+                        "surface-container-lowest": "#0e0e0e",
+                        "surface-container-highest": "#353534",
+                        "tertiary-fixed": "#ffdfa0",
+                        "on-tertiary": "#402d00",
+                        "on-primary-fixed-variant": "#004591",
+                        "surface-container-low": "#1c1b1b",
+                        "on-primary-fixed": "#001a40",
+                        "surface-variant": "#353534",
+                        "primary-fixed": "#d7e2ff",
+                        "inverse-on-surface": "#313030",
+                        "on-error-container": "#ffdad6",
+                        "surface-bright": "#393939",
+                        "secondary-container": "#3a4a5f",
+                        "tertiary": "#fbbc00",
+                        "primary-fixed-dim": "#acc7ff",
+                        "on-tertiary-container": "#372700",
+                        "surface-tint": "#acc7ff",
+                        "error": "#ffb4ab",
+                        "outline-variant": "#414754"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Newsreader"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(53, 53, 52, 0.4);
+            backdrop-filter: blur(24px);
+        }
+        .atmospheric-vignette {
+            background: radial-gradient(circle at center, transparent 0%, rgba(19, 19, 19, 0.95) 80%);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-label selection:bg-primary selection:text-on-primary min-h-screen overflow-hidden">
+<!-- Atmospheric Background Layer -->
+<div class="fixed inset-0 z-0">
+<div class="absolute inset-0 atmospheric-vignette z-10"></div>
+<img class="w-full h-full object-cover opacity-30" data-alt="Abstract deep space composition with subtle blue and gold cosmic dust, soft lighting, and high cinematic depth of field" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAU9EkzNlj57nF-6gyLPaaNmDlhGbHqnAmid-kwzM7qnRC1GNQ4kc-1zUmabOV-yavT7-opGN72QV1kJ_AZcCXvSE0KCLE2gM0htC3XQKsoYcUQ7Hts0ONooW-Hy4aomOwMHM1Ph6glPIStwjY8MM0wjRuonRsURxCZFlAbvAtAI-C2eyWLA6N7F3rP0n7HE2tcm4RVVumWd8pIIH-t9P9xar6dVWPnTyjHHZrnuX7nA2yPkPeG0N9su-Zt2tZTfLnrmc3MPO2_zqQ"/>
+</div>
+<!-- Header / Brand -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-8 h-20">
+<div class="text-xl font-bold tracking-tighter text-primary font-headline">The Cognitive Sanctuary</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">analytics</span>
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="relative z-20 flex flex-col items-center justify-center min-h-screen px-6 max-w-4xl mx-auto text-center">
+<!-- Motivational Quote Layer -->
+<section class="mb-24">
+<span class="block text-primary/40 font-headline uppercase tracking-[0.4em] text-xs mb-8">Session Concluded</span>
+<blockquote class="font-body text-4xl md:text-6xl italic leading-tight text-on-surface font-light tracking-tight">
+                "The mind is not a vessel to be filled, but a fire to be kindled."
+            </blockquote>
+<cite class="block mt-8 font-headline text-on-surface-variant/60 text-sm tracking-widest uppercase">— Plutarch</cite>
+</section>
+<!-- Metadata & Action HUD -->
+<div class="flex flex-col items-center gap-12 w-full max-w-md">
+<!-- Session Authenticated Stamp -->
+<div class="flex flex-col items-center gap-2">
+<div class="flex items-center gap-3 py-2 px-4 rounded-full border border-outline-variant/15 glass-panel">
+<span class="material-symbols-outlined text-tertiary-fixed-dim text-sm" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span class="text-[10px] font-headline font-medium tracking-[0.2em] uppercase text-on-surface-variant">Session Authenticated</span>
+</div>
+<div class="flex gap-6 mt-4">
+<div class="text-left">
+<p class="text-[9px] uppercase tracking-tighter text-on-surface-variant/40 font-bold">Ref No.</p>
+<p class="text-xs font-mono text-on-surface-variant/80 tracking-widest">CS-992-ALPHA</p>
+</div>
+<div class="w-px h-6 bg-outline-variant/20 self-center"></div>
+<div class="text-left">
+<p class="text-[9px] uppercase tracking-tighter text-on-surface-variant/40 font-bold">Flow Index</p>
+<p class="text-xs font-mono text-primary tracking-widest">0.982 σ</p>
+</div>
+</div>
+</div>
+<!-- Primary CTA -->
+<div class="w-full">
+<button class="group relative w-full flex items-center justify-center gap-3 py-5 px-10 bg-surface-tint rounded-md transition-all duration-300 hover:shadow-[0_0_40px_rgba(172,199,255,0.2)] active:scale-95 overflow-hidden">
+<!-- Spectral Glow Effect -->
+<div class="absolute inset-0 bg-gradient-to-tr from-primary to-primary-container opacity-100"></div>
+<span class="relative z-10 font-headline font-bold text-on-primary tracking-wider uppercase text-xs">Return to Sanctuary</span>
+<span class="relative z-10 material-symbols-outlined text-on-primary group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<p class="mt-4 text-[10px] text-on-surface-variant/40 font-headline tracking-widest uppercase">Deep work mode preserved. System on standby.</p>
+</div>
+</div>
+</main>
+<!-- Side Decoration ( HUD Elements ) -->
+<div class="fixed left-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-12 z-20">
+<div class="flex flex-col gap-1">
+<div class="w-8 h-0.5 bg-primary"></div>
+<div class="w-4 h-0.5 bg-outline-variant/30"></div>
+<div class="w-6 h-0.5 bg-outline-variant/30"></div>
+</div>
+<div class="[writing-mode:vertical-lr] rotate-180 text-[10px] font-headline tracking-[0.5em] text-on-surface-variant/30 uppercase">
+            Neural Sync Complete / Layer 0
+        </div>
+</div>
+<div class="fixed right-8 bottom-12 hidden lg:block z-20">
+<div class="flex flex-col items-end gap-2 text-right">
+<span class="text-[10px] font-headline tracking-widest text-on-surface-variant/40 uppercase">Integration Progress</span>
+<div class="w-32 h-[1px] bg-outline-variant/20 relative">
+<div class="absolute inset-y-0 left-0 w-4/5 bg-primary"></div>
+</div>
+</div>
+</div>
+</body></html>

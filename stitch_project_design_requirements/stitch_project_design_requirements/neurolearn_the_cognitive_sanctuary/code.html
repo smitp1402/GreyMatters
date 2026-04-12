@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NeuroLearn - The Cognitive Sanctuary</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&amp;family=Newsreader:ital,wght@0,400;0,600;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            scroll-behavior: smooth;
+        }
+        .glass-panel {
+            background: rgba(53, 53, 52, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .spectral-glow {
+            background: linear-gradient(135deg, #acc7ff 0%, #468fff 100%);
+        }
+        .ghost-border {
+            outline: 1px solid rgba(65, 71, 84, 0.2);
+        }
+        .ghost-border:hover {
+            outline: 1px solid rgba(65, 71, 84, 1);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-variant": "#353534",
+                      "inverse-on-surface": "#313030",
+                      "on-surface-variant": "#c1c6d7",
+                      "outline": "#8b90a0",
+                      "surface-container-highest": "#353534",
+                      "tertiary-fixed": "#ffdfa0",
+                      "primary-fixed-dim": "#acc7ff",
+                      "on-tertiary-fixed": "#261a00",
+                      "tertiary-container": "#b88900",
+                      "surface-dim": "#131313",
+                      "error-container": "#93000a",
+                      "surface-container-lowest": "#0e0e0e",
+                      "tertiary-fixed-dim": "#fbbc00",
+                      "outline-variant": "#414754",
+                      "on-primary-fixed": "#001a40",
+                      "secondary-container": "#3a4a5f",
+                      "secondary": "#b7c8e1",
+                      "primary-container": "#468fff",
+                      "on-secondary-fixed-variant": "#38485d",
+                      "on-secondary-fixed": "#0b1c30",
+                      "on-error-container": "#ffdad6",
+                      "on-tertiary": "#402d00",
+                      "surface-bright": "#393939",
+                      "primary": "#acc7ff",
+                      "surface": "#131313",
+                      "inverse-surface": "#e5e2e1",
+                      "surface-tint": "#acc7ff",
+                      "surface-container-low": "#1c1b1b",
+                      "on-primary-container": "#00285a",
+                      "surface-container": "#201f1f",
+                      "on-surface": "#e5e2e1",
+                      "on-error": "#690005",
+                      "inverse-primary": "#005cbd",
+                      "secondary-fixed-dim": "#b7c8e1",
+                      "background": "#131313",
+                      "secondary-fixed": "#d3e4fe",
+                      "on-secondary": "#213145",
+                      "on-background": "#e5e2e1",
+                      "on-primary-fixed-variant": "#004591",
+                      "surface-container-high": "#2a2a2a",
+                      "primary-fixed": "#d7e2ff",
+                      "on-tertiary-fixed-variant": "#5c4300",
+                      "on-tertiary-container": "#372700",
+                      "error": "#ffb4ab",
+                      "tertiary": "#fbbc00",
+                      "on-primary": "#002f67",
+                      "on-secondary-container": "#a9bad3"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "fontFamily": {
+                      "headline": ["Inter"],
+                      "body": ["Newsreader"],
+                      "label": ["Inter"]
+              }
+            },
+          },
+        }
+      </script>
+</head>
+<body class="font-body">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-xl transition-all">
+<div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto w-full">
+<div class="text-xl font-bold tracking-tighter text-[#acc7ff] font-headline">NeuroLearn</div>
+<div class="hidden md:flex space-x-8">
+<a class="font-['Inter'] font-medium text-sm tracking-tight text-[#acc7ff] border-b-2 border-[#acc7ff] pb-1 transition-colors duration-300" href="#">Science</a>
+<a class="font-['Inter'] font-medium text-sm tracking-tight text-gray-400 hover:text-[#acc7ff] transition-colors duration-300" href="#">Technology</a>
+<a class="font-['Inter'] font-medium text-sm tracking-tight text-gray-400 hover:text-[#acc7ff] transition-colors duration-300" href="#">Methodology</a>
+<a class="font-['Inter'] font-medium text-sm tracking-tight text-gray-400 hover:text-[#acc7ff] transition-colors duration-300" href="#">Journal</a>
+</div>
+<button class="bg-[#acc7ff] text-[#002f67] px-5 py-2 rounded-md font-headline font-bold text-sm hover:opacity-90 active:scale-95 transition-all">Get Started</button>
+</div>
+</nav>
+<!-- Hero Section -->
+<section class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden bg-surface">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-40" data-alt="Dark ethereal neural network visualization with faint glowing synapses and deep blue atmospheric space dust and particles" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCE2kLtxuAkcVQQdj2FYANxKGW-IPy_Fc6XXU6sl22v5KOWBDRv0yq5Hkh1fKRsKo8ByqZvovNvZiKY_svglqN9OBR51UCKgY7QmcNnpyqC0nm_Q-4V4nMVTgXxcVn5oD88oPKOcdN2RG676XB6FxTql-7uPHeOvtPJ1lm2bAlxNUMKROsd6GC4GG3_xWmcvamnmHnNX_cnCteBohjAYT8xa8E_CCayuW9M7BI1hB_Gz1kq3pL8uvqBEFWk6K4XKMvIcyN1e_llzVc"/>
+<div class="absolute inset-0 bg-gradient-to-b from-surface/20 via-surface to-surface"></div>
+</div>
+<div class="relative z-10 max-w-5xl px-8 text-center">
+<h1 class="text-5xl md:text-8xl font-body italic font-semibold text-on-surface mb-6 tracking-tight">
+                The Cognitive Sanctuary
+            </h1>
+<p class="text-xl md:text-2xl text-on-surface-variant font-body mb-10 max-w-3xl mx-auto leading-relaxed">
+                Unlock surgical precision in your learning journey with EEG-adaptive feedback loops that stabilize focus and dissolve distraction.
+            </p>
+<div class="flex flex-col md:flex-row items-center justify-center gap-6">
+<button class="spectral-glow text-on-primary font-headline font-bold px-8 py-4 rounded-md text-lg shadow-2xl transition-all hover:scale-[1.02] active:scale-95">
+                    Begin Journey
+                </button>
+<button class="ghost-border text-on-surface font-headline font-bold px-8 py-4 rounded-md text-lg transition-all active:scale-95">
+                    View Science
+                </button>
+</div>
+</div>
+</section>
+<!-- Section 1: The Technology of Focus -->
+<section class="py-32 px-8 bg-surface-container-low">
+<div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+<div class="order-2 lg:order-1">
+<div class="inline-block px-4 py-1 bg-secondary-container text-on-secondary-container text-xs font-headline font-bold uppercase tracking-widest rounded-full mb-6">
+                    Hard Science
+                </div>
+<h2 class="text-4xl md:text-5xl font-body font-semibold text-on-surface mb-8 leading-tight">
+                    The Technology of Focus
+                </h2>
+<div class="space-y-8">
+<div class="flex gap-6">
+<div class="flex-shrink-0 w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">analytics</span>
+</div>
+<div>
+<h3 class="text-xl font-headline font-bold text-on-surface mb-2">Neural Band Calibration</h3>
+<p class="text-on-surface-variant leading-relaxed font-body text-lg">Continuous monitoring of Theta, Alpha, and Beta bands to detect cognitive overload before it occurs.</p>
+</div>
+</div>
+<div class="flex gap-6">
+<div class="flex-shrink-0 w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">psychology</span>
+</div>
+<div>
+<h3 class="text-xl font-headline font-bold text-on-surface mb-2">Neurosity Crown Integration</h3>
+<p class="text-on-surface-variant leading-relaxed font-body text-lg">Seamless hardware-software synergy that translates raw brainwaves into real-time learning adjustments.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="order-1 lg:order-2 relative">
+<div class="aspect-square glass-panel rounded-full p-12 flex items-center justify-center relative">
+<div class="absolute inset-0 border-[1px] border-primary/20 rounded-full animate-pulse"></div>
+<img class="w-full h-full object-contain z-10" data-alt="High-tech minimalist EEG headset glowing with soft blue light on a dark professional studio background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4AFnYo1avj9e8zCbbJx8N1yiZJMsjGdJwCUmAkrCPXU4CjflSZnQInRFQ0R9DhDQsRJ0tVQtMGBR9GUV-meZNdBEWyF6SCrvJo0--4MNfEgpuwIzx4eoxgQf_TK8oTEn86WobzM2oylbC-1eS-yHgJQOoJkOUyq83tZ1Mqj42t8FkPfQohFEWm25KgCpeQG6IbfWwLcfi2QQEN8FUN1UveTFjn8jT_9TXXkYMIHZ19puLcIX33JOPTVXFjn9P3Fihdj2Ls9T95F0"/>
+<!-- HUD Elements -->
+<div class="absolute top-10 left-0 bg-surface-container-highest/80 backdrop-blur px-4 py-3 rounded-lg border border-outline-variant/20">
+<div class="text-[10px] font-headline text-on-surface-variant uppercase tracking-tighter">Focus Index</div>
+<div class="text-2xl font-headline font-bold text-primary">84%</div>
+</div>
+<div class="absolute bottom-20 right-0 bg-surface-container-highest/80 backdrop-blur px-4 py-3 rounded-lg border border-outline-variant/20">
+<div class="text-[10px] font-headline text-on-surface-variant uppercase tracking-tighter">Gamma Pulse</div>
+<div class="text-lg font-headline font-bold text-tertiary">Active</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Adaptive Interventions -->
+<section class="py-32 px-8 bg-surface">
+<div class="max-w-7xl mx-auto">
+<div class="text-center mb-20">
+<h2 class="text-4xl md:text-6xl font-body font-semibold text-on-surface mb-6 italic">Adaptive Interventions</h2>
+<p class="text-on-surface-variant font-body text-xl max-w-2xl mx-auto">When focus wavers, our system deploys subtle cognitive rescues to pull you back into the flow.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Card 1 -->
+<div class="bg-surface-container-high rounded-xl p-8 transition-transform hover:-translate-y-2 group">
+<div class="h-48 mb-8 overflow-hidden rounded-lg">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Futuristic interactive 3D particle simulation glowing neon blue and purple against a dark laboratory interface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWZjjEnxzK9A6ccbMa608g_7sCCnbRFLTE05wWLUg_fxSmVWK42E37B6TlpOcF_VfY7d4r9XQAL6CPRi8CxCgiC5NzgX6eJe0HZ2vCVtHNQ1jvtL3CHheXXvQ5bT2nxU-c-XUDARJS3Nj3czTzmiqn53m6J5u58zc8K0cqQfK91RF7FuAwrPJbHMIzL5m0laZ1FfCLd2mg_s0Ao6yRmtcQGiwgaRmIfye4imblkrnJzRLfxaweOnSsvZRkV0GttWpNO8TRRbqEBtY"/>
+</div>
+<h3 class="text-2xl font-headline font-bold text-on-surface mb-4">Interactive Simulations</h3>
+<p class="text-on-surface-variant font-body leading-relaxed mb-6">Manipulate visual data structures in 3D space to re-engage tactile cognitive processing.</p>
+<div class="flex items-center text-primary font-headline font-bold gap-2 cursor-pointer group">
+                        EXPLORE <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-high rounded-xl p-8 transition-transform hover:-translate-y-2 group">
+<div class="h-48 mb-8 overflow-hidden rounded-lg">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Sound wave visualization with elegant minimalist waveforms in gold and white on deep charcoal background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuCDee2iN-EFno2Xoq8QNTL-GAhGXSKhSb5Nl5UkWu_26OKuv8dX2bCXUJPfocZUV82Nya4zBQdQIV6BheQsVvr3_T-6oLTtBWNt9eYNnwuPiQH0iUtYfdprOESaxNhojYRXXnTEIubg_a5Vr5HVOH7otrNeGrFw_OJDWOSQBs8NyRUg70TYlMGQGbIyCL18IE4VKdniyeRP3nSPcrnpMiM164qMqI1zKwWBivMgH2urnvhokypX9VDdHI3K04EBJIgvFK4qDEtdY"/>
+</div>
+<h3 class="text-2xl font-headline font-bold text-on-surface mb-4">Voice Challenges</h3>
+<p class="text-on-surface-variant font-body leading-relaxed mb-6">Auditory logic puzzles designed to sharpen acoustic attention and verbal retention peaks.</p>
+<div class="flex items-center text-primary font-headline font-bold gap-2 cursor-pointer group">
+                        EXPLORE <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-high rounded-xl p-8 transition-transform hover:-translate-y-2 group">
+<div class="h-48 mb-8 overflow-hidden rounded-lg">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Abstract geometric spatial puzzle game with glowing lines and floating architectural elements in dark space" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbbgby59u5SI1528hbdyswSedTSeFLj-HJCUaMl9qpXfJwgFruScMFo2HEPaTJwnBm5Nh21lG3tgyE2YPJ9e7lmQdt0lDmXS_ZHx9YR7LYgky7OsR_-HnF_gg_pqT-lSOG7VCYNieWDDsXOJbWWn-wAHYQanljDPhZl7EEyev_ojsUQ6t0XFxw6pWSOASa4RDOrLFPZ-HCxiMOCEQVRyIJgqrZYcB5LlnCV88c_GJGBJamJkESNOGlHc8I1dNcQaPVo_iM1EFyjNc"/>
+</div>
+<h3 class="text-2xl font-headline font-bold text-on-surface mb-4">Spatial Games</h3>
+<p class="text-on-surface-variant font-body leading-relaxed mb-6">Quick-fire architectural puzzles that reset the visual cortex for renewed deep-work sessions.</p>
+<div class="flex items-center text-primary font-headline font-bold gap-2 cursor-pointer group">
+                        EXPLORE <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: For Educators & Students -->
+<section class="py-32 px-8 bg-surface-container-low border-y border-outline-variant/10">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-1">
+<!-- Educators Side -->
+<div class="flex-1 p-12 bg-surface-container-lowest">
+<div class="mb-10">
+<span class="material-symbols-outlined text-4xl text-tertiary mb-6" style="font-variation-settings: 'FILL' 1;">monitoring</span>
+<h2 class="text-4xl font-body italic font-semibold text-on-surface mb-6">For Educators</h2>
+<p class="text-on-surface-variant font-body text-lg leading-relaxed mb-8">
+                        Gain unprecedented insight into classroom engagement. Identify "Dead Zones" in your curriculum using aggregated neural metrics and real-time focus heatmaps.
+                    </p>
+<ul class="space-y-4 font-headline text-sm font-medium text-on-surface">
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-lg">check_circle</span>
+                            Live Student Attention HUD
+                        </li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-lg">check_circle</span>
+                            Curriculum Retention Analytics
+                        </li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-lg">check_circle</span>
+                            Automated Intervention Reports
+                        </li>
+</ul>
+</div>
+<img class="w-full rounded-xl shadow-2xl" data-alt="Sophisticated data visualization dashboard with dark theme showing brain activity charts and student engagement metrics" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCp5fndKQRZ-8BuXspmlFmvp6t2JtJziOTmeNwO4U8d9rUUL7WeARfSbNwSwW1YP1XqzGg2CzsnmfxC5WcVfx0fqAaLvozAwJzqGWgg5oDn5F04msjUzI069NVziIgcS68jVvNxKkLzrZK5S30GIQo1QWrEoCOjs7a3Y7EFSc0evi4l1ZNfrn5z2oUvGVGk73PHOmcAZAXJseJv-WMnf-pyJQeAXvF-bkMQWP-7UGGvBNyN7QqS3uJFvP0OQyKYwvh62Nr-y8g2WHg"/>
+</div>
+<!-- Students Side -->
+<div class="flex-1 p-12 bg-surface-container-high">
+<div class="mb-10">
+<span class="material-symbols-outlined text-4xl text-primary mb-6" style="font-variation-settings: 'FILL' 1;">spa</span>
+<h2 class="text-4xl font-body italic font-semibold text-on-surface mb-6">For Students</h2>
+<p class="text-on-surface-variant font-body text-lg leading-relaxed mb-8">
+                        Enter a personal sanctuary where the interface adapts to your state of mind. No more fighting burnout; the system breathes with you.
+                    </p>
+<ul class="space-y-4 font-headline text-sm font-medium text-on-surface">
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-lg">check_circle</span>
+                            Adaptive UI Complexity
+                        </li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-lg">check_circle</span>
+                            Gamified Flow State Rewards
+                        </li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-lg">check_circle</span>
+                            Personal Cognitive Records
+                        </li>
+</ul>
+</div>
+<img class="w-full rounded-xl shadow-2xl" data-alt="Student in focused state wearing a subtle headset in a clean minimalist dark room with soft blue ambient lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQ5-WRod4sKL3rshe8sMLYfWIIuerkFLXCNvdRdwbsjvPvKx9SXIFto8fEj7iRvUPdQTAnyjoUqFxwFNFMIrKwKvarE-nzrSlt58qWxyPzuzMIVqaMcb0P662CcUU5ZDYySAj3QQO2F-BJc0jfvvEJBGRUs9m6KvyQI60J-mO4OiOrKIhfePwf8Bh8wz6xKDoXGHMe8rxXaV3aahWHhiONQ63V2-gOEwE_ClJFQlJvlDsXxCAjVUo74OTG3aZOBXgHrGTpbBq9xuM"/>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="bg-[#1c1b1b] w-full py-12 px-8">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center max-w-7xl mx-auto">
+<div class="flex flex-col gap-4">
+<div class="text-lg font-bold text-[#acc7ff] font-headline">NeuroLearn</div>
+<p class="font-['Newsreader'] italic text-base text-gray-500">© 2024 The Cognitive Sanctuary. All rights reserved.</p>
+</div>
+<div class="flex flex-wrap gap-8 md:justify-end">
+<a class="font-['Newsreader'] italic text-base text-gray-500 hover:text-white transition-colors" href="#">White Papers</a>
+<a class="font-['Newsreader'] italic text-base text-gray-500 hover:text-white transition-colors" href="#">Clinical Trials</a>
+<a class="font-['Newsreader'] italic text-base text-gray-500 hover:text-white transition-colors" href="#">Privacy Protocol</a>
+<a class="font-['Newsreader'] italic text-base text-gray-500 hover:text-white transition-colors underline" href="#">Terms of Service</a>
+</div>
+</div>
+</footer>
+</body></html>

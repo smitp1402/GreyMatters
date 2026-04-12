@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Cognitive Sanctuary - Adaptive Intervention</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed-dim": "#fbbc00",
+                    "error": "#ffb4ab",
+                    "primary-fixed": "#d7e2ff",
+                    "on-tertiary-container": "#372700",
+                    "surface-container-highest": "#353534",
+                    "primary": "#acc7ff",
+                    "on-secondary-fixed": "#0b1c30",
+                    "on-surface": "#e5e2e1",
+                    "surface-container-low": "#1c1b1b",
+                    "secondary-container": "#3a4a5f",
+                    "background": "#131313",
+                    "on-surface-variant": "#c1c6d7",
+                    "surface-container": "#201f1f",
+                    "inverse-primary": "#005cbd",
+                    "tertiary-container": "#b88900",
+                    "surface-dim": "#131313",
+                    "secondary": "#b7c8e1",
+                    "surface-container-lowest": "#0e0e0e",
+                    "primary-container": "#468fff",
+                    "on-error-container": "#ffdad6",
+                    "on-error": "#690005",
+                    "tertiary-fixed": "#ffdfa0",
+                    "surface-bright": "#393939",
+                    "inverse-on-surface": "#313030",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "inverse-surface": "#e5e2e1",
+                    "on-tertiary": "#402d00",
+                    "surface": "#131313",
+                    "on-primary": "#002f67",
+                    "tertiary": "#fbbc00",
+                    "on-primary-fixed-variant": "#004591",
+                    "surface-variant": "#353534",
+                    "surface-container-high": "#2a2a2a",
+                    "on-background": "#e5e2e1",
+                    "on-tertiary-fixed-variant": "#5c4300",
+                    "on-secondary": "#213145",
+                    "on-tertiary-fixed": "#261a00",
+                    "secondary-fixed": "#d3e4fe",
+                    "outline": "#8b90a0",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "on-primary-fixed": "#001a40",
+                    "surface-tint": "#acc7ff",
+                    "outline-variant": "#414754",
+                    "on-primary-container": "#00285a",
+                    "primary-fixed-dim": "#acc7ff",
+                    "on-secondary-container": "#a9bad3",
+                    "error-container": "#93000a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Newsreader"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(53, 53, 52, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .electron-orbit {
+            border: 1px dashed rgba(172, 199, 255, 0.2);
+        }
+        .glow-primary {
+            box-shadow: 0 0 20px rgba(172, 199, 255, 0.3);
+        }
+        .ghost-border {
+            outline: 1px solid rgba(65, 71, 84, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-label selection:bg-primary/30">
+<!-- Top Navigation Shell -->
+<header class="bg-[#131313] text-[#acc7ff] flex justify-between items-center w-full px-6 py-4 fixed top-0 z-50 tonal-shift bg-[#1c1b1b]">
+<div class="flex items-center gap-4">
+<span class="text-lg font-bold tracking-tighter text-[#acc7ff]">The Cognitive Sanctuary</span>
+<div class="h-4 w-px bg-outline-variant/30 hidden md:block"></div>
+<span class="text-xs tracking-wider uppercase font-bold text-[#acc7ff]">ADAPTIVE INTERVENTION: SIMULATION</span>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-gray-500 hover:text-white transition-colors duration-300 scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<button class="text-gray-500 hover:text-white transition-colors duration-300 scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<button class="text-gray-500 hover:text-white transition-colors duration-300 scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+</header>
+<!-- Main Laboratory Canvas -->
+<main class="relative h-screen w-full flex flex-col items-center justify-center overflow-hidden pt-16">
+<!-- Background Grid/Pattern -->
+<div class="absolute inset-0 z-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(#acc7ff 0.5px, transparent 0.5px); background-size: 24px 24px;"></div>
+<!-- Surgical HUD - Left: Telemetry -->
+<div class="absolute left-8 top-24 bottom-8 w-64 flex flex-col gap-4 z-20">
+<div class="glass-panel p-6 rounded-lg flex flex-col gap-4 ghost-border">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Bond Stability</span>
+<div class="flex items-end gap-2 mt-1">
+<span class="text-3xl font-bold font-headline text-primary">84<span class="text-sm font-normal">%</span></span>
+<div class="flex gap-0.5 mb-1.5 h-4 items-end">
+<div class="w-1 h-2 bg-primary"></div>
+<div class="w-1 h-3 bg-primary"></div>
+<div class="w-1 h-4 bg-primary"></div>
+<div class="w-1 h-2 bg-primary"></div>
+<div class="w-1 h-1 bg-surface-container-highest"></div>
+</div>
+</div>
+</div>
+<div class="h-px bg-outline-variant/20"></div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Electron Velocity</span>
+<div class="flex items-end gap-2 mt-1">
+<span class="text-3xl font-bold font-headline text-tertiary">2.4<span class="text-sm font-normal"> km/s</span></span>
+</div>
+</div>
+<div class="h-px bg-outline-variant/20"></div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Intervention State</span>
+<div class="flex items-center gap-2 mt-2">
+<div class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></div>
+<span class="text-xs text-on-surface">Precision Alignment Required</span>
+</div>
+</div>
+</div>
+<div class="mt-auto glass-panel p-4 rounded-lg ghost-border">
+<p class="text-xs text-on-surface-variant leading-relaxed font-body italic">
+                    Drag the valence electrons from the Carbon atom to the Hydrogen receptors to initiate covalent bonding.
+                </p>
+</div>
+</div>
+<!-- Central Interactive Lab Area -->
+<section class="relative z-10 w-full max-w-4xl h-full flex items-center justify-center">
+<!-- Atom Visualizations -->
+<div class="relative w-[500px] h-[500px] flex items-center justify-center">
+<!-- Outer Glow and Atmosphere -->
+<div class="absolute inset-0 rounded-full bg-primary/5 blur-[120px]"></div>
+<!-- Main Carbon Nucleus -->
+<div class="relative z-30 w-24 h-24 rounded-full bg-surface-container-high border border-primary/20 flex items-center justify-center glow-primary">
+<div class="text-center">
+<div class="text-2xl font-bold text-primary">C</div>
+<div class="text-[10px] text-on-surface-variant font-bold">6 | 12.01</div>
+</div>
+</div>
+<!-- Valence Shell Orbit (Interactive) -->
+<div class="absolute w-[340px] h-[340px] rounded-full electron-orbit flex items-center justify-center">
+<!-- Draggable Electron 1 -->
+<div class="absolute -top-3 left-1/2 -translate-x-1/2 group cursor-grab active:cursor-grabbing">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center ring-4 ring-primary/20 shadow-[0_0_15px_rgba(172,199,255,0.6)]">
+<span class="material-symbols-outlined text-[14px] text-on-primary" data-icon="drag_pan">drag_pan</span>
+</div>
+<div class="absolute top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-surface-container-highest text-[8px] px-2 py-1 rounded border border-outline-variant uppercase whitespace-nowrap">Valence E-</div>
+</div>
+<!-- Static Electron 2 -->
+<div class="absolute top-1/2 -right-3 -translate-y-1/2">
+<div class="w-4 h-4 rounded-full bg-surface-container-highest border border-primary/40"></div>
+</div>
+<!-- Draggable Electron 3 -->
+<div class="absolute -bottom-3 left-1/2 -translate-x-1/2 group cursor-grab active:cursor-grabbing">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center ring-4 ring-primary/20 shadow-[0_0_15px_rgba(172,199,255,0.6)]">
+<span class="material-symbols-outlined text-[14px] text-on-primary" data-icon="drag_pan">drag_pan</span>
+</div>
+</div>
+</div>
+<!-- Target Receptors (Hydrogen Atoms) -->
+<div class="absolute -right-24 top-1/4 group">
+<div class="w-16 h-16 rounded-full border border-dashed border-tertiary/40 flex items-center justify-center glass-panel">
+<span class="text-tertiary font-bold">H</span>
+</div>
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-tertiary font-bold uppercase tracking-tighter">Target</div>
+</div>
+<div class="absolute -left-24 bottom-1/4 group">
+<div class="w-16 h-16 rounded-full border border-dashed border-outline-variant/40 flex items-center justify-center glass-panel">
+<span class="text-on-surface-variant font-bold">H</span>
+</div>
+</div>
+</div>
+<!-- Interaction Overlay Prompts -->
+<div class="absolute bottom-12 flex items-center gap-8">
+<div class="flex items-center gap-3">
+<div class="p-2 rounded bg-surface-container-highest ghost-border">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="mouse">mouse</span>
+</div>
+<span class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">LMB Drag to Pair</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="p-2 rounded bg-surface-container-highest ghost-border">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="keyboard_command_key">keyboard_command_key</span>
+</div>
+<span class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">CMD to Zoom</span>
+</div>
+</div>
+</section>
+<!-- Right: Diagnostic Panel -->
+<div class="absolute right-8 top-24 bottom-8 w-72 flex flex-col gap-6 z-20">
+<div class="glass-panel p-6 rounded-lg ghost-border flex-1">
+<h3 class="text-xs font-bold uppercase tracking-widest text-primary mb-6">Quantum Diagnostics</h3>
+<div class="space-y-6">
+<div class="relative">
+<div class="flex justify-between text-[10px] text-on-surface-variant font-bold uppercase mb-2">
+<span>Orbital Overlap</span>
+<span class="text-primary">62%</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[62%]"></div>
+</div>
+</div>
+<div class="relative">
+<div class="flex justify-between text-[10px] text-on-surface-variant font-bold uppercase mb-2">
+<span>Pauli Exclusion</span>
+<span class="text-secondary">Optimal</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-[90%]"></div>
+</div>
+</div>
+<div class="mt-8">
+<h4 class="text-[10px] text-on-surface-variant font-bold uppercase mb-4 tracking-widest">Spectral Data</h4>
+<div class="h-32 w-full bg-surface-container-lowest rounded overflow-hidden relative">
+<!-- Simulated Graph -->
+<div class="absolute inset-0 opacity-40">
+<svg height="100%" preserveaspectratio="none" viewbox="0 0 100 100" width="100%">
+<path d="M0 80 Q 20 20, 40 70 T 80 30 T 100 60" fill="none" stroke="#acc7ff" stroke-width="1"></path>
+<path d="M0 70 Q 15 40, 35 60 T 75 20 T 100 50" fill="none" stroke="#fbbc00" stroke-width="0.5"></path>
+</svg>
+</div>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full py-4 bg-primary text-on-primary font-bold rounded-md hover:bg-primary-container transition-all flex items-center justify-center gap-2 group">
+<span>Finalize Bond</span>
+<span class="material-symbols-outlined transition-transform group-hover:translate-x-1" data-icon="bolt">bolt</span>
+</button>
+</div>
+<!-- Floating Status Bar -->
+<div class="absolute bottom-8 left-1/2 -translate-x-1/2 px-6 py-2 glass-panel rounded-full flex items-center gap-6 ghost-border">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+<span class="text-[10px] uppercase font-bold text-on-surface-variant">Session Live</span>
+</div>
+<div class="w-px h-3 bg-outline-variant/30"></div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant">Cognitive Load:</span>
+<span class="text-[10px] uppercase font-bold text-primary">Low-Stress</span>
+</div>
+<div class="w-px h-3 bg-outline-variant/30"></div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant">Time:</span>
+<span class="text-[10px] uppercase font-bold text-on-surface">14:02.04</span>
+</div>
+</div>
+</main>
+<!-- Visual Polish: Grain Overlay -->
+<div class="fixed inset-0 pointer-events-none opacity-[0.03] z-[100] mix-blend-overlay" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCaelhitIludTn7L4SiVlq2L4HxFQ-svm9jnasN-ATElc_sigHFYB0EmIjJ3FuDy8xog3NGic-nuYbHlcKt1jFdc7xdRkB7Fqr14flfbpcRl78AnvPLWfoGwhvVqkLl3j8HufFpy_EW-j-BDGhbLCpz3Uei_aeS4nqn-R7cApxZhJu4LECqEOlcU9qUrvdYRXIIuoEdE7NpsJlDmU-RT-syEvmKFa0jCKb86fuUbozfG-9AZ_Jhf8nH8jrv08V4knpWP5_bPYIsepI');"></div>
+</body></html>

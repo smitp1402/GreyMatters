@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Cognitive Sanctuary | Draw-It Mode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(53, 53, 52, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .canvas-texture {
+            background-image: radial-gradient(#414754 0.5px, transparent 0.5px);
+            background-size: 24px 24px;
+        }
+        .spectral-glow {
+            box-shadow: 0 0 20px rgba(172, 199, 255, 0.15);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#468fff",
+                        "primary": "#acc7ff",
+                        "surface-dim": "#131313",
+                        "tertiary-fixed-dim": "#fbbc00",
+                        "outline-variant": "#414754",
+                        "secondary-container": "#3a4a5f",
+                        "on-error-container": "#ffdad6",
+                        "on-surface": "#e5e2e1",
+                        "on-secondary": "#213145",
+                        "inverse-primary": "#005cbd",
+                        "surface": "#131313",
+                        "on-secondary-container": "#a9bad3",
+                        "on-tertiary-fixed": "#261a00",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "surface-container-highest": "#353534",
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "inverse-surface": "#e5e2e1",
+                        "secondary": "#b7c8e1",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "on-tertiary": "#402d00",
+                        "surface-container-lowest": "#0e0e0e",
+                        "surface-container": "#201f1f",
+                        "secondary-fixed": "#d3e4fe",
+                        "outline": "#8b90a0",
+                        "surface-variant": "#353534",
+                        "on-error": "#690005",
+                        "on-primary-container": "#00285a",
+                        "surface-container-high": "#2a2a2a",
+                        "on-tertiary-container": "#372700",
+                        "on-primary-fixed": "#001a40",
+                        "tertiary": "#fbbc00",
+                        "primary-fixed": "#d7e2ff",
+                        "error-container": "#93000a",
+                        "error": "#ffb4ab",
+                        "background": "#131313",
+                        "primary-fixed-dim": "#acc7ff",
+                        "on-surface-variant": "#c1c6d7",
+                        "on-primary-fixed-variant": "#004591",
+                        "tertiary-fixed": "#ffdfa0",
+                        "on-primary": "#002f67",
+                        "surface-tint": "#acc7ff",
+                        "surface-bright": "#393939",
+                        "on-background": "#e5e2e1",
+                        "surface-container-low": "#1c1b1b",
+                        "inverse-on-surface": "#313030",
+                        "on-secondary-fixed": "#0b1c30",
+                        "tertiary-container": "#b88900"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Newsreader"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-headline selection:bg-primary/30 min-h-screen flex flex-col">
+<!-- Minimal Header -->
+<header class="w-full bg-[#131313] border-b border-outline-variant/10 z-50">
+<nav class="flex justify-center items-center px-6 py-4 w-full">
+<span class="text-xs uppercase tracking-[0.3em] font-bold text-primary">ADAPTIVE INTERVENTION: DRAW-IT MODE</span>
+</nav>
+</header>
+<main class="relative flex-1 flex flex-col overflow-hidden">
+<!-- Main Workspace -->
+<section class="flex-1 relative bg-surface-container-lowest canvas-texture flex items-center justify-center p-4 md:p-12 overflow-hidden">
+<!-- Drawing Toolset (Floating HUD) -->
+<div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 glass-panel rounded-full border border-outline-variant/10 shadow-2xl z-30">
+<button class="p-3 bg-primary text-on-primary rounded-full transition-all hover:scale-105 active:scale-95 shadow-lg">
+<span class="material-symbols-outlined">brush</span>
+</button>
+<button class="p-3 text-on-surface-variant hover:text-primary transition-all hover:bg-surface-container-highest rounded-full">
+<span class="material-symbols-outlined">ink_eraser</span>
+</button>
+<button class="p-3 text-on-surface-variant hover:text-primary transition-all hover:bg-surface-container-highest rounded-full">
+<span class="material-symbols-outlined">label</span>
+</button>
+<div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
+<button class="p-3 text-on-surface-variant hover:text-primary transition-all hover:bg-surface-container-highest rounded-full">
+<span class="material-symbols-outlined">undo</span>
+</button>
+<button class="p-3 text-on-surface-variant hover:text-primary transition-all hover:bg-surface-container-highest rounded-full">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+<!-- Drawing Canvas -->
+<div class="relative w-full h-full max-w-5xl max-h-[700px] bg-transparent border border-outline-variant/5 rounded-xl cursor-crosshair">
+<!-- Mock Drawing: Large Circular Cell -->
+<svg class="w-full h-full drop-shadow-[0_0_30px_rgba(172,199,255,0.05)]" viewbox="0 0 800 600">
+<!-- Cell Membrane -->
+<circle class="opacity-40" cx="400" cy="300" fill="none" r="220" stroke="#acc7ff" stroke-dasharray="4 2" stroke-width="2"></circle>
+<path d="M400,80 A220,220 0 1,1 399.9,80" fill="none" stroke="#acc7ff" stroke-linecap="round" stroke-width="3"></path>
+<!-- Nucleus -->
+<g class="group">
+<circle cx="380" cy="280" fill="rgba(172, 199, 255, 0.05)" r="60" stroke="#acc7ff" stroke-width="3"></circle>
+<circle class="opacity-20" cx="385" cy="275" fill="#acc7ff" r="20"></circle>
+</g>
+<!-- Interactive Feedback Label -->
+<foreignobject height="60" width="160" x="450" y="240">
+<div class="flex items-center gap-2 glass-panel px-3 py-2 rounded-lg border border-primary/40 spectral-glow">
+<span class="material-symbols-outlined text-primary text-xs" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex flex-col">
+<span class="text-[9px] uppercase tracking-widest text-primary font-bold">Detection</span>
+<span class="text-xs text-on-surface">Nucleus detected</span>
+</div>
+</div>
+</foreignobject>
+<!-- Organelle Label Line -->
+<line stroke="#414754" stroke-width="1" x1="560" x2="620" y1="400" y2="440"></line>
+<foreignobject height="40" width="120" x="625" y="430">
+<span class="font-body text-lg italic text-outline border-b border-outline-variant/30 px-2 pb-1">Mitochondrion...</span>
+</foreignobject>
+</svg>
+<!-- HUD Overlays -->
+<div class="absolute top-4 right-4 flex flex-col items-end gap-3 pointer-events-none">
+<div class="glass-panel p-4 rounded-xl border border-outline-variant/10 text-right">
+<span class="text-[10px] font-bold text-outline uppercase tracking-widest mb-1 block">Precision Engine</span>
+<div class="text-2xl font-mono text-primary">0.982</div>
+</div>
+</div>
+<!-- Instructions Overlay (Since Sidebar is gone) -->
+<div class="absolute top-4 left-4 pointer-events-none max-w-xs">
+<div class="glass-panel p-4 rounded-xl border border-outline-variant/10">
+<span class="text-[9px] font-bold text-primary uppercase tracking-[0.2em] mb-1 block">Biological Systems</span>
+<h2 class="font-body text-xl text-on-surface leading-tight">Draw a cell and label 3 organelles</h2>
+</div>
+</div>
+</div>
+<!-- Intervention Prompt (Floating Alert) -->
+<div class="absolute top-24 left-1/2 -translate-x-1/2 w-full max-w-md px-4 pointer-events-none">
+<div class="glass-panel p-6 rounded-xl border-l-4 border-tertiary shadow-2xl flex items-start gap-5 pointer-events-auto">
+<div class="bg-tertiary-container/20 p-2 rounded-lg">
+<span class="material-symbols-outlined text-tertiary">lightbulb</span>
+</div>
+<div>
+<h4 class="text-sm font-bold text-on-surface uppercase tracking-wider mb-1">Clinical Insight</h4>
+<p class="font-body text-on-surface-variant text-base leading-relaxed">
+                        Remember to include the <span class="text-tertiary font-semibold">Rough ER</span> adjacent to the nucleus for maximum structural score.
+                    </p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 pb-safe bg-[#131313]/80 backdrop-blur-xl border-t border-[#414754]/15 z-50">
+<div class="flex flex-col items-center justify-center text-gray-500">
+<span class="material-symbols-outlined">school</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase mt-1">Learn</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-[#acc7ff]/10 text-[#acc7ff] rounded-xl py-1 px-3">
+<span class="material-symbols-outlined">bolt</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase mt-1">Practice</span>
+</div>
+<div class="flex flex-col items-center justify-center text-gray-500">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase mt-1">Metrics</span>
+</div>
+<div class="flex flex-col items-center justify-center text-gray-500">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase mt-1">Profile</span>
+</div>
+</nav>
+</body></html>

@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroLearn - Project Dashboard</title>
+<style>
+  :root {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #21262d;
+    --bg-card: #1c2128;
+    --border: #30363d;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #6e7681;
+    --accent-blue: #58a6ff;
+    --accent-green: #3fb950;
+    --accent-yellow: #d29922;
+    --accent-orange: #db6d28;
+    --accent-red: #f85149;
+    --accent-purple: #bc8cff;
+    --accent-cyan: #39d2c0;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header h1 { font-size: 20px; font-weight: 600; }
+  .header h1 span { color: var(--accent-blue); }
+  .header-badge {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .header-right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--text-secondary); }
+  .live-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green);
+    display: inline-block; animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Main grid */
+  .dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto auto auto;
+    gap: 16px;
+    padding: 24px 32px;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+
+  /* Card base */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .icon { font-size: 16px; }
+
+  /* Overview card */
+  .overview { grid-column: 1 / -1; }
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+  }
+  .stat-box {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-value { font-size: 28px; font-weight: 700; }
+  .stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+  .stat-value.blue { color: var(--accent-blue); }
+  .stat-value.green { color: var(--accent-green); }
+  .stat-value.yellow { color: var(--accent-yellow); }
+  .stat-value.red { color: var(--accent-red); }
+  .stat-value.purple { color: var(--accent-purple); }
+
+  /* Progress bar */
+  .progress-bar-bg {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    height: 8px;
+    overflow: hidden;
+    width: 100%;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+    min-width: 0;
+  }
+
+  /* Phase tracker */
+  .phases { grid-column: 1 / 3; grid-row: span 2; }
+  .phase-list { display: flex; flex-direction: column; gap: 10px; }
+  .phase-item {
+    display: grid;
+    grid-template-columns: 32px 1fr 80px 60px;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .phase-item:hover { background: #282e36; }
+  .phase-item.active { border-left-color: var(--accent-blue); }
+  .phase-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--bg-primary);
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: var(--text-secondary);
+  }
+  .phase-num.done { background: var(--accent-green); border-color: var(--accent-green); color: #000; }
+  .phase-num.active { background: var(--accent-blue); border-color: var(--accent-blue); color: #000; }
+  .phase-info h4 { font-size: 13px; font-weight: 600; }
+  .phase-info p { font-size: 11px; color: var(--text-secondary); }
+  .phase-est { font-size: 11px; color: var(--text-muted); text-align: right; }
+  .phase-progress-cell { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .phase-pct { font-size: 11px; color: var(--text-muted); }
+
+  /* Status badges */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-not-started { background: rgba(139,148,158,0.15); color: var(--text-secondary); }
+  .badge-in-progress { background: rgba(88,166,255,0.15); color: var(--accent-blue); }
+  .badge-done { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+  .badge-blocked { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+
+  /* Requirements */
+  .requirements { grid-column: 3 / 4; }
+  .req-grid { display: flex; flex-direction: column; gap: 10px; }
+  .req-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+  }
+  .req-label { font-size: 13px; font-weight: 500; }
+  .req-count { font-size: 20px; font-weight: 700; }
+  .req-bar { margin-top: 4px; }
+
+  /* Timeline */
+  .timeline-card { grid-column: 1 / -1; }
+  .timeline-container { position: relative; padding: 20px 0; }
+  .timeline-track {
+    position: relative;
+    height: 60px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .timeline-segment {
+    position: absolute;
+    top: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.8);
+    border-right: 1px solid rgba(0,0,0,0.3);
+    transition: opacity 0.2s;
+    cursor: default;
+  }
+  .timeline-segment:hover { opacity: 0.85; }
+  .timeline-segment span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 4px;
+  }
+  .timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .timeline-now {
+    position: absolute;
+    top: -6px;
+    bottom: -20px;
+    width: 2px;
+    background: var(--accent-red);
+    z-index: 2;
+  }
+  .timeline-now::before {
+    content: 'NOW';
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--accent-red);
+    letter-spacing: 0.5px;
+  }
+
+  /* Risk matrix */
+  .risk-card { grid-column: 1 / 3; }
+  .risk-table { width: 100%; border-collapse: collapse; }
+  .risk-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .risk-table td {
+    font-size: 12px;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+    vertical-align: top;
+  }
+  .risk-table tr:last-child td { border-bottom: none; }
+  .risk-table tr:hover td { background: rgba(48,54,61,0.3); }
+  .impact-high { color: var(--accent-red); font-weight: 600; }
+  .impact-medium { color: var(--accent-yellow); font-weight: 600; }
+  .impact-low { color: var(--accent-green); font-weight: 600; }
+  .likelihood-high { color: var(--accent-red); }
+  .likelihood-medium { color: var(--accent-yellow); }
+  .likelihood-low { color: var(--accent-green); }
+
+  /* Architecture */
+  .arch-card { grid-column: 3 / 4; }
+  .arch-layers { display: flex; flex-direction: column; gap: 8px; }
+  .arch-layer {
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    padding: 12px;
+    border-left: 3px solid var(--accent-blue);
+    transition: transform 0.15s;
+  }
+  .arch-layer:hover { transform: translateX(4px); }
+  .arch-layer h4 { font-size: 12px; font-weight: 700; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 0.3px; }
+  .arch-layer p { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+  .arch-layer.hardware { border-left-color: var(--accent-purple); }
+  .arch-layer.hardware h4 { color: var(--accent-purple); }
+  .arch-layer.daemon { border-left-color: var(--accent-cyan); }
+  .arch-layer.daemon h4 { color: var(--accent-cyan); }
+  .arch-layer.flutter { border-left-color: var(--accent-blue); }
+  .arch-layer.flutter h4 { color: var(--accent-blue); }
+  .arch-layer.storage { border-left-color: var(--accent-yellow); }
+  .arch-layer.storage h4 { color: var(--accent-yellow); }
+  .arch-arrow {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 16px;
+    line-height: 1;
+  }
+  .arch-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .arch-tag {
+    background: rgba(88,166,255,0.1);
+    color: var(--accent-blue);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+  }
+  .arch-layer.hardware .arch-tag { background: rgba(188,140,255,0.1); color: var(--accent-purple); }
+  .arch-layer.daemon .arch-tag { background: rgba(57,210,192,0.1); color: var(--accent-cyan); }
+  .arch-layer.storage .arch-tag { background: rgba(210,153,34,0.1); color: var(--accent-yellow); }
+
+  /* Phase detail panel */
+  .phase-detail {
+    grid-column: 1 / -1;
+    display: none;
+  }
+  .phase-detail.visible { display: block; }
+  .phase-detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .phase-detail-header h3 { font-size: 16px; }
+  .close-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .close-btn:hover { background: var(--border); color: var(--text-primary); }
+  .deliverables-list { list-style: none; }
+  .deliverables-list li {
+    padding: 6px 0;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid rgba(48,54,61,0.3);
+  }
+  .deliverables-list li:last-child { border-bottom: none; }
+  .check-box {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-radius: 3px;
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    transition: all 0.15s;
+  }
+  .check-box.checked {
+    background: var(--accent-green);
+    border-color: var(--accent-green);
+    color: #000;
+  }
+  .features-completed {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .feature-tag {
+    background: rgba(63,185,80,0.1);
+    color: var(--accent-green);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .dashboard {
+      grid-template-columns: 1fr 1fr;
+    }
+    .overview { grid-column: 1 / -1; }
+    .phases { grid-column: 1 / -1; }
+    .requirements { grid-column: 1 / -1; }
+    .timeline-card { grid-column: 1 / -1; }
+    .risk-card { grid-column: 1 / -1; }
+    .arch-card { grid-column: 1 / -1; }
+    .phase-detail { grid-column: 1 / -1; }
+    .overview-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .dashboard { padding: 12px; gap: 12px; }
+    .header { padding: 12px 16px; }
+    .overview-grid { grid-template-columns: repeat(2, 1fr); }
+    .phase-item { grid-template-columns: 28px 1fr 60px; }
+    .phase-est { display: none; }
+  }
+
+  /* Tooltip */
+  .tooltip-wrap { position: relative; }
+  .tooltip-wrap .tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .tooltip-wrap:hover .tooltip { display: block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1><span>NeuroLearn</span> Project Dashboard</h1>
+    <span class="header-badge">EEG-Adaptive Learning Platform</span>
+  </div>
+  <div class="header-right">
+    <span><span class="live-dot"></span> Dashboard Live</span>
+    <span id="clock"></span>
+  </div>
+</div>
+
+<div class="dashboard" id="dashboard">
+
+  <!-- Overview stats -->
+  <div class="card overview">
+    <div class="card-title"><span class="icon">&#9671;</span> Project Overview</div>
+    <div class="overview-grid">
+      <div class="stat-box tooltip-wrap">
+        <div class="stat-value blue" id="overall-pct">0%</div>
+        <div class="stat-label">Overall Completion</div>
+        <div class="progress-bar-bg" style="margin-top:8px">
+          <div class="progress-bar-fill" id="overall-bar" style="width:0%;background:var(--accent-blue)"></div>
+        </div>
+        <div class="tooltip">0 of 8 phases completed</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value green">25</div>
+        <div class="stat-label">Must-Have</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value yellow">11</div>
+        <div class="stat-label">Should-Have</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value purple">2</div>
+        <div class="stat-label">Could-Have</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value red">4</div>
+        <div class="stat-label">Won't-Have (v1)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase tracker -->
+  <div class="card phases">
+    <div class="card-title"><span class="icon">&#9654;</span> Phase Progress (click to expand)</div>
+    <div class="phase-list" id="phase-list"></div>
+  </div>
+
+  <!-- Requirements breakdown -->
+  <div class="card requirements">
+    <div class="card-title"><span class="icon">&#9745;</span> Requirements</div>
+    <div class="req-grid" id="req-grid"></div>
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+      <div class="card-title" style="font-size:12px;margin-bottom:10px">Non-Functional (14)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px" id="nfr-tags"></div>
+    </div>
+  </div>
+
+  <!-- Phase detail panel (injected dynamically) -->
+  <div class="card phase-detail" id="phase-detail">
+    <div class="phase-detail-header">
+      <h3 id="detail-title">Phase 1</h3>
+      <button class="close-btn" onclick="closeDetail()">Close</button>
+    </div>
+    <div id="detail-body"></div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="card timeline-card">
+    <div class="card-title"><span class="icon">&#9202;</span> Timeline &mdash; April 12 (today) to April 13 (demo day)</div>
+    <div class="timeline-container">
+      <div class="timeline-track" id="timeline-track"></div>
+      <div class="timeline-labels">
+        <span>Apr 12, 8:00 AM</span>
+        <span>Apr 12, 4:00 PM</span>
+        <span>Apr 13, 12:00 AM</span>
+        <span>Apr 13, 8:00 AM</span>
+        <span>Apr 13, 2:00 PM</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk matrix -->
+  <div class="card risk-card">
+    <div class="card-title"><span class="icon">&#9888;</span> Risk Matrix</div>
+    <table class="risk-table">
+      <thead>
+        <tr><th>Risk</th><th>Impact</th><th>Likelihood</th><th>Mitigation</th></tr>
+      </thead>
+      <tbody id="risk-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Architecture -->
+  <div class="card arch-card">
+    <div class="card-title"><span class="icon">&#9638;</span> Architecture</div>
+    <div class="arch-layers" id="arch-layers"></div>
+  </div>
+</div>
+
+<script>
+// ---- DATA ----
+const phases = [
+  {
+    id: 1, name: "Python Daemon (Mock + Real)", hours: "2-3h", status: "not-started", pct: 0,
+    goal: "Working EEG daemon that broadcasts AttentionState over WebSocket. Mock mode first, then real Crown.",
+    features: ["FR-01 EEG Daemon", "FR-02 Mock Daemon"],
+    deliverables: [
+      "daemon/attention_engine.py with mock + real modes",
+      "daemon/requirements.txt with Python deps",
+      "WebSocket server on :8765 emitting JSON at 1 Hz",
+      "Mock mode: 60s focus / 15s drift cycles with noise",
+      "Real mode: BrainFlow Crown, Welch PSD, hysteresis classifier"
+    ]
+  },
+  {
+    id: 2, name: "Core Services + Session Flow", hours: "2-3h", status: "not-started", pct: 0,
+    goal: "Flutter app connects to daemon, displays session code, runs calibration, persists session data.",
+    features: ["FR-03 Session Start", "FR-05 Session Code", "FR-34 Role Picker", "FR-36 Reactive Streams", "FR-40 WS Auto-Reconnect"],
+    deliverables: [
+      "WebSocketClient connecting to :8765 with auto-reconnect",
+      "AttentionStream broadcasting parsed AttentionState",
+      "SessionManager: startSession() + endSession()",
+      "EEGService: spawn daemon subprocess",
+      "Session start screen: calibration + code display",
+      "Riverpod providers wired up",
+      "Drift database generating and running"
+    ]
+  },
+  {
+    id: 3, name: "Lesson Content + HUD + Pacing", hours: "2-3h", status: "not-started", pct: 0,
+    goal: "Student reads Periodic Table content with live focus HUD. Content pauses on drift, resumes after recovery.",
+    features: ["FR-06 Lesson Renderer", "FR-07 Curriculum Content", "FR-08 Pacing Engine", "FR-09 Live HUD"],
+    deliverables: [
+      "Periodic Table JSON content (3-4 sections)",
+      "Topic model + JSON parser",
+      "Lesson screen: scrollable, intentionally boring design",
+      "Focus HUD: gauge + band power bars at 1 Hz",
+      "Pacing controller: pause on drift, resume on focused",
+      "3 placeholder topic JSONs"
+    ]
+  },
+  {
+    id: 4, name: "Interventions + RL Agent", hours: "4-5h", status: "not-started", pct: 0,
+    goal: "Drift triggers RL-selected intervention. 4 formats working. Recovery measurement + reward updates.",
+    features: ["FR-10 Intervention Engine", "FR-11 Simulation", "FR-12 Gesture", "FR-13 Flashcard", "FR-14 Voice", "FR-18 Rule-Based RL", "FR-24 Post-Recovery", "FR-25 Cascade", "FR-43 Confirmation MCQ"],
+    deliverables: [
+      "RLAgent interface + RuleBasedAgent",
+      "InterventionEngine orchestrator",
+      "FlashcardScreen: 5-card swipeable deck",
+      "SimulationScreen: drag-and-drop elements",
+      "GestureScreen: MediaPipe WS :8766",
+      "VoiceChallengeScreen: TTS + STT + fallback",
+      "daemon/mediapipe_server.py",
+      "Confirmation MCQ after recovery",
+      "60s cascade logic"
+    ]
+  },
+  {
+    id: 5, name: "Student Dashboard", hours: "1-2h", status: "not-started", pct: 0,
+    goal: "Student home screen with attention-prioritized topics and full content library.",
+    features: ["FR-21 Home Tab", "FR-22 Library Tab", "FR-23 Topic Card"],
+    deliverables: [
+      "Home tab: topic cards sorted by worst focus first",
+      "Library tab: topics by subject",
+      "Subject filter bar",
+      "Topic card with stats + Start Session button",
+      "Empty state for first-time user"
+    ]
+  },
+  {
+    id: 6, name: "Session End Summary", hours: "1h", status: "not-started", pct: 0,
+    goal: "Session end screen with stats and color-coded focus timeline.",
+    features: ["FR-04 Session Summary"],
+    deliverables: [
+      "Session end screen: duration, avg focus, intervention count, best format",
+      "Color-coded focus timeline bar",
+      "SessionDao.updateSession() saves final stats",
+      "Done button returns to dashboard"
+    ]
+  },
+  {
+    id: 7, name: "Teacher Live Monitor", hours: "1-2h", status: "not-started", pct: 0,
+    goal: "Teacher joins student session by code and sees live focus data.",
+    features: ["FR-27 Live Monitor", "FR-28 Session Join"],
+    deliverables: [
+      "Join session screen: 6-char code input",
+      "Live monitor: focus gauge + band power bars",
+      "Session duration timer",
+      "Session ended detection",
+      "Error handling: invalid code, disconnection"
+    ]
+  },
+  {
+    id: 8, name: "Integration + Demo Rehearsal", hours: "1-2h", status: "not-started", pct: 0,
+    goal: "End-to-end flow works for a 5-10 minute demo.",
+    features: ["Full demo flow validated"],
+    deliverables: [
+      "Full demo script written and rehearsed",
+      "Mock daemon tuned for demo timing",
+      "All navigation paths tested",
+      "Edge cases handled (disconnect, reconnect, cascade)"
+    ]
+  }
+];
+
+const requirements = [
+  { label: "Must-Have", count: 25, total: 25, done: 0, color: "var(--accent-green)" },
+  { label: "Should-Have", count: 11, total: 11, done: 0, color: "var(--accent-yellow)" },
+  { label: "Could-Have", count: 2, total: 2, done: 0, color: "var(--accent-purple)" },
+  { label: "Won't-Have (v1)", count: 4, total: 4, done: 0, color: "var(--accent-red)" }
+];
+
+const nfrs = [
+  "Drift < 4s", "1 Hz broadcast", "WS < 100ms", "EEG privacy", "Teacher: derived only",
+  "Indefinite storage", "60fps Windows", "< 500MB RAM", "Reconnect < 3s",
+  "No data loss", "30s calibration", "6-char code", "Full offline", "WCAG AA contrast"
+];
+
+const risks = [
+  { risk: "BrainFlow Crown connection fails", impact: "High", likelihood: "Medium", mitigation: "Mock daemon is fully functional fallback" },
+  { risk: "MediaPipe camera fails on Windows", impact: "Medium", likelihood: "Low", mitigation: "Skip gesture, demo 3 formats" },
+  { risk: "speech_to_text unreliable on desktop", impact: "Medium", likelihood: "Medium", mitigation: "Typed text fallback always available" },
+  { risk: "Time runs out (not all phases)", impact: "High", likelihood: "Medium", mitigation: "Phases ordered by priority; demo with 2 formats if needed" },
+  { risk: "Flutter desktop WebSocket perf", impact: "Low", likelihood: "Low", mitigation: "1 Hz is trivial load" },
+  { risk: "Drift code generation breaks", impact: "Medium", likelihood: "Low", mitigation: "Run build_runner after schema changes" },
+  { risk: "Crown battery dies during demo", impact: "Medium", likelihood: "Low", mitigation: "Charge fully; mock daemon fallback" },
+  { risk: "Demo WiFi issues", impact: "Medium", likelihood: "Low", mitigation: "Same machine or hotspot" }
+];
+
+const archLayers = [
+  { cls: "hardware", title: "Hardware Layer", desc: "Neurosity Crown (WiFi/OSC) via BrainFlow BoardShim", tags: ["Crown", "BrainFlow", "WiFi"] },
+  { cls: "daemon", title: "Python Daemon Layer", desc: "attention_engine.py (EEG processing, WS :8765) + mediapipe_server.py (hand tracking, WS :8766)", tags: ["Python 3.11", "NumPy", "SciPy", "MediaPipe", "WebSockets"] },
+  { cls: "flutter", title: "Flutter App Layer", desc: "core/ (models, services, data, widgets) + student/ (dashboard, session, interventions, RL) + teacher/ (live monitor, join)", tags: ["Flutter 3.x", "Riverpod", "go_router", "Drift", "web_socket_channel"] },
+  { cls: "storage", title: "Storage Layer", desc: "SQLite on-device via Drift. Sessions, interventions, baselines. Supabase deferred to post-demo.", tags: ["SQLite", "Drift ORM", "Local-first"] }
+];
+
+// ---- RENDER FUNCTIONS ----
+
+function renderPhases() {
+  const list = document.getElementById('phase-list');
+  list.innerHTML = phases.map(p => {
+    const statusCls = p.status === 'done' ? 'done' : p.status === 'in-progress' ? 'active' : '';
+    const badgeCls = p.status === 'done' ? 'badge-done' : p.status === 'in-progress' ? 'badge-in-progress' : 'badge-not-started';
+    const badgeText = p.status === 'done' ? 'Done' : p.status === 'in-progress' ? 'In Progress' : 'Not Started';
+    return `
+      <div class="phase-item ${statusCls}" onclick="showDetail(${p.id - 1})">
+        <div class="phase-num ${statusCls}">${p.id}</div>
+        <div class="phase-info">
+          <h4>${p.name} <span class="badge ${badgeCls}">${badgeText}</span></h4>
+          <p>${p.goal.substring(0, 80)}${p.goal.length > 80 ? '...' : ''}</p>
+        </div>
+        <div class="phase-est">${p.hours}</div>
+        <div class="phase-progress-cell">
+          <span class="phase-pct">${p.pct}%</span>
+          <div class="progress-bar-bg" style="width:60px">
+            <div class="progress-bar-fill" style="width:${p.pct}%;background:${p.pct === 100 ? 'var(--accent-green)' : p.pct > 0 ? 'var(--accent-blue)' : 'var(--border)'}"></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderRequirements() {
+  const grid = document.getElementById('req-grid');
+  grid.innerHTML = requirements.map(r => `
+    <div class="req-row">
+      <div>
+        <div class="req-label">${r.label}</div>
+        <div class="req-bar">
+          <div class="progress-bar-bg" style="width:120px;height:6px">
+            <div class="progress-bar-fill" style="width:${r.total > 0 ? (r.done / r.total * 100) : 0}%;background:${r.color}"></div>
+          </div>
+        </div>
+      </div>
+      <div class="req-count" style="color:${r.color}">${r.done}/${r.count}</div>
+    </div>
+  `).join('');
+}
+
+function renderNFRs() {
+  const el = document.getElementById('nfr-tags');
+  el.innerHTML = nfrs.map(n => `<span class="arch-tag" style="background:rgba(139,148,158,0.1);color:var(--text-secondary)">${n}</span>`).join('');
+}
+
+function renderTimeline() {
+  const track = document.getElementById('timeline-track');
+  // Total window: Apr 12 8AM to Apr 13 2PM = 30 hours
+  const totalHours = 30;
+  const colors = [
+    'rgba(88,166,255,0.5)', 'rgba(63,185,80,0.4)', 'rgba(210,153,34,0.4)', 'rgba(248,81,73,0.4)',
+    'rgba(188,140,255,0.4)', 'rgba(57,210,192,0.4)', 'rgba(219,109,40,0.4)', 'rgba(139,148,158,0.4)'
+  ];
+  // Rough hour allocations starting at hour 0 (8AM Apr 12)
+  const allocations = [
+    { phase: 1, start: 0, dur: 2.5 },
+    { phase: 2, start: 2.5, dur: 2.5 },
+    { phase: 3, start: 5, dur: 2.5 },
+    { phase: 4, start: 7.5, dur: 4.5 },
+    { phase: 5, start: 12, dur: 1.5 },
+    { phase: 6, start: 13.5, dur: 1 },
+    { phase: 7, start: 14.5, dur: 1.5 },
+    { phase: 8, start: 16, dur: 1.5 }
+  ];
+
+  let html = '';
+  allocations.forEach((a, i) => {
+    const left = (a.start / totalHours * 100);
+    const width = (a.dur / totalHours * 100);
+    html += `<div class="timeline-segment" style="left:${left}%;width:${width}%;background:${colors[i]}"><span>P${a.phase}</span></div>`;
+  });
+
+  // "Now" marker - Apr 12 current time approximation
+  const now = new Date();
+  const startTime = new Date(2026, 3, 12, 8, 0, 0);
+  const elapsed = (now - startTime) / (1000 * 60 * 60);
+  const nowPct = Math.max(0, Math.min(100, elapsed / totalHours * 100));
+  html += `<div class="timeline-now" style="left:${nowPct}%"></div>`;
+
+  // Demo marker
+  const demoPct = 26 / totalHours * 100; // Apr 13 10AM = 26h from start
+  html += `<div style="position:absolute;top:0;bottom:0;width:2px;background:var(--accent-green);left:${demoPct}%;z-index:1;opacity:0.6"></div>`;
+  html += `<div style="position:absolute;top:-16px;left:${demoPct}%;transform:translateX(-50%);font-size:9px;font-weight:700;color:var(--accent-green);letter-spacing:0.5px">DEMO</div>`;
+
+  track.innerHTML = html;
+}
+
+function renderRisks() {
+  const tbody = document.getElementById('risk-tbody');
+  tbody.innerHTML = risks.map(r => {
+    const ic = r.impact.toLowerCase();
+    const lc = r.likelihood.toLowerCase();
+    return `<tr>
+      <td>${r.risk}</td>
+      <td class="impact-${ic}">${r.impact}</td>
+      <td class="likelihood-${lc}">${r.likelihood}</td>
+      <td style="color:var(--text-secondary)">${r.mitigation}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderArchitecture() {
+  const el = document.getElementById('arch-layers');
+  let html = '';
+  archLayers.forEach((l, i) => {
+    html += `<div class="arch-layer ${l.cls}">
+      <h4>${l.title}</h4>
+      <p>${l.desc}</p>
+      <div class="arch-tags">${l.tags.map(t => `<span class="arch-tag">${t}</span>`).join('')}</div>
+    </div>`;
+    if (i < archLayers.length - 1) {
+      html += `<div class="arch-arrow">&#9660;</div>`;
+    }
+  });
+  el.innerHTML = html;
+}
+
+function updateOverall() {
+  const total = phases.length;
+  const sum = phases.reduce((a, p) => a + p.pct, 0);
+  const overall = Math.round(sum / total);
+  document.getElementById('overall-pct').textContent = overall + '%';
+  document.getElementById('overall-bar').style.width = overall + '%';
+}
+
+// Phase detail panel
+function showDetail(idx) {
+  const p = phases[idx];
+  const panel = document.getElementById('phase-detail');
+  document.getElementById('detail-title').textContent = `Phase ${p.id}: ${p.name}`;
+
+  // Load checked state from localStorage
+  const storageKey = `phase-${p.id}-checks`;
+  let checks = {};
+  try { checks = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch(e) {}
+
+  let html = `<p style="color:var(--text-secondary);font-size:13px;margin-bottom:12px">${p.goal}</p>`;
+  html += `<h4 style="font-size:12px;color:var(--text-secondary);text-transform:uppercase;margin-bottom:8px">Deliverables</h4>`;
+  html += `<ul class="deliverables-list">`;
+  p.deliverables.forEach((d, i) => {
+    const checked = checks[i] ? 'checked' : '';
+    html += `<li>
+      <div class="check-box ${checked}" data-phase="${p.id}" data-idx="${i}" onclick="toggleCheck(this)">${checks[i] ? '&#10003;' : ''}</div>
+      <span style="${checks[i] ? 'text-decoration:line-through;color:var(--text-muted)' : ''}">${d}</span>
+    </li>`;
+  });
+  html += `</ul>`;
+  html += `<div style="margin-top:12px"><span style="font-size:12px;color:var(--text-secondary);text-transform:uppercase;font-weight:600">Features</span></div>`;
+  html += `<div class="features-completed">${p.features.map(f => `<span class="feature-tag">${f}</span>`).join('')}</div>`;
+
+  document.getElementById('detail-body').innerHTML = html;
+  panel.classList.add('visible');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeDetail() {
+  document.getElementById('phase-detail').classList.remove('visible');
+}
+
+function toggleCheck(el) {
+  const phaseId = el.dataset.phase;
+  const idx = el.dataset.idx;
+  const storageKey = `phase-${phaseId}-checks`;
+  let checks = {};
+  try { checks = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch(e) {}
+
+  if (checks[idx]) {
+    delete checks[idx];
+    el.classList.remove('checked');
+    el.innerHTML = '';
+    el.nextElementSibling.style.textDecoration = '';
+    el.nextElementSibling.style.color = '';
+  } else {
+    checks[idx] = true;
+    el.classList.add('checked');
+    el.innerHTML = '&#10003;';
+    el.nextElementSibling.style.textDecoration = 'line-through';
+    el.nextElementSibling.style.color = 'var(--text-muted)';
+  }
+  localStorage.setItem(storageKey, JSON.stringify(checks));
+  recalcPhaseProgress(parseInt(phaseId));
+}
+
+function recalcPhaseProgress(phaseId) {
+  const storageKey = `phase-${phaseId}-checks`;
+  let checks = {};
+  try { checks = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch(e) {}
+  const p = phases[phaseId - 1];
+  const done = Object.keys(checks).length;
+  p.pct = Math.round(done / p.deliverables.length * 100);
+  if (p.pct === 100) p.status = 'done';
+  else if (p.pct > 0) p.status = 'in-progress';
+  else p.status = 'not-started';
+  renderPhases();
+  updateOverall();
+}
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  const opts = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+  document.getElementById('clock').textContent = now.toLocaleString('en-US', opts);
+}
+
+// Init
+function init() {
+  // Load saved progress from localStorage
+  phases.forEach(p => recalcPhaseProgress(p.id));
+  renderPhases();
+  renderRequirements();
+  renderNFRs();
+  renderTimeline();
+  renderRisks();
+  renderArchitecture();
+  updateOverall();
+  updateClock();
+  setInterval(updateClock, 1000);
+}
+
+init();
+</script>
+</body>
+</html>

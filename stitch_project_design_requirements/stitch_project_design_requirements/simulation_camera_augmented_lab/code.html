@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Cognitive Sanctuary - Camera Simulation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#acc7ff",
+                    "tertiary-container": "#b88900",
+                    "outline": "#8b90a0",
+                    "on-background": "#e5e2e1",
+                    "on-error-container": "#ffdad6",
+                    "error": "#ffb4ab",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "surface-variant": "#353534",
+                    "surface-bright": "#393939",
+                    "on-primary-fixed-variant": "#004591",
+                    "surface-container-high": "#2a2a2a",
+                    "tertiary-fixed-dim": "#fbbc00",
+                    "surface": "#131313",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "error-container": "#93000a",
+                    "primary-fixed": "#d7e2ff",
+                    "secondary": "#b7c8e1",
+                    "secondary-fixed": "#d3e4fe",
+                    "background": "#131313",
+                    "surface-container-low": "#1c1b1b",
+                    "inverse-surface": "#e5e2e1",
+                    "on-surface": "#e5e2e1",
+                    "primary": "#acc7ff",
+                    "on-tertiary-fixed-variant": "#5c4300",
+                    "secondary-container": "#3a4a5f",
+                    "on-surface-variant": "#c1c6d7",
+                    "tertiary": "#fbbc00",
+                    "surface-dim": "#131313",
+                    "on-tertiary-container": "#372700",
+                    "on-error": "#690005",
+                    "primary-container": "#468fff",
+                    "on-primary-fixed": "#001a40",
+                    "surface-container-highest": "#353534",
+                    "outline-variant": "#414754",
+                    "surface-container": "#201f1f",
+                    "on-secondary": "#213145",
+                    "inverse-primary": "#005cbd",
+                    "on-tertiary": "#402d00",
+                    "inverse-on-surface": "#313030",
+                    "on-secondary-fixed": "#0b1c30",
+                    "on-secondary-container": "#a9bad3",
+                    "on-primary-container": "#00285a",
+                    "on-tertiary-fixed": "#261a00",
+                    "on-primary": "#002f67",
+                    "surface-container-lowest": "#0e0e0e",
+                    "primary-fixed-dim": "#acc7ff",
+                    "tertiary-fixed": "#ffdfa0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Newsreader"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(53, 53, 52, 0.6);
+            backdrop-filter: blur(20px);
+        }
+        .hud-scanline {
+            background: linear-gradient(to bottom, transparent 50%, rgba(172, 199, 255, 0.05) 50%);
+            background-size: 100% 4px;
+        }
+        .vignette {
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.8);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-label selection:bg-primary selection:text-on-primary overflow-hidden">
+<!-- TopAppBar Fragmented into Simulation Header -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-gradient-to-b from-[#1c1b1b] to-transparent">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">emergency_home</span>
+<h1 class="font-sans text-xs uppercase tracking-[0.2em] text-primary">ADAPTIVE INTERVENTION: CAMERA SIMULATION</h1>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-sans text-[10px] uppercase tracking-widest text-on-surface-variant">Live Feed: Secure</span>
+</div>
+<span class="material-symbols-outlined text-blue-200" style="font-variation-settings: 'FILL' 0;">psychology</span>
+</div>
+</header>
+<!-- Main Content Canvas (Camera Feed Simulation) -->
+<main class="relative w-screen h-screen overflow-hidden bg-surface-container-lowest">
+<!-- Simulation Background (The "Camera Feed") -->
+<div class="absolute inset-0 z-0">
+<img alt="POV of a laboratory bench with scientific equipment under cool sterile blue lighting, cinematic and moody" class="w-full h-full object-cover opacity-60 grayscale brightness-50" data-alt="POV of a laboratory bench with scientific equipment under cool sterile blue lighting, cinematic and moody" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRvrJYyE6VaMBTaLpycWe4NcGlqd-qCd-Hh3ZnnxfpPGnQqwMFZhKiWGodc8ZL20QVMgi1AztjPssAs7LGu3ZkQhcHkXNBViBE3jJnXiO1xsbbXhx2GNyPq146lfImo_AU1g4MB1BolM7ugUDBZEDWY_B0YHjPWSx593HGqhDs1fMdTYxTp-3MAn4ZSHIwrDZu2f9s-n6arm2pM_7WUYhWCee7Z1Nsto55L-na2kXiFt-brVU-naxlr1kTxUjS18hwi1COP_FH28A"/>
+<!-- HUD Overlays -->
+<div class="absolute inset-0 hud-scanline pointer-events-none"></div>
+<div class="absolute inset-0 vignette pointer-events-none"></div>
+</div>
+<!-- Augmented Reality Model (The Molecule) -->
+<div class="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+<div class="relative w-[500px] h-[500px] flex items-center justify-center">
+<!-- Glowing Molecular Node -->
+<div class="absolute w-64 h-64 border border-primary/20 rounded-full animate-[spin_20s_linear_infinite]"></div>
+<div class="absolute w-80 h-80 border border-primary/10 rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
+<!-- Central Protein Model Asset (Represented by high-tech imagery) -->
+<div class="relative">
+<img alt="Digital 3D rendering of a complex crystal lattice structure with glowing cyan nodes and connecting glass filaments" class="w-72 h-72 object-contain mix-blend-screen drop-shadow-[0_0_30px_rgba(172,199,255,0.4)]" data-alt="Digital 3D rendering of a complex crystal lattice structure with glowing cyan nodes and connecting glass filaments" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCudIGklCdKOggqaDrVwA6M6xeV_t6_CvScbs00Fa60mA7rcHv5a0xm_y7pGo7MsPAtoC2G7UvmyheroZyJmxfBHstLJtBikRMxp56w3FxOSmGWXyQEKI29cp024ipWBO6gYQzM7kfhaKhl08nYwye8VFno5QIbSuPtEwm8DdaSAZWO4NejuM-2-OH_Bmolul5aqGz_Yf1Hk7ompBHdTtO43bU1kN-QVW6TK0NNs_kzjt-3iZoyJQ7INfWzwlFDPn0dTX5y1Oc_ljk"/>
+<!-- Reticle Target -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 border-2 border-tertiary rounded-sm flex items-center justify-center">
+<div class="w-1 h-1 bg-tertiary rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Telemetry Data (Floating Layers) -->
+<div class="absolute bottom-32 left-10 z-20 space-y-4">
+<div class="glass-panel p-4 rounded-xl border border-outline-variant/15 flex flex-col gap-1">
+<span class="text-[10px] uppercase tracking-tighter text-on-surface-variant font-bold">Spatial Tracking</span>
+<span class="text-primary font-mono text-sm">Active &amp; Locked</span>
+</div>
+<div class="glass-panel p-4 rounded-xl border border-outline-variant/15 flex flex-col gap-1">
+<span class="text-[10px] uppercase tracking-tighter text-on-surface-variant font-bold">Confidence</span>
+<div class="flex items-end gap-2">
+<span class="text-on-surface text-xl font-bold">94</span>
+<span class="text-primary text-[10px] mb-1">%</span>
+</div>
+</div>
+</div>
+<!-- Target Objective Box -->
+<div class="absolute top-24 left-1/2 -translate-x-1/2 z-20 w-full max-w-md">
+<div class="glass-panel px-8 py-6 rounded-2xl border border-primary/20 text-center shadow-2xl">
+<div class="flex justify-center mb-2">
+<span class="text-[10px] font-bold tracking-[0.3em] text-primary uppercase">Target Objective</span>
+</div>
+<p class="font-body text-xl text-on-surface italic">Align your hand with the molecular node</p>
+<div class="mt-4 flex justify-center gap-1">
+<div class="h-[2px] w-8 bg-primary"></div>
+<div class="h-[2px] w-2 bg-surface-variant"></div>
+<div class="h-[2px] w-2 bg-surface-variant"></div>
+</div>
+</div>
+</div>
+<!-- Focus HUD Gauges (Right Side) -->
+<div class="absolute right-10 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-8">
+<div class="relative w-24 h-24 flex items-center justify-center">
+<svg class="absolute w-full h-full -rotate-90">
+<circle class="text-surface-container-highest" cx="48" cy="48" fill="transparent" r="44" stroke="currentColor" stroke-width="2"></circle>
+<circle class="text-primary drop-shadow-[0_0_8px_rgba(172,199,255,0.6)]" cx="48" cy="48" fill="transparent" r="44" stroke="currentColor" stroke-dasharray="276" stroke-dashoffset="40" stroke-width="2"></circle>
+</svg>
+<div class="flex flex-col items-center">
+<span class="text-[9px] uppercase font-bold text-on-surface-variant">Depth</span>
+<span class="text-lg font-bold">8.2</span>
+</div>
+</div>
+<div class="relative w-24 h-24 flex items-center justify-center">
+<svg class="absolute w-full h-full -rotate-90">
+<circle class="text-surface-container-highest" cx="48" cy="48" fill="transparent" r="44" stroke="currentColor" stroke-width="2"></circle>
+<circle class="text-tertiary" cx="48" cy="48" fill="transparent" r="44" stroke="currentColor" stroke-dasharray="276" stroke-dashoffset="120" stroke-width="2"></circle>
+</svg>
+<div class="flex flex-col items-center">
+<span class="text-[9px] uppercase font-bold text-on-surface-variant">Drift</span>
+<span class="text-lg font-bold">12%</span>
+</div>
+</div>
+</div>
+<!-- Intervention Alert (Soft Amber Drift) -->
+<div class="absolute bottom-24 right-10 z-20">
+<div class="flex items-center gap-3 px-6 py-3 bg-tertiary-container/20 border border-tertiary/20 rounded-full">
+<span class="material-symbols-outlined text-tertiary text-sm">crisis_alert</span>
+<span class="text-[10px] uppercase font-bold tracking-widest text-tertiary">Stabilizing Perspective</span>
+</div>
+</div>
+</main>
+<!-- BottomNavBar Implementation -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 pb-safe z-50 bg-[#131313]/80 backdrop-blur-xl border-t border-white/5">
+<button class="flex flex-col items-center justify-center text-slate-500 px-6 py-1 hover:text-white transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined mb-1">school</span>
+<span class="font-sans text-[10px] font-medium">Academic</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-[#acc7ff]/10 text-[#acc7ff] rounded-xl px-6 py-1 transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">crisis_alert</span>
+<span class="font-sans text-[10px] font-medium">Intervention</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-500 px-6 py-1 hover:text-white transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined mb-1">spa</span>
+<span class="font-sans text-[10px] font-medium">Sanctuary</span>
+</button>
+</nav>
+</body></html>

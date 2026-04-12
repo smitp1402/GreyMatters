@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cognitive Sanctuary - Transition</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;family=Newsreader:ital,wght@0,400;0,600;1,400&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary": "#213145",
+                    "tertiary-fixed": "#ffdfa0",
+                    "on-secondary-fixed": "#0b1c30",
+                    "primary": "#acc7ff",
+                    "on-tertiary": "#402d00",
+                    "inverse-on-surface": "#313030",
+                    "tertiary-fixed-dim": "#fbbc00",
+                    "surface-variant": "#353534",
+                    "on-tertiary-fixed": "#261a00",
+                    "on-primary": "#002f67",
+                    "on-surface-variant": "#c1c6d7",
+                    "surface-dim": "#131313",
+                    "on-tertiary-container": "#372700",
+                    "background": "#131313",
+                    "inverse-surface": "#e5e2e1",
+                    "secondary-fixed": "#d3e4fe",
+                    "surface-container-highest": "#353534",
+                    "on-primary-fixed-variant": "#004591",
+                    "outline-variant": "#414754",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "inverse-primary": "#005cbd",
+                    "surface-bright": "#393939",
+                    "primary-fixed-dim": "#acc7ff",
+                    "surface": "#131313",
+                    "error": "#ffb4ab",
+                    "on-secondary-container": "#a9bad3",
+                    "surface-container-low": "#1c1b1b",
+                    "on-background": "#e5e2e1",
+                    "secondary": "#b7c8e1",
+                    "on-error-container": "#ffdad6",
+                    "surface-container": "#201f1f",
+                    "on-surface": "#e5e2e1",
+                    "surface-container-high": "#2a2a2a",
+                    "on-error": "#690005",
+                    "tertiary-container": "#b88900",
+                    "tertiary": "#fbbc00",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "primary-container": "#468fff",
+                    "surface-container-lowest": "#0e0e0e",
+                    "outline": "#8b90a0",
+                    "on-primary-container": "#00285a",
+                    "surface-tint": "#acc7ff",
+                    "error-container": "#93000a",
+                    "primary-fixed": "#d7e2ff",
+                    "on-tertiary-fixed-variant": "#5c4300",
+                    "on-primary-fixed": "#001a40",
+                    "secondary-container": "#3a4a5f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Newsreader"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .loading-ring {
+            border: 2px solid transparent;
+            border-top-color: #acc7ff;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            animation: spin 3s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { transform: rotate(360deg); opacity: 0.3; }
+        }
+        .clinical-hud-blur {
+            backdrop-filter: blur(24px);
+        }
+        .learning-layer {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-label selection:bg-primary/30 antialiased overflow-hidden">
+<!-- Top Navigation Anchor -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-transparent">
+<div class="text-xl font-bold tracking-tight text-blue-200 dark:text-blue-100">Cognitive Sanctuary</div>
+<nav class="hidden md:flex gap-8 items-center">
+<a class="text-blue-200 dark:text-blue-100 border-b-2 border-blue-200 text-sm font-medium tracking-wide" href="#">Sanctuary</a>
+<a class="text-slate-400 dark:text-slate-500 hover:text-blue-200 dark:hover:text-blue-100 transition-colors duration-300 text-sm font-medium tracking-wide" href="#">Metrics</a>
+<a class="text-slate-400 dark:text-slate-500 hover:text-blue-200 dark:hover:text-blue-100 transition-colors duration-300 text-sm font-medium tracking-wide" href="#">Archive</a>
+</nav>
+<div class="flex gap-4 items-center">
+<span class="material-symbols-outlined text-blue-200" data-icon="account_circle">account_circle</span>
+<span class="material-symbols-outlined text-blue-200" data-icon="settings">settings</span>
+</div>
+</header>
+<!-- Side Navigation Sidebar (Suppressed for focused content but ghost-visible in background) -->
+<aside class="fixed left-0 top-0 h-full z-40 flex flex-col py-8 bg-neutral-900/60 dark:bg-neutral-950/60 backdrop-blur-xl w-64 border-r border-white/5 opacity-20 pointer-events-none">
+<div class="px-6 mb-12">
+<h2 class="text-lg font-semibold text-blue-200">Clinical HUD</h2>
+<p class="text-xs text-neutral-400">In-Zone: 84%</p>
+</div>
+<div class="flex-1 space-y-2 px-3">
+<div class="flex items-center gap-3 p-3 rounded bg-neutral-800/40 text-blue-200 font-bold">
+<span class="material-symbols-outlined" data-icon="spa">spa</span>
+<span class="text-sm">Sanctuary</span>
+</div>
+<div class="flex items-center gap-3 p-3 rounded text-neutral-400">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="text-sm">Metrics</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas (The Technical Academic Text) -->
+<main class="min-h-screen pt-24 pl-64 pr-12 pb-12 opacity-40">
+<article class="learning-layer font-body leading-relaxed text-on-surface/80">
+<span class="font-label text-[10px] uppercase tracking-[0.2em] text-primary/60 mb-8 block">Section 4.2 // Neural Entrainment Patterns</span>
+<h1 class="text-4xl font-semibold mb-12 font-body text-on-surface">The Architecture of Deep Cognition</h1>
+<p class="text-xl mb-8">
+                Theoretical frameworks for cognitive endurance suggest that the sustained activation of the prefrontal cortex during high-entropy tasks is modulated not by sheer effort, but by the precise orchestration of alpha-wave synchronization. In this sanctuary, we observe the convergence of bio-feedback and pedagogical delivery.
+            </p>
+<p class="text-xl mb-8">
+                The data suggests that the transition between focused metabolic states requires a refractory period—a "gentle fade"—where the environmental stimuli are muted to allow for neural recalibration. This ensures that the subsequent learning module is received by a primed and neuroplastic substrate.
+            </p>
+<div class="grid grid-cols-2 gap-8 my-12">
+<div class="aspect-video bg-surface-container-high rounded-xl overflow-hidden relative border border-white/5">
+<img class="w-full h-full object-cover mix-blend-luminosity opacity-50" data-alt="abstract clinical laboratory setting with glowing scientific instruments and soft blue lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuoRlirsUbm4MOddDfPdLGcm3OqEPES1gGFkC6jrgCTA5cBwMZeolw4RBo-D6aoZmNnygEPj_4BOcXza0dsmMxCKVg1pVPmsiZcknC7rpxZaWzwXCZ7mv13P4rZQV_z6HgnvyI3jzKxzSTPdWy62efe0c6MBJ0PrExLzWiI9Kcj07PbCDo9-uTJ7Cokn442SPcV8gOV0uCNjneZfnu6xomoLoPmyDGktVG_iZgZoD9GMcs9Utf9v31eBJStQbtvgSX15-mi6X84aY"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
+</div>
+<div class="aspect-video bg-surface-container-high rounded-xl overflow-hidden relative border border-white/5">
+<img class="w-full h-full object-cover mix-blend-luminosity opacity-50" data-alt="macro photograph of a digital circuit board with microscopic neural pathways glowing blue" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDelprMZ3DsY1I1pcXV_kXMlTrbnQmqkUKnY1FngeZKS4O1HpvWzO4f6ZjOJGXKiHqK8MA895lEFDLSw2yj-QU_1F2qO2nMr13mHprNrqRPN68LNkph9yw-vPlTmwnSAPRoN1f61CJCoRaXOtWc2TCQLyppKtehZ_UWihUwpSef1dO2OsPBqoat2yPQqZvSmevpb2DGs41rWGKuz2CTXKQ-dFAsxw-PMCifiD-Dve292t9SnD8V4CcXjmPLg-US20PTaAe1frNO9JQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
+</div>
+</div>
+<p class="text-xl mb-8">
+                By leveraging surgical precision in our UI delivery, we minimize the cognitive "drag" associated with traditional educational interfaces. The goal is a seamless integration of thought and data.
+            </p>
+</article>
+</main>
+<!-- Transition Screen Overlay (The Gentle Fade) -->
+<div class="fixed inset-0 z-[100] bg-on-secondary/60 clinical-hud-blur flex flex-col items-center justify-center">
+<!-- Minimalist High-Fidelity Loading Ring -->
+<div class="relative flex items-center justify-center">
+<!-- The Pulse Outer Glow -->
+<div class="absolute w-32 h-32 rounded-full bg-primary/5 blur-3xl scale-150"></div>
+<!-- The Ring -->
+<div class="loading-ring shadow-[0_0_20px_rgba(172,199,255,0.1)]"></div>
+<!-- Inner Center Dot -->
+<div class="absolute w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_10px_#acc7ff]"></div>
+</div>
+<!-- Descriptive Text Anchor -->
+<div class="absolute bottom-12 left-0 w-full text-center">
+<span class="text-primary/70 text-[11px] tracking-[0.3em] font-label uppercase">Adjusting focus session...</span>
+</div>
+<!-- Precision HUD Sub-Elements -->
+<div class="absolute top-1/2 left-12 -translate-y-1/2 flex flex-col gap-12 opacity-30 border-l border-primary/20 pl-4 py-8">
+<div>
+<span class="block text-[10px] text-primary/40 uppercase mb-1">State</span>
+<span class="block text-xs text-primary font-semibold tracking-wider">RECALIBRATING</span>
+</div>
+<div>
+<span class="block text-[10px] text-primary/40 uppercase mb-1">Bio-Freq</span>
+<span class="block text-xs text-primary font-semibold tracking-wider">8.42 HZ</span>
+</div>
+</div>
+<div class="absolute top-1/2 right-12 -translate-y-1/2 flex flex-col gap-12 opacity-30 border-r border-primary/20 pr-4 py-8 text-right">
+<div>
+<span class="block text-[10px] text-primary/40 uppercase mb-1">Oxygenation</span>
+<span class="block text-xs text-primary font-semibold tracking-wider">98.2%</span>
+</div>
+<div>
+<span class="block text-[10px] text-primary/40 uppercase mb-1">Ambient</span>
+<span class="block text-xs text-primary font-semibold tracking-wider">32 DB</span>
+</div>
+</div>
+</div>
+<!-- Background Texture Noise (Subtle Tonal Depth) -->
+<div class="fixed inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay z-[110]">
+<img class="w-full h-full object-cover" data-alt="fine-grained paper texture with subtle grey noise" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD17iPwCTUiLS6judhVO0VhK43bJnMdd3kDvxFqSYQrcma9I4cF68uUB7wWuP4fxPWS56DsUCcXPpdEuMkreyoFrnhNIvZU1WOm_Jhb1BkEpQwQ8yprpoaR86BjbX4AIFhtvtSmn790JweIrGJsq-_HfdEm4clbImswVYJJv9z8WScAmJFzKjTVU7IT17s7gJ7aHzmIRzU45n_V07dEo6ZOR6yNaJpesgvaIePm2XObRW4a7wdsxU9EcHESd5SVKKxrwoU-IzpkjXA"/>
+</div>
+</body></html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NeuroLearn - Session Calibration</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "on-primary-fixed-variant": "#004591",
+                "on-primary-fixed": "#001a40",
+                "secondary": "#b7c8e1",
+                "error-container": "#93000a",
+                "tertiary-container": "#b88900",
+                "surface-tint": "#acc7ff",
+                "on-surface": "#e5e2e1",
+                "on-secondary-fixed": "#0b1c30",
+                "on-tertiary-container": "#372700",
+                "on-error-container": "#ffdad6",
+                "on-tertiary-fixed": "#261a00",
+                "tertiary-fixed-dim": "#fbbc00",
+                "secondary-fixed-dim": "#b7c8e1",
+                "on-secondary-fixed-variant": "#38485d",
+                "tertiary-fixed": "#ffdfa0",
+                "surface": "#131313",
+                "on-surface-variant": "#c1c6d7",
+                "primary-fixed": "#d7e2ff",
+                "on-tertiary": "#402d00",
+                "surface-container-highest": "#353534",
+                "secondary-fixed": "#d3e4fe",
+                "primary-fixed-dim": "#acc7ff",
+                "inverse-primary": "#005cbd",
+                "tertiary": "#fbbc00",
+                "surface-container-low": "#1c1b1b",
+                "primary-container": "#468fff",
+                "on-secondary-container": "#a9bad3",
+                "error": "#ffb4ab",
+                "surface-variant": "#353534",
+                "outline": "#8b90a0",
+                "on-primary-container": "#00285a",
+                "surface-dim": "#131313",
+                "inverse-surface": "#e5e2e1",
+                "surface-container-lowest": "#0e0e0e",
+                "surface-container-high": "#2a2a2a",
+                "background": "#131313",
+                "surface-bright": "#393939",
+                "on-tertiary-fixed-variant": "#5c4300",
+                "on-primary": "#002f67",
+                "on-secondary": "#213145",
+                "on-error": "#690005",
+                "outline-variant": "#414754",
+                "primary": "#acc7ff",
+                "surface-container": "#201f1f",
+                "secondary-container": "#3a4a5f",
+                "on-background": "#e5e2e1",
+                "inverse-on-surface": "#313030"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+            },
+            "fontFamily": {
+                "headline": ["Inter"],
+                "body": ["Newsreader"],
+                "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .eeg-wave {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: dash 5s linear infinite;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: 0; }
+        }
+        .pulse-core {
+            animation: pulse-ring 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-ring {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.5); opacity: 0.2; }
+        }
+        .glass-panel {
+            background: rgba(42, 42, 42, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-label selection:bg-primary/30 min-h-screen overflow-hidden">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-[#131313] flex justify-between items-center px-6 h-16 w-full">
+<div class="text-xl font-bold text-[#acc7ff] tracking-tighter">NeuroLearn</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="font-sans text-sm tracking-tight uppercase text-[#acc7ff] border-b-2 border-[#acc7ff] pb-1 font-bold" href="#">Dashboard</a>
+<a class="font-sans text-sm tracking-tight uppercase text-gray-400 font-medium hover:text-[#acc7ff] transition-colors duration-200" href="#">Library</a>
+<a class="font-sans text-sm tracking-tight uppercase text-gray-400 font-medium hover:text-[#acc7ff] transition-colors duration-200" href="#">History</a>
+</nav>
+<div class="flex items-center gap-4 text-[#acc7ff]">
+<span class="material-symbols-outlined cursor-pointer hover:opacity-80 transition-opacity">account_circle</span>
+<span class="material-symbols-outlined cursor-pointer hover:opacity-80 transition-opacity">settings</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="relative h-screen w-full flex flex-col items-center justify-center pt-16">
+<!-- Signal Quality HUD (Asymmetric Floating Element) -->
+<!-- Central Calibration Area -->
+<div class="relative flex flex-col items-center">
+<!-- Pulsing Central Focus -->
+<div class="relative w-64 h-64 flex items-center justify-center">
+<!-- Circular Gauge Outer Track -->
+<svg class="absolute inset-0 w-full h-full -rotate-90">
+<circle class="text-surface-container-highest" cx="128" cy="128" fill="transparent" r="120" stroke="currentColor" stroke-width="0.5"></circle>
+<circle class="text-primary" cx="128" cy="128" fill="transparent" r="120" stroke="currentColor" stroke-dasharray="754" stroke-dashoffset="200" stroke-width="1.5"></circle>
+</svg>
+<!-- The Core Point -->
+<div class="relative">
+<div class="absolute inset-0 pulse-core w-12 h-12 -ml-6 -mt-6 rounded-full bg-primary/20 blur-sm"></div>
+<div class="w-2 h-2 rounded-full bg-primary shadow-[0_0_15px_rgba(172,199,255,0.8)]"></div>
+</div>
+<!-- Countdown Timer -->
+<div class="absolute -bottom-16 flex flex-col items-center">
+<span class="text-5xl font-headline font-extralight tracking-tighter text-on-surface">00:24</span>
+<span class="text-[10px] uppercase tracking-[0.3em] text-on-surface-variant mt-2">Recording Baseline</span>
+</div>
+</div>
+</div>
+<!-- Instructional Layer (Newsreader Serif) -->
+<div class="mt-48 max-w-lg text-center px-8">
+<h1 class="font-body text-2xl italic text-on-surface mb-4">Focus on the center point to calibrate your baseline attention.</h1>
+<p class="font-body text-lg text-on-surface-variant/80 leading-relaxed">
+                Maintain a relaxed gaze. Minimal blinking and physical stillness will ensure the precision of the neural feedback loop.
+            </p>
+</div>
+<!-- Session Metadata (Asymmetric Right HUD) -->
+<div class="absolute bottom-32 right-8 glass-panel p-6 rounded-xl border border-outline-variant/15 w-64">
+<div class="space-y-4">
+<div>
+<label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60 block mb-1">Active Protocol</label>
+<p class="text-sm font-headline font-semibold text-primary">Theta Wave Induction</p>
+</div>
+<div>
+<label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60 block mb-1">Environment</label>
+<p class="text-sm font-headline font-semibold text-on-surface">Cognitive Sanctuary V3</p>
+</div>
+<div class="pt-2">
+<button class="w-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-xs font-bold uppercase py-3 rounded-md transition-all flex items-center justify-center gap-2 border border-outline-variant/20">
+<span class="material-symbols-outlined text-sm">close</span>
+                        Abort Calibration
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Suppressed for focused journey as per rule, but following JSON if needed for high level - choosing to prioritize Canvas focus for this transactional/focused task) -->
+<!-- Navigation is technically suppressed per "Task-Focused" rule for Calibration screen -->
+<!-- Decorative background elements -->
+<div class="fixed inset-0 pointer-events-none -z-10">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px]"></div>
+<div class="absolute top-0 right-0 w-[400px] h-[400px] bg-secondary-container/10 rounded-full blur-[100px]"></div>
+</div>
+</body></html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Cognitive Sanctuary - Flashcard Intervention</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#468fff",
+                        "primary": "#acc7ff",
+                        "surface-dim": "#131313",
+                        "tertiary-fixed-dim": "#fbbc00",
+                        "outline-variant": "#414754",
+                        "secondary-container": "#3a4a5f",
+                        "on-error-container": "#ffdad6",
+                        "on-surface": "#e5e2e1",
+                        "on-secondary": "#213145",
+                        "inverse-primary": "#005cbd",
+                        "surface": "#131313",
+                        "on-secondary-container": "#a9bad3",
+                        "on-tertiary-fixed": "#261a00",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "surface-container-highest": "#353534",
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "inverse-surface": "#e5e2e1",
+                        "secondary": "#b7c8e1",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "on-tertiary": "#402d00",
+                        "surface-container-lowest": "#0e0e0e",
+                        "surface-container": "#201f1f",
+                        "secondary-fixed": "#d3e4fe",
+                        "outline": "#8b90a0",
+                        "surface-variant": "#353534",
+                        "on-error": "#690005",
+                        "on-primary-container": "#00285a",
+                        "surface-container-high": "#2a2a2a",
+                        "on-tertiary-container": "#372700",
+                        "on-primary-fixed": "#001a40",
+                        "tertiary": "#fbbc00",
+                        "primary-fixed": "#d7e2ff",
+                        "error-container": "#93000a",
+                        "error": "#ffb4ab",
+                        "background": "#131313",
+                        "primary-fixed-dim": "#acc7ff",
+                        "on-surface-variant": "#c1c6d7",
+                        "on-primary-fixed-variant": "#004591",
+                        "tertiary-fixed": "#ffdfa0",
+                        "on-primary": "#002f67",
+                        "surface-tint": "#acc7ff",
+                        "surface-bright": "#393939",
+                        "on-background": "#e5e2e1",
+                        "surface-container-low": "#1c1b1b",
+                        "inverse-on-surface": "#313030",
+                        "on-secondary-fixed": "#0b1c30",
+                        "tertiary-container": "#b88900"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Newsreader"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(53, 53, 52, 0.6);
+            backdrop-filter: blur(24px);
+        }
+        .ghost-border {
+            outline: 1px solid rgba(65, 71, 84, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-headline selection:bg-primary/30 selection:text-primary">
+<div class="flex min-h-screen flex-col">
+<!-- Minimal Top Header -->
+<header class="flex justify-center items-center px-6 py-6 w-full top-0 sticky bg-[#131313]/80 backdrop-blur-md z-40 border-b border-[#414754]/10">
+<div class="text-xs font-black text-[#acc7ff] uppercase tracking-[0.3em] font-['Inter']">
+                Adaptive Intervention: Flashcards
+            </div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-h-screen relative overflow-hidden">
+<!-- Flashcard Canvas -->
+<section class="flex-1 flex flex-col items-center justify-center p-6 md:p-12 relative">
+<!-- Decorative background elements -->
+<div class="absolute top-1/4 -left-20 w-64 h-64 bg-primary/5 rounded-full blur-[120px]"></div>
+<div class="absolute bottom-1/4 -right-20 w-80 h-80 bg-secondary-container/10 rounded-full blur-[120px]"></div>
+<div class="w-full max-w-4xl flex flex-col items-center">
+<!-- Progress Indicator -->
+<div class="w-full flex justify-between items-end mb-8 max-w-md">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-1">Session Progress</span>
+<div class="flex gap-1.5">
+<div class="h-1 w-8 rounded-full bg-primary shadow-[0_0_8px_rgba(172,199,255,0.4)]"></div>
+<div class="h-1 w-8 rounded-full bg-primary shadow-[0_0_8px_rgba(172,199,255,0.4)]"></div>
+<div class="h-1 w-8 rounded-full bg-surface-container-highest"></div>
+<div class="h-1 w-8 rounded-full bg-surface-container-highest"></div>
+<div class="h-1 w-8 rounded-full bg-surface-container-highest"></div>
+</div>
+</div>
+<div class="text-right">
+<span class="text-2xl font-black text-primary font-headline tracking-tighter">02<span class="text-on-surface-variant/40 mx-1">/</span>05</span>
+</div>
+</div>
+<!-- Flashcard Interface -->
+<div class="w-full max-w-xl aspect-[4/5] sm:aspect-[3/2] relative group">
+<!-- Stack effect (Back cards) -->
+<div class="absolute inset-0 translate-y-4 scale-95 bg-surface-container-low rounded-xl ghost-border opacity-40"></div>
+<div class="absolute inset-0 translate-y-2 scale-[0.975] bg-surface-container-high rounded-xl ghost-border opacity-60"></div>
+<!-- Main Active Card -->
+<div class="absolute inset-0 glass-panel rounded-xl ghost-border flex flex-col p-8 md:p-12 items-center justify-center text-center shadow-2xl transition-all hover:translate-y-[-4px]">
+<div class="absolute top-6 left-8">
+<span class="text-[10px] uppercase tracking-widest text-primary font-black border-l-2 border-primary pl-3">Chemistry</span>
+</div>
+<div class="space-y-6">
+<h2 class="font-body text-4xl md:text-5xl text-on-surface leading-tight italic">
+                                    Classify H₂O, NaCl, CO₂ — ionic or covalent?
+                                </h2>
+<p class="text-on-surface-variant text-sm font-label tracking-wide max-w-xs mx-auto">
+                                    Identify the chemical bonding nature of the provided molecular structures.
+                                </p>
+</div>
+<!-- Interaction Indicators -->
+<div class="absolute bottom-6 flex gap-12 text-on-surface-variant/30 text-[10px] font-bold uppercase tracking-widest">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="swipe_left">swipe_left</span> Ionic
+                                </div>
+<div class="flex items-center gap-2">
+                                    Covalent <span class="material-symbols-outlined text-sm" data-icon="swipe_right">swipe_right</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action HUD -->
+<div class="mt-12 flex flex-col sm:flex-row gap-4 w-full max-w-md">
+<button class="flex-1 py-5 bg-surface-container-highest hover:bg-on-error-container/10 text-on-surface border border-outline-variant/20 rounded-md font-bold uppercase tracking-widest transition-all hover:border-error group active:scale-95 flex items-center justify-center gap-3">
+<span class="material-symbols-outlined text-error" data-icon="hexagon" style="font-variation-settings: 'FILL' 1;">hexagon</span>
+                            Ionic
+                        </button>
+<button class="flex-1 py-5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md font-bold uppercase tracking-widest transition-all hover:border-primary active:scale-95 flex items-center justify-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="cyclone" style="font-variation-settings: 'FILL' 1;">cyclone</span>
+                            Covalent
+                        </button>
+</div>
+<!-- Clinical Support Info -->
+<div class="mt-12 p-6 glass-panel rounded-xl max-w-2xl w-full flex gap-6 items-start ghost-border">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-primary" data-icon="lightbulb" style="font-variation-settings: 'FILL' 1;">lightbulb</span>
+</div>
+<div class="space-y-1">
+<h4 class="text-sm font-bold text-on-surface">Cognitive Recall Tip</h4>
+<p class="text-sm font-body italic text-on-surface-variant leading-relaxed">
+                                Ionic bonds typically occur between metals and non-metals through electron transfer, while covalent bonds involve the sharing of electrons between non-metals.
+                            </p>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+</body></html>
