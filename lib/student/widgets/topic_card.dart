@@ -59,7 +59,7 @@ class TopicCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
+                    color: AppColors.onSurfaceVariant,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -92,7 +92,7 @@ class TopicCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: AppColors.onSurface,
               ),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -115,7 +115,7 @@ class TopicCard extends StatelessWidget {
                 _StatChip(
                   icon: Icons.play_circle,
                   label: '${topic.sessionCount} sessions',
-                  color: AppColors.textSecondary,
+                  color: AppColors.outline,
                 ),
               ],
             ),

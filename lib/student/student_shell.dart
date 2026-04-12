@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme/app_colors.dart';
-import '../core/theme/app_spacing.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/library_screen.dart';
 
@@ -32,27 +31,56 @@ class _StudentShellState extends ConsumerState<StudentShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NeuroLearn'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
-        elevation: 0,
+        title: const Text('NEUROLEARN'),
+        backgroundColor: AppColors.surfaceContainer,
+        actions: [
+          // Connection status dot
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.focused,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'ONLINE',
+                  style: TextStyle(
+                    fontFamily: 'Consolas',
+                    fontSize: 10,
+                    letterSpacing: 2.0,
+                    color: AppColors.outline,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+        backgroundColor: AppColors.surfaceContainer,
+        indicatorColor: AppColors.secondaryContainer,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.library_books),
+          NavigationDestination(
+            icon: Icon(Icons.library_books_outlined),
+            selectedIcon: Icon(Icons.library_books),
             label: 'Library',
           ),
         ],
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
       ),
     );
   }

@@ -2,43 +2,76 @@
 
 import 'package:flutter/material.dart';
 
-/// NeuroLearn colour palette.
+/// NeuroLearn "Cognitive Sanctuary" colour palette.
 ///
-/// One primary (deep indigo — focus / cognition), one accent (teal — calm /
-/// recovery), neutral grays for text and backgrounds. Dark mode variants
-/// defined alongside each colour.
+/// Derived from the Stitch design system — dark theme with blue primary,
+/// gold tertiary accent, and layered surface containers.
 abstract final class AppColors {
-  // -- Primary --
-  static const primary = Color(0xFF3F51B5); // Indigo 500
-  static const primaryLight = Color(0xFF7986CB); // Indigo 300
-  static const primaryDark = Color(0xFF283593); // Indigo 800
+  // -- Primary (blue cognitive focus) --
+  static const primary = Color(0xFFACC7FF);
+  static const primaryContainer = Color(0xFF468FFF);
+  static const onPrimary = Color(0xFF002F67);
+  static const onPrimaryContainer = Color(0xFF00285A);
+  static const primaryFixed = Color(0xFFD7E2FF);
+  static const primaryFixedDim = Color(0xFFACC7FF);
 
-  // -- Accent --
-  static const accent = Color(0xFF00897B); // Teal 600
-  static const accentLight = Color(0xFF4DB6AC); // Teal 300
+  // -- Secondary (muted blue-gray) --
+  static const secondary = Color(0xFFB7C8E1);
+  static const secondaryContainer = Color(0xFF3A4A5F);
+  static const onSecondary = Color(0xFF213145);
+  static const onSecondaryContainer = Color(0xFFA9BAD3);
+
+  // -- Tertiary (gold accent) --
+  static const tertiary = Color(0xFFFBBC00);
+  static const tertiaryContainer = Color(0xFFB88900);
+  static const onTertiary = Color(0xFF402D00);
+
+  // -- Surface layers (dark, layered) --
+  static const surface = Color(0xFF131313);
+  static const surfaceDim = Color(0xFF131313);
+  static const surfaceBright = Color(0xFF393939);
+  static const surfaceContainerLowest = Color(0xFF0E0E0E);
+  static const surfaceContainerLow = Color(0xFF1C1B1B);
+  static const surfaceContainer = Color(0xFF201F1F);
+  static const surfaceContainerHigh = Color(0xFF2A2A2A);
+  static const surfaceContainerHighest = Color(0xFF353534);
+  static const surfaceVariant = Color(0xFF353534);
+
+  // -- On-surface text --
+  static const onSurface = Color(0xFFE5E2E1);
+  static const onSurfaceVariant = Color(0xFFC1C6D7);
+  static const onBackground = Color(0xFFE5E2E1);
+
+  // -- Outlines --
+  static const outline = Color(0xFF8B90A0);
+  static const outlineVariant = Color(0xFF414754);
+
+  // -- Inverse --
+  static const inverseSurface = Color(0xFFE5E2E1);
+  static const inverseOnSurface = Color(0xFF313030);
+  static const inversePrimary = Color(0xFF005CBD);
+
+  // -- Error --
+  static const error = Color(0xFFFFB4AB);
+  static const errorContainer = Color(0xFF93000A);
+  static const onError = Color(0xFF690005);
+  static const onErrorContainer = Color(0xFFFFDAD6);
 
   // -- Attention level indicators --
-  static const focused = Color(0xFF43A047); // Green 600
-  static const drifting = Color(0xFFFFA000); // Amber 700
-  static const lost = Color(0xFFE53935); // Red 600
+  static const focused = Color(0xFF43A047);
+  static const drifting = Color(0xFFFFA000);
+  static const lost = Color(0xFFE53935);
 
   // -- Band power bars --
-  static const theta = Color(0xFF7E57C2); // Deep Purple 400
-  static const alpha = Color(0xFF42A5F5); // Blue 400
-  static const beta = Color(0xFF66BB6A); // Green 400
-  static const gamma = Color(0xFFFFCA28); // Amber 400
-
-  // -- Neutrals --
-  static const backgroundLight = Color(0xFFFAFAFA);
-  static const backgroundDark = Color(0xFF121212);
-  static const surfaceLight = Color(0xFFFFFFFF);
-  static const surfaceDark = Color(0xFF1E1E1E);
-  static const textPrimary = Color(0xFF212121);
-  static const textSecondary = Color(0xFF757575);
-  static const textOnPrimary = Color(0xFFFFFFFF);
-  static const divider = Color(0xFFE0E0E0);
+  static const theta = Color(0xFF7E57C2);
+  static const alpha = Color(0xFF42A5F5);
+  static const beta = Color(0xFF66BB6A);
+  static const gamma = Color(0xFFFFCA28);
 
   // -- Semantic --
-  static const error = Color(0xFFD32F2F);
   static const success = Color(0xFF388E3C);
+
+  // -- Glass panel --
+  static const glassBackground = Color(0x66353534); // 40% opacity
+  static const glassBorder = Color(0x33414754);     // 20% opacity
 }

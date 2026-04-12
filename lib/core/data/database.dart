@@ -5,6 +5,8 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'session_dao.dart';
+import 'intervention_dao.dart';
 
 part 'database.g.dart';
 
@@ -67,6 +69,10 @@ class AppDatabase extends _$AppDatabase {
   /// Bump this when the schema changes. Drift handles migrations.
   @override
   int get schemaVersion => 1;
+
+  /// Expose DAOs as getters for convenient access.
+  SessionDao get sessionDao => SessionDao(this);
+  InterventionDao get interventionDao => InterventionDao(this);
 
   @override
   MigrationStrategy get migration => MigrationStrategy(

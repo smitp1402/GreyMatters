@@ -1,23 +1,16 @@
 // lib/main.dart
 
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'core/services/eeg_service.dart';
-import 'core/services/websocket_client.dart';
 import 'core/theme/app_theme.dart';
 import 'router.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Start the Python EEG daemon on desktop platforms.
-  if (EEGService.instance.isDesktop) {
-    await EEGService.instance.startDaemon();
-  }
-
-  // Connect to the daemon's WebSocket server.
-  await WebSocketClient.instance.connect();
+  // Daemon and WebSocket connections are deferred until a session starts.
+  // This ensures the app launches immediately without blocking on missing
+  // Python daemon or Crown hardware.
 
   runApp(const ProviderScope(child: NeuroLearnApp()));
 }
@@ -30,9 +23,9 @@ class NeuroLearnApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'NeuroLearn',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      theme: AppTheme.dark,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.dark,
       routerConfig: appRouter,
     );
   }

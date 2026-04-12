@@ -24,7 +24,7 @@ class DashboardScreen extends ConsumerWidget {
         final prioritizedTopics = _prioritizeTopics(sessions);
 
         if (prioritizedTopics.isEmpty) {
-          return _buildEmptyState();
+          return _buildEmptyState(context);
         }
 
         return ListView.builder(
@@ -98,7 +98,7 @@ class DashboardScreen extends ConsumerWidget {
     )).toList();
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xxl),
@@ -113,20 +113,13 @@ class DashboardScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.lg),
             Text(
               'Welcome to NeuroLearn!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
-              'Start your first learning session to see personalized topic recommendations.',
+              'Start your first learning session to see\npersonalized topic recommendations.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
         ),
@@ -198,5 +191,5 @@ final allSessionsProvider = StreamProvider<List<Session>>((ref) {
 
 /// Provider for app database instance.
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
-  throw UnimplementedError('Database provider not initialized');
+  return AppDatabase();
 });

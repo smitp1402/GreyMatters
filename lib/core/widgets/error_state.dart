@@ -57,7 +57,7 @@ class ErrorState extends StatelessWidget {
               Text(
                 detail!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
+                      color: AppColors.onSurfaceVariant,
                     ),
                 textAlign: TextAlign.center,
               ),
