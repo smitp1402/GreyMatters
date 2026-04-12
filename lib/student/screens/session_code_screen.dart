@@ -76,7 +76,8 @@ class _SessionCodeScreenState extends State<SessionCodeScreen>
   }
 
   void _startLearning() {
-    context.go('/student');
+    // Navigate to lesson with Periodic Table as default topic
+    context.go('/student/lesson/periodic_table');
   }
 
   @override

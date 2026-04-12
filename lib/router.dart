@@ -8,6 +8,7 @@ import 'student/screens/crown_connection_screen.dart';
 import 'student/screens/debug_stream_screen.dart';
 import 'student/screens/calibration_screen.dart';
 import 'student/screens/session_code_screen.dart';
+import 'student/screens/lesson_screen.dart';
 import 'teacher/teacher_shell.dart';
 
 /// Top-level router for the entire app.
@@ -47,6 +48,13 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/student/session-ready',
       builder: (_, __) => const SessionCodeScreen(),
+    ),
+    // Lesson screen with topic ID
+    GoRoute(
+      path: '/student/lesson/:topicId',
+      builder: (_, state) => LessonScreen(
+        topicId: state.pathParameters['topicId']!,
+      ),
     ),
     // Student dashboard (post-session-setup)
     GoRoute(

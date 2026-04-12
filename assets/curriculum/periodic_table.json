@@ -1,0 +1,62 @@
+{
+  "id": "periodic_table",
+  "name": "The Periodic Table",
+  "subject": "Chemistry",
+  "estimatedMinutes": 10,
+  "sections": [
+    {
+      "id": "pt_s1",
+      "title": "I. History & Organization",
+      "content": "The periodic table is one of the most important tools in chemistry. It organizes all known elements — 118 in total — by their atomic number, electron configuration, and recurring chemical properties.\n\nIn 1869, Russian chemist Dmitri Mendeleev published the first widely recognized periodic table. His genius was not just in arranging the elements, but in leaving gaps for elements that had not yet been discovered. He predicted the properties of gallium, scandium, and germanium years before they were found in nature.\n\nThe modern periodic table arranges elements in order of increasing atomic number (the number of protons in the nucleus). Elements in the same column (group) share similar chemical properties because they have the same number of valence electrons — the electrons in the outermost shell that participate in chemical bonding.\n\nThe table is divided into 18 groups (columns) and 7 periods (rows). As you move left to right across a period, atomic number increases by one. As you move down a group, atoms get larger because each new period adds another electron shell.",
+      "keyTerms": ["atomic number", "electron configuration", "valence electrons", "groups", "periods"]
+    },
+    {
+      "id": "pt_s2",
+      "title": "II. Element Groups & Families",
+      "content": "Elements in the periodic table are categorized into several major groups based on their properties:\n\nAlkali Metals (Group 1): Lithium, sodium, potassium — these are soft, silvery metals that react violently with water. They have one valence electron, which they easily lose to form +1 ions. Sodium (Na) is found in table salt (NaCl), and potassium (K) is essential for nerve function in your body.\n\nAlkaline Earth Metals (Group 2): Beryllium, magnesium, calcium — harder than alkali metals, with two valence electrons. Calcium (Ca) builds your bones and teeth. Magnesium (Mg) is the central atom in chlorophyll, the molecule that makes plants green.\n\nHalogens (Group 17): Fluorine, chlorine, bromine, iodine — highly reactive nonmetals with seven valence electrons. They desperately want one more electron to complete their outer shell. Chlorine (Cl) disinfects swimming pools. Fluoride (F⁻) strengthens tooth enamel.\n\nNoble Gases (Group 18): Helium, neon, argon — these gases are almost completely unreactive because their outer electron shells are already full. Helium makes balloons float. Neon glows orange-red in signs. Argon fills incandescent light bulbs to prevent the filament from burning.",
+      "keyTerms": ["alkali metals", "alkaline earth metals", "halogens", "noble gases", "valence electrons"]
+    },
+    {
+      "id": "pt_s3",
+      "title": "III. Periodic Trends",
+      "content": "The periodic table reveals powerful patterns called periodic trends. Understanding these trends lets you predict an element's behavior without memorizing every fact.\n\nAtomic Radius: Atoms get smaller as you move left to right across a period. This seems counterintuitive — you're adding more electrons — but you're also adding more protons, which pull the electrons closer to the nucleus. Moving down a group, atoms get larger because each period adds a new electron shell farther from the nucleus.\n\nElectronegativity: This measures how strongly an atom attracts electrons in a chemical bond. Fluorine is the most electronegative element (3.98 on the Pauling scale). Electronegativity increases going right across a period and decreases going down a group. This is why elements in the top-right corner (like oxygen, fluorine, chlorine) are greedy for electrons.\n\nIonization Energy: The energy required to remove an electron from an atom. Elements on the left (metals) have low ionization energy — they give up electrons easily. Elements on the right (nonmetals) have high ionization energy — they hold onto their electrons tightly. Noble gases have the highest ionization energy because their electron shells are full and stable.\n\nMetallic Character: Metals are found on the left and bottom of the table. Nonmetals are on the right and top. The diagonal staircase (boron to astatine) separates metals from nonmetals, with metalloids (silicon, germanium, arsenic) straddling the line.",
+      "keyTerms": ["atomic radius", "electronegativity", "ionization energy", "metallic character", "periodic trends"]
+    },
+    {
+      "id": "pt_s4",
+      "title": "IV. Reading the Periodic Table",
+      "content": "Every element box on the periodic table contains essential information:\n\nThe atomic number (top) tells you how many protons are in the nucleus. This number defines the element — change the proton count and you change the element entirely. Carbon always has 6 protons. Gold always has 79.\n\nThe element symbol (center) is a one- or two-letter abbreviation. Some are intuitive: C for carbon, O for oxygen. Others come from Latin names: Fe for iron (ferrum), Au for gold (aurum), Pb for lead (plumbum), Na for sodium (natrium).\n\nThe atomic mass (bottom) is the weighted average mass of all naturally occurring isotopes. Carbon's atomic mass is 12.011, not exactly 12, because about 1.1% of natural carbon is carbon-13 (with an extra neutron).\n\nTo find the number of neutrons: subtract the atomic number from the mass number (rounded to nearest whole number). For carbon-12: 12 - 6 = 6 neutrons. For carbon-13: 13 - 6 = 7 neutrons.\n\nThe electron configuration can be derived from the element's position. Period number tells you how many electron shells. Group number (for main group elements) tells you how many valence electrons. Sodium is in Period 3, Group 1: three shells, one valence electron."
+    }
+  ],
+  "flashcards": [
+    {"question": "How many elements are in the periodic table?", "answer": "118 elements", "explanation": "As of 2024, 118 elements have been confirmed and named."},
+    {"question": "Who created the first widely recognized periodic table?", "answer": "Dmitri Mendeleev (1869)", "explanation": "Mendeleev organized elements by atomic weight and predicted undiscovered elements."},
+    {"question": "What determines an element's identity?", "answer": "The number of protons (atomic number)", "explanation": "Change the proton count and you change the element entirely."},
+    {"question": "Noble gas or halogen: Neon?", "answer": "Noble gas (Group 18)", "explanation": "Neon has a full outer electron shell, making it unreactive."},
+    {"question": "Which element is the most electronegative?", "answer": "Fluorine (3.98 Pauling)", "explanation": "Fluorine attracts electrons more strongly than any other element."}
+  ],
+  "simulation": {
+    "type": "element_placement",
+    "instructions": "Drag each element to the correct position on the periodic table grid.",
+    "elements": [
+      {"symbol": "Na", "name": "Sodium", "group": 1, "period": 3},
+      {"symbol": "Cl", "name": "Chlorine", "group": 17, "period": 3},
+      {"symbol": "Fe", "name": "Iron", "group": 8, "period": 4},
+      {"symbol": "He", "name": "Helium", "group": 18, "period": 1},
+      {"symbol": "Ca", "name": "Calcium", "group": 2, "period": 4}
+    ]
+  },
+  "gestureQuestions": [
+    {"question": "How many valence electrons does Sodium have?", "answer": 1},
+    {"question": "How many valence electrons does Carbon have?", "answer": 4},
+    {"question": "How many valence electrons does Chlorine have?", "answer": 7},
+    {"question": "What group are the Noble Gases in?", "answer": 18, "hint": "Hold up 1 and 8 (or approximate)"}
+  ],
+  "voiceQuestions": [
+    {"question": "What type of element is Fluorine?", "acceptedAnswers": ["halogen", "a halogen", "nonmetal", "a nonmetal"]},
+    {"question": "Name the element with atomic number 79.", "acceptedAnswers": ["gold", "au", "aurum"]},
+    {"question": "What trend increases from left to right across a period?", "acceptedAnswers": ["electronegativity", "ionization energy", "both electronegativity and ionization energy"]},
+    {"question": "What element makes up the center of chlorophyll?", "acceptedAnswers": ["magnesium", "mg"]}
+  ],
+  "curiosityBomb": "If you could line up every atom in your body side by side, the line would stretch about 2 light-years — halfway to the nearest star. Yet 99% of your body is made of just 6 elements from the periodic table: oxygen, carbon, hydrogen, nitrogen, calcium, and phosphorus."
+}
