@@ -11,6 +11,7 @@ import '../../core/models/attention_state.dart';
 import '../../core/models/topic.dart';
 import '../../core/services/attention_stream.dart';
 import '../widgets/focus_hud.dart';
+import 'interventions/intervention_engine.dart';
 
 /// Lesson screen — full-screen content renderer with HUD and pacing engine.
 ///
@@ -38,6 +39,11 @@ class _LessonScreenState extends State<LessonScreen>
   StreamSubscription<AttentionState>? _attentionSub;
   int _driftSeconds = 0;
   Timer? _driftTimer;
+
+  // Intervention engine
+  final _interventionEngine = InterventionEngine();
+  bool _showingIntervention = false;
+  String? _currentFormat;
 
   // Session tracking
   final _sessionStart = DateTime.now();
@@ -107,18 +113,54 @@ class _LessonScreenState extends State<LessonScreen>
     // Track drift duration
     _driftTimer?.cancel();
     _driftTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) {
-        setState(() => _driftSeconds++);
+      if (!mounted) return;
+      setState(() => _driftSeconds++);
+
+      // After 4 seconds of drift, launch intervention
+      if (_driftSeconds >= 4 && !_showingIntervention && !_interventionEngine.isActive) {
+        _launchIntervention();
       }
     });
+  }
+
+  void _launchIntervention() {
+    _interventionEngine.start(
+      driftDurationSec: _driftSeconds,
+      topicId: widget.topicId,
+      subject: _topic?.subject ?? '',
+    );
+
+    final format = _interventionEngine.selectNextFormat();
+    setState(() {
+      _showingIntervention = true;
+      _currentFormat = format;
+    });
+  }
+
+  void _onInterventionComplete() {
+    // Check if attention recovered (simplified — check current level)
+    final recovered = _currentLevel == AttentionLevel.focused;
+    _interventionEngine.reportResult(_currentFormat!, recovered);
+
+    if (!recovered && _interventionEngine.hasMoreFormats) {
+      // Cascade to next format
+      final nextFormat = _interventionEngine.selectNextFormat();
+      setState(() => _currentFormat = nextFormat);
+    } else {
+      // Either recovered or exhausted all formats — resume
+      _onFocusRecovered();
+    }
   }
 
   void _onFocusRecovered() {
     _driftTimer?.cancel();
     _pauseAnim.reverse();
+    _interventionEngine.reset();
 
     setState(() {
       _paused = false;
+      _showingIntervention = false;
+      _currentFormat = null;
     });
   }
 
@@ -212,8 +254,18 @@ class _LessonScreenState extends State<LessonScreen>
             ],
           ),
 
-          // Pause overlay
-          if (_paused) _buildPauseOverlay(),
+          // Intervention or pause overlay
+          if (_showingIntervention && _currentFormat != null)
+            Container(
+              color: AppColors.surface,
+              child: InterventionEngine.buildFormatScreen(
+                format: _currentFormat!,
+                topicId: widget.topicId,
+                onComplete: _onInterventionComplete,
+              ),
+            )
+          else if (_paused)
+            _buildPauseOverlay(),
         ],
       ),
     );
