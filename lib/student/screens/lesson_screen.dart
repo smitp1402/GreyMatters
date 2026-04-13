@@ -173,8 +173,8 @@ class _LessonScreenState extends State<LessonScreen>
         curve: Curves.easeOut,
       );
     } else {
-      // All sections complete → session end
-      context.go('/student');
+      // All sections complete → session end summary
+      context.go('/student/session-end');
     }
   }
 
