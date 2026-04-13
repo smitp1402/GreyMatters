@@ -3,15 +3,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_spacing.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/library_screen.dart';
 
-/// Root widget for the student module.
+/// Root widget for the student module — matches Stitch "Cognitive Sanctuary" dashboard.
 ///
-/// Two-tab layout: Home (attention-prioritized dashboard) and Library
-/// (full topic browser). Navigation between lesson, intervention, and
-/// session end flows happens via GoRouter.
+/// Desktop: Left sidebar (Cognitive Dashboard, nav, Start Session) + main content.
+/// Mobile: Bottom navigation bar.
 class StudentShell extends ConsumerStatefulWidget {
   const StudentShell({super.key});
 
@@ -22,66 +23,275 @@ class StudentShell extends ConsumerStatefulWidget {
 class _StudentShellState extends ConsumerState<StudentShell> {
   int _selectedIndex = 0;
 
-  final _screens = [
-    const DashboardScreen(),
-    const LibraryScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width > 768;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('NEUROLEARN'),
-        backgroundColor: AppColors.surfaceContainer,
-        actions: [
-          // Connection status dot
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
+      backgroundColor: AppColors.surface,
+      body: Column(
+        children: [
+          // Top nav bar
+          _buildTopNav(),
+          Expanded(
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.focused,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'ONLINE',
-                  style: TextStyle(
-                    fontFamily: 'Consolas',
-                    fontSize: 10,
-                    letterSpacing: 2.0,
-                    color: AppColors.outline,
-                  ),
+                // Sidebar (desktop only)
+                if (isDesktop) _buildSidebar(),
+                // Main content
+                Expanded(
+                  child: _selectedIndex == 0
+                      ? const DashboardScreen()
+                      : const LibraryScreen(),
                 ),
               ],
             ),
           ),
         ],
       ),
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-        backgroundColor: AppColors.surfaceContainer,
-        indicatorColor: AppColors.secondaryContainer,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+      // Mobile bottom nav
+      bottomNavigationBar: isDesktop
+          ? null
+          : _buildMobileNav(),
+    );
+  }
+
+  Widget _buildTopNav() {
+    return Container(
+      height: 52,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      color: AppColors.surface.withValues(alpha: 0.95),
+      child: Row(
+        children: [
+          const Text(
+            'The Cognitive Sanctuary',
+            style: TextStyle(
+              fontFamily: 'Segoe UI',
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+              color: AppColors.primary,
+              letterSpacing: -0.3,
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.library_books_outlined),
-            selectedIcon: Icon(Icons.library_books),
-            label: 'Library',
+          const Spacer(),
+          _topNavLink('Dashboard', _selectedIndex == 0, () => setState(() => _selectedIndex = 0)),
+          const SizedBox(width: 32),
+          _topNavLink('Library', _selectedIndex == 1, () => setState(() => _selectedIndex = 1)),
+          const SizedBox(width: 32),
+          _topNavLink('History', false, () {}),
+          const SizedBox(width: 24),
+          // Profile icon
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.account_circle, color: AppColors.primary, size: 28),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _topNavLink(String label, bool isActive, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Segoe UI',
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+              fontSize: 14,
+              color: isActive ? AppColors.primary : AppColors.outline,
+            ),
+          ),
+          const SizedBox(height: 2),
+          if (isActive)
+            Container(
+              width: 28,
+              height: 2,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSidebar() {
+    return Container(
+      width: 256,
+      color: AppColors.surfaceContainerLow,
+      child: Column(
+        children: [
+          // Profile section
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.surfaceContainerHighest,
+                  ),
+                  child: const Icon(Icons.person, color: AppColors.primary, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Cognitive Dashboard',
+                      style: TextStyle(
+                        fontFamily: 'Segoe UI',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    Text(
+                      'CURRENT FLOW: 82%',
+                      style: TextStyle(
+                        fontFamily: 'Segoe UI',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.5,
+                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Nav items
+          _sidebarItem(Icons.home, 'Home', 0),
+          _sidebarItem(Icons.library_books, 'Library', 1),
+
+          const Spacer(),
+
+          // Start Session button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => context.go('/student/connect'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  ),
+                ),
+                child: const Text(
+                  'Start Session',
+                  style: TextStyle(
+                    fontFamily: 'Segoe UI',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Settings / Support
+          _sidebarSmallItem(Icons.settings, 'Settings'),
+          _sidebarSmallItem(Icons.help_outline, 'Support'),
+
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _sidebarItem(IconData icon, String label, int index) {
+    final isActive = _selectedIndex == index;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Material(
+        color: isActive ? AppColors.surfaceContainerHighest : Colors.transparent,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        child: InkWell(
+          onTap: () => setState(() => _selectedIndex = index),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Icon(
+                  isActive ? icon : icon,
+                  size: 20,
+                  color: isActive ? AppColors.primary : AppColors.outline,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Segoe UI',
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: isActive ? AppColors.primary : AppColors.outline,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sidebarSmallItem(IconData icon, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        child: InkWell(
+          onTap: () {},
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                Icon(icon, size: 16, color: AppColors.outline),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontFamily: 'Segoe UI',
+                    fontSize: 12,
+                    color: AppColors.outline,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileNav() {
+    return NavigationBar(
+      selectedIndex: _selectedIndex,
+      onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+      backgroundColor: AppColors.surfaceContainerLow,
+      indicatorColor: AppColors.secondaryContainer,
+      destinations: const [
+        NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
+        NavigationDestination(icon: Icon(Icons.library_books_outlined), selectedIcon: Icon(Icons.library_books), label: 'Library'),
+      ],
     );
   }
 }

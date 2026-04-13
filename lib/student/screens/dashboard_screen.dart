@@ -2,194 +2,695 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/data/database.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../widgets/topic_card.dart';
 
-/// Home dashboard — topics prioritized by attention performance.
+/// Home dashboard — "Welcome back, Scholar" with attention-first topic cards.
 ///
-/// Shows all topics sorted by worst focus score first. Cards display
-/// topic name, subject, last session stats, and "Start Session" button.
+/// Matches the Stitch student_dashboard_home_tab design:
+/// - Hero greeting
+/// - Today's Focus bento grid (large + secondary card)
+/// - Continue where you left off
+/// - Strong topics
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch all sessions to compute topic priorities
-    final sessionsAsync = ref.watch(allSessionsProvider);
-
-    return sessionsAsync.when(
-      data: (sessions) {
-        final prioritizedTopics = _prioritizeTopics(sessions);
-
-        if (prioritizedTopics.isEmpty) {
-          return _buildEmptyState(context);
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          itemCount: prioritizedTopics.length,
-          itemBuilder: (context, index) {
-            final topic = prioritizedTopics[index];
-            return TopicCard(
-              topic: topic,
-              priority: index + 1,
-              onStartSession: () => _startSession(context, topic),
-            );
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
-        child: Text('Error loading dashboard: $error'),
-      ),
-    );
-  }
-
-  List<TopicPriority> _prioritizeTopics(List<Session> sessions) {
-    // Group sessions by topic and compute average focus
-    final topicStats = <String, TopicStats>{};
-
-    for (final session in sessions) {
-      final key = '${session.subject}:${session.topic}';
-      final existing = topicStats[key];
-
-      if (existing != null) {
-        // Update running average
-        final newCount = existing.sessionCount + 1;
-        final newAvgFocus = (existing.avgFocus * existing.sessionCount + session.avgFocusScore) / newCount;
-        final newDriftCount = existing.totalDriftCount + session.interventionCount;
-
-        topicStats[key] = TopicStats(
-          subject: session.subject,
-          topic: session.topic,
-          avgFocus: newAvgFocus,
-          sessionCount: newCount,
-          totalDriftCount: newDriftCount,
-          lastSessionAt: session.startedAt.isAfter(existing.lastSessionAt) ? session.startedAt : existing.lastSessionAt,
-        );
-      } else {
-        topicStats[key] = TopicStats(
-          subject: session.subject,
-          topic: session.topic,
-          avgFocus: session.avgFocusScore,
-          sessionCount: 1,
-          totalDriftCount: session.interventionCount,
-          lastSessionAt: session.startedAt,
-        );
-      }
-    }
-
-    // Sort by worst focus score first, then by most recent
-    final sorted = topicStats.values.toList()
-      ..sort((a, b) {
-        final focusCompare = a.avgFocus.compareTo(b.avgFocus);
-        if (focusCompare != 0) return focusCompare;
-        return b.lastSessionAt.compareTo(a.lastSessionAt);
-      });
-
-    return sorted.map((stats) => TopicPriority(
-      subject: stats.subject,
-      topic: stats.topic,
-      avgFocus: stats.avgFocus,
-      sessionCount: stats.sessionCount,
-      totalDriftCount: stats.totalDriftCount,
-    )).toList();
-  }
-
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xxl),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(40),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1100),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              Icons.school,
-              size: 64,
-              color: AppColors.primary.withOpacity(0.5),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Welcome to NeuroLearn!',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Start your first learning session to see\npersonalized topic recommendations.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            // Header
+            _buildHeader(context),
+            const SizedBox(height: 48),
+
+            // Today's Focus
+            _buildTodaysFocus(context),
+            const SizedBox(height: 48),
+
+            // Continue + Strong Topics
+            _buildBottomSection(context),
+
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  void _startSession(BuildContext context, TopicPriority topic) {
-    // TODO: Navigate to session start flow
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Starting session for ${topic.topic}')),
+  Widget _buildHeader(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Welcome back, Scholar.',
+          style: TextStyle(
+            fontFamily: 'Georgia',
+            fontStyle: FontStyle.italic,
+            fontSize: 44,
+            fontWeight: FontWeight.w400,
+            color: AppColors.onSurface,
+            height: 1.2,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'YOUR FOCUS IS PEAKING IN BIOLOGY AND CHEMISTRY TODAY.',
+          style: TextStyle(
+            fontFamily: 'Segoe UI',
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 1.5,
+            color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTodaysFocus(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Today\'s Focus',
+              style: TextStyle(
+                fontFamily: 'Georgia',
+                fontSize: 24,
+                color: AppColors.onSurface,
+              ),
+            ),
+            Text(
+              'ATTENTION-FIRST VIEW',
+              style: TextStyle(
+                fontFamily: 'Segoe UI',
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 2.0,
+                color: AppColors.tertiary,
+                decoration: TextDecoration.underline,
+                decorationColor: AppColors.tertiary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // Bento grid
+        LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth > 700) {
+              return SizedBox(
+                height: 380,
+                child: Row(
+                  children: [
+                    // Large feature card (7/12)
+                    Expanded(
+                      flex: 7,
+                      child: _FocusCard(
+                        topic: 'The Periodic Table',
+                        description: 'Elemental trends and electronegativity.',
+                        focusPercent: 54,
+                        statusLabel: 'NEEDS WORK',
+                        statusColor: AppColors.error,
+                        metricLabel: 'AVG FOCUS',
+                        metricColor: AppColors.primary,
+                        topicId: 'periodic_table',
+                        hasResumeButton: true,
+                        lastSession: '2h ago',
+                        gradientColors: [
+                          AppColors.primary.withValues(alpha: 0.1),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+                    // Secondary card (5/12)
+                    Expanded(
+                      flex: 5,
+                      child: _FocusCard(
+                        topic: 'Chemical Bonding',
+                        description: 'Electron sharing and molecular orbital overlaps in organic structures.',
+                        focusPercent: 58,
+                        statusLabel: 'REVIEW PRIORITY',
+                        statusColor: AppColors.tertiary,
+                        metricLabel: 'RETENTION',
+                        metricColor: AppColors.tertiary,
+                        topicId: 'chemical_bonding',
+                        hasProgressBar: true,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            // Mobile: stacked
+            return Column(
+              children: [
+                SizedBox(
+                  height: 300,
+                  child: _FocusCard(
+                    topic: 'The Periodic Table',
+                    description: 'Elemental trends and electronegativity.',
+                    focusPercent: 54,
+                    statusLabel: 'NEEDS WORK',
+                    statusColor: AppColors.error,
+                    metricLabel: 'AVG FOCUS',
+                    metricColor: AppColors.primary,
+                    topicId: 'periodic_table',
+                    hasResumeButton: true,
+                    lastSession: '2h ago',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 260,
+                  child: _FocusCard(
+                    topic: 'Chemical Bonding',
+                    description: 'Electron sharing and molecular orbital overlaps.',
+                    focusPercent: 58,
+                    statusLabel: 'REVIEW PRIORITY',
+                    statusColor: AppColors.tertiary,
+                    metricLabel: 'RETENTION',
+                    metricColor: AppColors.tertiary,
+                    topicId: 'chemical_bonding',
+                    hasProgressBar: true,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomSection(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth > 700) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(flex: 2, child: _buildContinueSection(context)),
+              const SizedBox(width: 48),
+              Expanded(child: _buildStrongTopics(context)),
+            ],
+          );
+        }
+        return Column(
+          children: [
+            _buildContinueSection(context),
+            const SizedBox(height: 32),
+            _buildStrongTopics(context),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildContinueSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Continue where you left off',
+          style: TextStyle(
+            fontFamily: 'Georgia',
+            fontSize: 22,
+            color: AppColors.onSurface,
+          ),
+        ),
+        const SizedBox(height: 20),
+        // Continue card
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+            border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
+          ),
+          padding: const EdgeInsets.all(4),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: InkWell(
+              onTap: () => context.go('/student/lesson/periodic_table'),
+              child: Row(
+                children: [
+                  // Thumbnail
+                  Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Icon(Icons.science, size: 36,
+                            color: AppColors.primary.withValues(alpha: 0.4)),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          padding: const EdgeInsets.all(8),
+                          child: const Icon(Icons.play_circle,
+                              size: 28, color: AppColors.primary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'The Periodic Table',
+                              style: TextStyle(
+                                fontFamily: 'Georgia',
+                                fontSize: 20,
+                                color: AppColors.onSurface,
+                              ),
+                            ),
+                            Text(
+                              '25% COMPLETED',
+                              style: TextStyle(
+                                fontFamily: 'Segoe UI',
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.5,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Element groups, periodic trends, and reading the table.',
+                          style: TextStyle(
+                            fontFamily: 'Georgia',
+                            fontSize: 14,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Icon(Icons.timer, size: 14,
+                                color: AppColors.outline.withValues(alpha: 0.6)),
+                            const SizedBox(width: 4),
+                            Text(
+                              '8 MINS REMAINING',
+                              style: TextStyle(
+                                fontFamily: 'Segoe UI',
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.5,
+                                color: AppColors.outline,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStrongTopics(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Strong topics',
+          style: TextStyle(
+            fontFamily: 'Georgia',
+            fontSize: 22,
+            color: AppColors.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        const SizedBox(height: 20),
+        _StrongTopicItem(
+          name: 'Cell Structure',
+          status: 'Mastered',
+          percent: 94,
+          label: 'Consistency',
+        ),
+        const SizedBox(height: 12),
+        _StrongTopicItem(
+          name: 'DNA Replication',
+          status: 'Mastered',
+          percent: 89,
+          label: 'Consistency',
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton(
+            onPressed: () {},
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+            child: Text(
+              'VIEW MASTERY MAP',
+              style: TextStyle(
+                fontFamily: 'Segoe UI',
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 2.0,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-/// Topic statistics for prioritization.
-class TopicStats {
-  final String subject;
-  final String topic;
-  final double avgFocus;
-  final int sessionCount;
-  final int totalDriftCount;
-  final DateTime lastSessionAt;
+// ============================================================
+// Focus Card (bento grid item)
+// ============================================================
 
-  const TopicStats({
-    required this.subject,
+class _FocusCard extends StatefulWidget {
+  const _FocusCard({
     required this.topic,
-    required this.avgFocus,
-    required this.sessionCount,
-    required this.totalDriftCount,
-    required this.lastSessionAt,
-  });
-}
-
-/// Prioritized topic data for display.
-class TopicPriority {
-  final String subject;
-  final String topic;
-  final double avgFocus;
-  final int sessionCount;
-  final int totalDriftCount;
-
-  const TopicPriority({
-    required this.subject,
-    required this.topic,
-    required this.avgFocus,
-    required this.sessionCount,
-    required this.totalDriftCount,
+    required this.description,
+    required this.focusPercent,
+    required this.statusLabel,
+    required this.statusColor,
+    required this.metricLabel,
+    required this.metricColor,
+    required this.topicId,
+    this.hasResumeButton = false,
+    this.hasProgressBar = false,
+    this.lastSession,
+    this.gradientColors,
   });
 
-  String get statusText {
-    if (avgFocus >= 0.8) return 'Strong';
-    if (avgFocus >= 0.6) return 'In Progress';
-    return 'Needs Work';
-  }
+  final String topic, description, statusLabel, metricLabel, topicId;
+  final int focusPercent;
+  final Color statusColor, metricColor;
+  final bool hasResumeButton, hasProgressBar;
+  final String? lastSession;
+  final List<Color>? gradientColors;
 
-  Color get statusColor {
-    if (avgFocus >= 0.8) return AppColors.focused;
-    if (avgFocus >= 0.6) return AppColors.drifting;
-    return AppColors.lost;
+  @override
+  State<_FocusCard> createState() => _FocusCardState();
+}
+
+class _FocusCardState extends State<_FocusCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: () => context.go('/student/lesson/${widget.topicId}'),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            color: _hovered
+                ? AppColors.surfaceContainerHigh
+                : AppColors.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+          ),
+          child: Stack(
+            children: [
+              // Gradient overlay
+              if (widget.gradientColors != null)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: widget.gradientColors!,
+                      ),
+                    ),
+                  ),
+                ),
+
+              Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Top row: status + metric
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: widget.statusColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            widget.statusLabel,
+                            style: TextStyle(
+                              fontFamily: 'Segoe UI',
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.5,
+                              color: widget.statusColor,
+                            ),
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${widget.focusPercent}%',
+                              style: TextStyle(
+                                fontFamily: 'Segoe UI',
+                                fontSize: 36,
+                                fontWeight: FontWeight.w300,
+                                color: widget.metricColor,
+                              ),
+                            ),
+                            Text(
+                              widget.metricLabel,
+                              style: TextStyle(
+                                fontFamily: 'Segoe UI',
+                                fontSize: 10,
+                                letterSpacing: 1.0,
+                                color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    const Spacer(),
+
+                    // Topic title + description
+                    Text(
+                      widget.topic,
+                      style: const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 32,
+                        color: AppColors.onSurface,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.description,
+                      style: TextStyle(
+                        fontFamily: 'Georgia',
+                        fontStyle: FontStyle.italic,
+                        fontSize: 16,
+                        color: AppColors.onSurfaceVariant,
+                        height: 1.4,
+                      ),
+                    ),
+
+                    // Resume button
+                    if (widget.hasResumeButton) ...[
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () =>
+                                context.go('/student/lesson/${widget.topicId}'),
+                            icon: const Icon(Icons.play_arrow, size: 16),
+                            label: const Text('Resume Session'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.onPrimary,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 12),
+                            ),
+                          ),
+                          if (widget.lastSession != null) ...[
+                            const SizedBox(width: 16),
+                            Text(
+                              'Last session: ${widget.lastSession}',
+                              style: const TextStyle(
+                                fontFamily: 'Segoe UI',
+                                fontSize: 12,
+                                color: AppColors.outline,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+
+                    // Progress bar
+                    if (widget.hasProgressBar) ...[
+                      const SizedBox(height: 24),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: SizedBox(
+                          height: 6,
+                          child: LinearProgressIndicator(
+                            value: widget.focusPercent / 100,
+                            backgroundColor: AppColors.surfaceContainerHighest,
+                            valueColor: AlwaysStoppedAnimation<Color>(widget.metricColor),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
-/// Provider for all sessions from database.
-final allSessionsProvider = StreamProvider<List<Session>>((ref) {
-  final db = ref.watch(appDatabaseProvider);
-  return db.sessionDao.watchAllSessions();
-});
+// ============================================================
+// Strong Topic Item
+// ============================================================
 
-/// Provider for app database instance.
-final appDatabaseProvider = Provider<AppDatabase>((ref) {
-  return AppDatabase();
-});
+class _StrongTopicItem extends StatefulWidget {
+  const _StrongTopicItem({
+    required this.name,
+    required this.status,
+    required this.percent,
+    required this.label,
+  });
+  final String name, status, label;
+  final int percent;
+
+  @override
+  State<_StrongTopicItem> createState() => _StrongTopicItemState();
+}
+
+class _StrongTopicItemState extends State<_StrongTopicItem> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: _hovered
+              ? AppColors.surfaceContainerHigh
+              : AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+        ),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 300),
+          opacity: _hovered ? 1.0 : 0.4,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.name,
+                    style: const TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: 18,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.check_circle,
+                          size: 14, color: AppColors.secondaryContainer),
+                      const SizedBox(width: 6),
+                      Text(
+                        widget.status.toUpperCase(),
+                        style: const TextStyle(
+                          fontFamily: 'Segoe UI',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.5,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${widget.percent}%',
+                    style: const TextStyle(
+                      fontFamily: 'Segoe UI',
+                      fontSize: 20,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                  Text(
+                    widget.label.toUpperCase(),
+                    style: TextStyle(
+                      fontFamily: 'Segoe UI',
+                      fontSize: 8,
+                      letterSpacing: 1.0,
+                      color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
