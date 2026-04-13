@@ -296,8 +296,24 @@ class AttentionServer:
             logger.info("Mock engine ready (demo=%s)", self._demo)
         else:
             self._crown = CrownEngine()
-            self._crown.connect()
-            logger.info("Crown engine ready")
+            try:
+                self._crown.connect()
+                logger.info("Crown engine ready")
+            except Exception as e:
+                logger.error("=" * 60)
+                logger.error("CROWN NOT FOUND — Is it powered on and on the same WiFi?")
+                logger.error("")
+                logger.error("Checklist:")
+                logger.error("  1. Crown headset is ON (green LED)")
+                logger.error("  2. Crown is on the SAME WiFi as this computer")
+                logger.error("  3. OSC is ENABLED in Neurosity Developer Console")
+                logger.error("  4. Windows Firewall allows UDP port 9000")
+                logger.error("")
+                logger.error("Falling back to MOCK MODE so the app still works.")
+                logger.error("=" * 60)
+                self._crown = None
+                self._mock_gen = MockGenerator(demo_mode=self._demo)
+                logger.info("Mock engine ready (fallback)")
 
         # Start WebSocket server
         async with websockets.serve(
