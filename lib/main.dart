@@ -2,15 +2,19 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'core/services/supabase_config.dart';
 import 'core/theme/app_theme.dart';
 import 'router.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Daemon and WebSocket connections are deferred until a session starts.
-  // This ensures the app launches immediately without blocking on missing
-  // Python daemon or Crown hardware.
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
+  );
 
   runApp(const ProviderScope(child: NeuroLearnApp()));
 }
