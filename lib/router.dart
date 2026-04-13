@@ -11,6 +11,7 @@ import 'student/screens/session_code_screen.dart';
 import 'student/screens/lesson_screen.dart';
 import 'student/screens/session_end_screen.dart';
 import 'teacher/teacher_shell.dart';
+import 'teacher/screens/live_monitor_screen.dart';
 
 /// Top-level router for the entire app.
 ///
@@ -71,6 +72,12 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/teacher',
       builder: (_, __) => const TeacherShell(),
+    ),
+    GoRoute(
+      path: '/teacher/monitor/:sessionCode',
+      builder: (_, state) => LiveMonitorScreen(
+        sessionCode: state.pathParameters['sessionCode']!,
+      ),
     ),
   ],
 );
