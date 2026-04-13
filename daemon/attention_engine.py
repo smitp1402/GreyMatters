@@ -161,9 +161,17 @@ class CrownEngine:
         try:
             from brainflow import BoardShim, BrainFlowInputParams, BoardIds
 
+            # Enable BrainFlow debug logging for troubleshooting
+            BoardShim.enable_dev_board_logger()
+
             params = BrainFlowInputParams()
-            self._board = BoardShim(BoardIds.CROWN_BOARD, params)
+            board_id = BoardIds.CROWN_BOARD.value
+            logger.info("Searching for Neurosity Crown (board_id=%d)...", board_id)
+            logger.info("Make sure Crown is ON, on same WiFi, and OSC is enabled")
+
+            self._board = BoardShim(board_id, params)
             self._board.prepare_session()
+            logger.info("Session prepared — starting stream...")
             self._board.start_stream()
             logger.info("Crown connected via BrainFlow")
         except Exception as e:
