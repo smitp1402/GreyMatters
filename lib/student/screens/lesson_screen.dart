@@ -91,24 +91,46 @@ class _LessonScreenState extends State<LessonScreen>
     }
   }
 
+  // Rolling window for drift detection — prevents false triggers from
+  // momentary dips. Drift is confirmed only when 5+ of the last 10
+  // readings are below threshold (drifting or lost).
+  static const int _driftWindowSize = 10;
+  static const int _driftConfirmCount = 5;
+  final List<AttentionLevel> _recentLevels = [];
+  bool _driftConfirmed = false;
+
   void _startPacingEngine() {
     _attentionSub = AttentionStream.instance.stream.listen((state) {
       if (!mounted) return;
       _currentLevel = state.level;
-      if (!_paused &&
-          (state.level == AttentionLevel.drifting ||
-              state.level == AttentionLevel.lost)) {
+
+      // Maintain rolling window of last N readings
+      _recentLevels.add(state.level);
+      if (_recentLevels.length > _driftWindowSize) {
+        _recentLevels.removeAt(0);
+      }
+
+      // Count how many of the last N readings are drifting or lost
+      final driftCount = _recentLevels
+          .where((l) => l == AttentionLevel.drifting || l == AttentionLevel.lost)
+          .length;
+
+      if (!_paused && driftCount >= _driftConfirmCount) {
+        _driftConfirmed = true;
         _onDriftDetected();
       }
       if (_paused &&
           !_showingIntervention &&
+          driftCount < _driftConfirmCount &&
           state.level == AttentionLevel.focused) {
+        _driftConfirmed = false;
         _onFocusRecovered();
       }
     });
   }
 
   void _onDriftDetected() {
+    if (_paused) return; // Already in drift state
     setState(() { _paused = true; _driftCount++; _driftSeconds = 0; });
     _pauseAnim.forward();
     _driftTimer?.cancel();
@@ -146,6 +168,8 @@ class _LessonScreenState extends State<LessonScreen>
     _driftTimer?.cancel();
     _pauseAnim.reverse();
     _interventionEngine.reset();
+    _recentLevels.clear();
+    _driftConfirmed = false;
     setState(() { _paused = false; _showingIntervention = false; _currentFormat = null; });
   }
 
