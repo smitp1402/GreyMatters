@@ -31,6 +31,9 @@ dependencies:
   # Text-to-speech (voice intervention question readout)
   flutter_tts: ^4.2.0
 
+  # YouTube player for web
+  url_launcher: ^6.2.0
+
   # Supabase (cloud database + realtime)
   supabase_flutter: ^2.8.0
 
