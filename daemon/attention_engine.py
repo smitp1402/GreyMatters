@@ -184,15 +184,32 @@ class CrownEngine:
             raise RuntimeError("Crown not connected")
 
         logger.info(f"Calibrating for {duration_sec}s...")
-        time.sleep(duration_sec)
+
+        # Print raw samples every 5s during calibration so we can see data flowing
+        for elapsed in range(duration_sec):
+            time.sleep(1)
+            if elapsed % 5 == 4:
+                peek = self._board.get_current_board_data(SAMPLING_RATE)
+                n_ch, n_samp = peek.shape
+                logger.info(
+                    f"[CAL {elapsed+1}s] channels={n_ch} samples={n_samp} | "
+                    f"F5 last5=[{', '.join(f'{v:.1f}' for v in peek[4, -5:])}] | "
+                    f"F6 last5=[{', '.join(f'{v:.1f}' for v in peek[5, -5:])}]"
+                )
 
         data = self._board.get_board_data()
+        logger.info(f"[CAL DONE] total samples collected: {data.shape[1]}")
+
         if data.shape[1] < SAMPLING_RATE:
             logger.warning("Not enough calibration data, using default baseline")
             return 1.0
 
         # Compute baseline from frontal channels
         band_powers = self._compute_band_powers(data[[4, 5], :])
+        logger.info(
+            f"[CAL BANDS] θ={band_powers['theta']:.4f} α={band_powers['alpha']:.4f} "
+            f"β={band_powers['beta']:.4f} γ={band_powers['gamma']:.4f}"
+        )
         self._baseline_index = (band_powers["theta"] + band_powers["alpha"]) / max(band_powers["beta"], 0.001)
         logger.info(f"Baseline index: {self._baseline_index:.3f}")
         return self._baseline_index
@@ -203,7 +220,18 @@ class CrownEngine:
             raise RuntimeError("Crown not connected")
 
         data = self._board.get_current_board_data(WINDOW_SAMPLES)
+
+        # Print raw data summary so we can verify Crown is streaming
+        n_channels, n_samples = data.shape
+        logger.info(
+            f"[RAW] channels={n_channels} samples={n_samples} | "
+            f"ch0 range=[{data[0].min():.1f}, {data[0].max():.1f}] | "
+            f"ch4(F5)=[{data[4].min():.1f}, {data[4].max():.1f}] | "
+            f"ch5(F6)=[{data[5].min():.1f}, {data[5].max():.1f}]"
+        )
+
         if data.shape[1] < SAMPLING_RATE:
+            logger.warning(f"[RAW] Not enough samples ({n_samples} < {SAMPLING_RATE}), skipping computation")
             return AttentionState(
                 session_id=session_id,
                 focus_score=0.5,
@@ -214,6 +242,10 @@ class CrownEngine:
 
         frontal = data[[4, 5], :]
         bp = self._compute_band_powers(frontal)
+        logger.info(
+            f"[BAND] raw powers: θ={bp['theta']:.4f} α={bp['alpha']:.4f} "
+            f"β={bp['beta']:.4f} γ={bp['gamma']:.4f}"
+        )
 
         # Normalize
         total = sum(bp.values())
@@ -304,26 +336,34 @@ class AttentionServer:
             logger.info("Mock engine ready (demo=%s)", self._demo)
         else:
             self._crown = CrownEngine()
-            try:
-                self._crown.connect()
-                logger.info("Crown engine ready")
-            except Exception:
-                logger.error("")
-                logger.error("=" * 60)
-                logger.error("  CROWN NOT CONNECTED")
-                logger.error("=" * 60)
-                logger.error("")
-                logger.error("  Checklist:")
-                logger.error("  1. Crown headset is ON (green LED)")
-                logger.error("  2. Crown is on the SAME WiFi as this computer")
-                logger.error("  3. OSC is ENABLED in Neurosity Developer Console")
-                logger.error("  4. Windows Firewall allows UDP port 9000")
-                logger.error("")
-                logger.error("  Fix the issue above and run again.")
-                logger.error("  Or use: python daemon/attention_engine.py --mock")
-                logger.error("")
-                logger.error("=" * 60)
-                sys.exit(1)
+            max_retries = 5
+            for attempt in range(1, max_retries + 1):
+                try:
+                    self._crown.connect()
+                    logger.info("Crown engine ready")
+                    break
+                except Exception as e:
+                    logger.warning(f"Attempt {attempt}/{max_retries} failed: {e}")
+                    self._crown.disconnect()
+                    if attempt < max_retries:
+                        wait = 5 * attempt
+                        logger.info(f"Retrying in {wait}s... (put Crown on head, check WiFi)")
+                        await asyncio.sleep(wait)
+                    else:
+                        logger.error("")
+                        logger.error("=" * 60)
+                        logger.error("  CROWN NOT CONNECTED after %d attempts", max_retries)
+                        logger.error("=" * 60)
+                        logger.error("")
+                        logger.error("  Checklist:")
+                        logger.error("  1. Crown headset is ON (green LED)")
+                        logger.error("  2. Crown is on the SAME WiFi as this computer")
+                        logger.error("  3. OSC is ENABLED in Neurosity Developer Console")
+                        logger.error("  4. Windows Firewall allows UDP port 9000")
+                        logger.error("")
+                        logger.error("  Or use: python daemon/attention_engine.py --mock")
+                        logger.error("=" * 60)
+                        sys.exit(1)
 
         # Start WebSocket server
         async with websockets.serve(
@@ -379,11 +419,24 @@ class AttentionServer:
 
     async def _broadcast_loop(self) -> None:
         """Main loop — compute attention every 1s and broadcast to all clients."""
+        tick = 0
         while self._running:
             state = self._compute()
+            tick += 1
+
+            # Print live data to terminal
+            level_color = {"focused": "\033[92m", "drifting": "\033[93m", "lost": "\033[91m"}
+            reset = "\033[0m"
+            c = level_color.get(state.level, "")
+            logger.info(
+                f"{tick:4d} | {c}{state.level:8s}{reset} | "
+                f"focus={state.focus_score:.3f} | "
+                f"θ={state.theta:.3f} α={state.alpha:.3f} "
+                f"β={state.beta:.3f} γ={state.gamma:.3f}"
+            )
+
             if self._clients:
                 payload = state.to_json()
-                # Broadcast to all connected clients concurrently
                 disconnected: list[WebSocketServerProtocol] = []
                 for client in self._clients.copy():
                     try:

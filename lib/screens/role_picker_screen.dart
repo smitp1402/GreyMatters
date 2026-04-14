@@ -163,6 +163,10 @@ class _RolePickerScreenState extends State<RolePickerScreen>
 
               // Initialize button
               _buildInitializeButton(context),
+              const SizedBox(height: 16),
+
+              // Dev skip — bypass Crown + calibration
+              _buildSkipToDashboard(context),
             ],
           ),
         ),
@@ -288,6 +292,25 @@ class _RolePickerScreenState extends State<RolePickerScreen>
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkipToDashboard(BuildContext context) {
+    return Center(
+      child: TextButton(
+        onPressed: () {
+          final route = _selectedRole == _Role.student ? '/student' : '/teacher';
+          context.go(route);
+        },
+        child: Text(
+          'Skip to Dashboard (Dev Mode)',
+          style: TextStyle(
+            fontFamily: 'Segoe UI',
+            fontSize: 12,
+            color: AppColors.outline.withValues(alpha: 0.6),
           ),
         ),
       ),

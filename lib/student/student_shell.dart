@@ -4,6 +4,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../core/services/attention_stream_provider.dart';
+import '../core/services/websocket_client.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import 'screens/dashboard_screen.dart';
@@ -32,7 +34,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
       body: Column(
         children: [
           // Top nav bar
-          _buildTopNav(),
+          _buildTopNav(ref),
           Expanded(
             child: Row(
               children: [
@@ -56,7 +58,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
     );
   }
 
-  Widget _buildTopNav() {
+  Widget _buildTopNav(WidgetRef ref) {
     return Container(
       height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -80,12 +82,75 @@ class _StudentShellState extends ConsumerState<StudentShell> {
           const SizedBox(width: 32),
           _topNavLink('History', false, () {}),
           const SizedBox(width: 24),
+          // Headset connection status
+          _buildHeadsetStatus(ref),
+          const SizedBox(width: 16),
           // Profile icon
           IconButton(
             onPressed: () {},
             icon: const Icon(Icons.account_circle, color: AppColors.primary, size: 28),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildHeadsetStatus(WidgetRef ref) {
+    final statusAsync = ref.watch(headsetConnectionProvider);
+    final status = statusAsync.valueOrNull ?? HeadsetConnectionStatus.disconnected;
+
+    final (Color color, String label, IconData icon) = switch (status) {
+      HeadsetConnectionStatus.connected => (
+          AppColors.focused,
+          'CROWN LINKED',
+          Icons.bluetooth_connected,
+        ),
+      HeadsetConnectionStatus.connecting => (
+          AppColors.drifting,
+          'CONNECTING',
+          Icons.bluetooth_searching,
+        ),
+      HeadsetConnectionStatus.disconnected => (
+          AppColors.lost,
+          'NO CROWN',
+          Icons.bluetooth_disabled,
+        ),
+    };
+
+    return Tooltip(
+      message: switch (status) {
+        HeadsetConnectionStatus.connected => 'Neurosity Crown is streaming EEG data',
+        HeadsetConnectionStatus.connecting => 'Searching for Neurosity Crown...',
+        HeadsetConnectionStatus.disconnected => 'Crown not connected — tap to reconnect',
+      },
+      child: InkWell(
+        onTap: () => context.go('/student/connect'),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Segoe UI',
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -3,6 +3,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/attention_state.dart';
 import 'attention_stream.dart';
+import 'websocket_client.dart';
 
 /// Riverpod StreamProvider that exposes [AttentionStream] to widgets.
 ///
@@ -29,4 +30,15 @@ final attentionStreamProvider = StreamProvider<AttentionState>((ref) {
 final sessionAttentionProvider =
     StreamProvider.family<AttentionState, String>((ref, sessionId) {
   return AttentionStream.instance.forSession(sessionId);
+});
+
+/// Headset connection status provider.
+///
+/// Emits [HeadsetConnectionStatus] whenever the WebSocket link changes.
+/// Starts with the current synchronous status, then streams updates.
+final headsetConnectionProvider =
+    StreamProvider<HeadsetConnectionStatus>((ref) async* {
+  // Emit current status immediately so widgets don't start blank.
+  yield WebSocketClient.instance.status;
+  yield* WebSocketClient.instance.statusStream;
 });

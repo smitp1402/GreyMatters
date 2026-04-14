@@ -45,3 +45,6 @@ daemon/venv/
 
 # Study guide (personal reference)
 STUDY_GUIDE.md
+
+# Docs folder
+docs/

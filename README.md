@@ -4,14 +4,6 @@ EEG-adaptive learning platform — Flutter + Neurosity Crown.
 
 Detects student attention drift in real time using the Neurosity Crown EEG headset. When drift is detected, an RL agent selects the best rescue intervention (flashcard, video, simulation, voice challenge, hand gesture game, curiosity bomb, or draw-it mode) to re-engage the student before they fall behind.
 
-## Team
-
-| Developer | Module | Folder |
-|-----------|--------|--------|
-| Smit | Student module + EEG daemon | `lib/student/`, `daemon/` |
-| Felipe | Teacher module | `lib/teacher/` |
-| Joint | Core layer | `lib/core/` |
-
 ## Setup
 
 ### Prerequisites
@@ -38,7 +30,7 @@ flutter run -d <your-ipad-udid>
 flutter run -d <your-device-id>
 ```
 
-### Python daemon (Smit only — weeks 1-2)
+### Python daemon
 
 ```bash
 cd daemon/
@@ -66,14 +58,13 @@ SQLite via drift (local persistence)
 
 ## Module boundaries
 
-- `lib/student/` — Smit owns entirely. Felipe never touches.
-- `lib/teacher/` — Felipe owns entirely. Smit never touches.
-- `lib/core/` — Joint. Discuss before changing.
+- `lib/student/` — Student module, RL agent, interventions, HUD
+- `lib/teacher/` — Teacher module, live monitor, session history, export
+- `lib/core/` — Shared core layer (models, services, database)
 - No imports between `student/` and `teacher/`.
 
 ## Branching
 
 - `main` — always deployable, protected
-- `feature/smit/xxx` — Smit's feature branches
-- `feature/felipe/xxx` — Felipe's feature branches
+- Feature branches for individual work
 - PR required to merge to main
