@@ -1,0 +1,55 @@
+{
+  "id": "dna_replication",
+  "name": "DNA Replication",
+  "subject": "Biology",
+  "estimatedMinutes": 10,
+  "sections": [
+    {
+      "id": "dna_s1",
+      "title": "I. Why Cells Copy DNA",
+      "content": "Before a cell divides, it must copy its entire DNA so each daughter cell gets a complete set of genetic instructions. This process is called DNA replication, and it happens during the S phase (synthesis phase) of the cell cycle.\n\nHuman cells contain about 6.4 billion base pairs of DNA spread across 46 chromosomes. All of this must be copied accurately — an error rate of more than 1 in a billion would cause serious problems. The cell achieves this extraordinary accuracy through a combination of precise enzymes and proofreading mechanisms.\n\nDNA replication is semiconservative — each new DNA molecule contains one original strand and one newly synthesized strand. This was proven by the Meselson-Stahl experiment in 1958, one of the most elegant experiments in molecular biology.",
+      "keyTerms": ["DNA replication", "S phase", "semiconservative", "base pairs", "Meselson-Stahl"]
+    },
+    {
+      "id": "dna_s2",
+      "title": "II. The Replication Machinery",
+      "content": "DNA replication requires a team of enzymes working together like a factory assembly line:\n\nHelicase unzips the double helix by breaking the hydrogen bonds between base pairs. It creates a Y-shaped structure called the replication fork, where the two strands separate.\n\nPrimase lays down short RNA primers — starting points that DNA polymerase needs to begin synthesis. DNA polymerase cannot start from scratch; it can only add nucleotides to an existing strand.\n\nDNA Polymerase III is the main builder. It reads the template strand and adds complementary nucleotides one by one: A pairs with T, C pairs with G. It works at about 1,000 nucleotides per second in bacteria.\n\nThe leading strand is synthesized continuously in the direction of the replication fork. The lagging strand is synthesized in short fragments (Okazaki fragments) in the opposite direction, which are later joined by DNA ligase.\n\nDNA Polymerase I removes the RNA primers and replaces them with DNA. Finally, DNA ligase seals any remaining gaps, creating a continuous strand.",
+      "keyTerms": ["helicase", "primase", "DNA polymerase", "replication fork", "Okazaki fragments", "ligase"]
+    },
+    {
+      "id": "dna_s3",
+      "title": "III. Error Correction",
+      "content": "DNA polymerase has a built-in proofreading ability. As it adds each new nucleotide, it checks if the base pairing is correct. If it detects a mismatch, it reverses, removes the wrong nucleotide, and tries again. This is called 3' to 5' exonuclease activity.\n\nEven after proofreading, some errors slip through. Mismatch repair enzymes scan newly replicated DNA and fix any remaining errors. Together, replication and repair achieve an error rate of about 1 mistake per billion base pairs.\n\nWhen errors do occur and aren't repaired, they become mutations. Most mutations are harmless. Some are harmful — they can cause cancer if they affect genes that control cell growth. Rarely, mutations are beneficial and drive evolution.\n\nThe ends of chromosomes pose a special problem. Each round of replication shortens the chromosome tips (telomeres) slightly. After many divisions, telomeres become critically short and the cell stops dividing. This is one mechanism of aging. Cancer cells reactivate telomerase, an enzyme that rebuilds telomeres, allowing unlimited division.",
+      "keyTerms": ["proofreading", "mismatch repair", "mutations", "telomeres", "telomerase"]
+    }
+  ],
+  "flashcards": [
+    {"question": "What enzyme unzips the DNA double helix?", "answer": "Helicase", "explanation": "Helicase breaks hydrogen bonds between base pairs at the replication fork."},
+    {"question": "What are the short fragments on the lagging strand called?", "answer": "Okazaki fragments", "explanation": "Named after Reiji and Tsuneko Okazaki who discovered them in 1968."},
+    {"question": "What does semiconservative mean?", "answer": "Each new DNA has one old strand and one new strand", "explanation": "Proven by the Meselson-Stahl experiment using nitrogen isotopes."},
+    {"question": "What enzyme seals gaps in the DNA backbone?", "answer": "DNA Ligase", "explanation": "It joins Okazaki fragments and seals nicks after primer replacement."},
+    {"question": "What structures protect chromosome ends?", "answer": "Telomeres", "explanation": "They shorten with each division — linked to aging."}
+  ],
+  "simulation": {
+    "type": "replication_steps",
+    "instructions": "Drag each enzyme to the correct step in DNA replication.",
+    "elements": [
+      {"symbol": "He", "name": "Helicase", "group": 1, "period": 1},
+      {"symbol": "Pr", "name": "Primase", "group": 2, "period": 1},
+      {"symbol": "P3", "name": "DNA Pol III", "group": 3, "period": 1},
+      {"symbol": "P1", "name": "DNA Pol I", "group": 4, "period": 1},
+      {"symbol": "Li", "name": "Ligase", "group": 5, "period": 1}
+    ]
+  },
+  "gestureQuestions": [
+    {"question": "How many strands does a DNA molecule have?", "answer": 2},
+    {"question": "Adenine pairs with how many hydrogen bonds to Thymine?", "answer": 2},
+    {"question": "Guanine pairs with how many hydrogen bonds to Cytosine?", "answer": 3}
+  ],
+  "voiceQuestions": [
+    {"question": "What base does Adenine pair with?", "acceptedAnswers": ["thymine", "t"]},
+    {"question": "What enzyme adds new nucleotides during replication?", "acceptedAnswers": ["dna polymerase", "polymerase", "dna polymerase 3", "dna pol 3"]},
+    {"question": "What is the name for errors in DNA that are not repaired?", "acceptedAnswers": ["mutations", "mutation", "a mutation"]}
+  ],
+  "curiosityBomb": "Your body replaces about 3.8 million cells every second. Each replacement requires copying all 6.4 billion base pairs of DNA. That means your body copies roughly 24 quadrillion DNA bases per second — with an accuracy rate of 99.9999999%. No human-made copying machine comes close."
+}

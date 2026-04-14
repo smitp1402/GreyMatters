@@ -1,0 +1,50 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+
+# Drift generated
+*.g.dart
+
+# pubspec.lock — committed for apps (not packages)
+# pubspec.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secrets — never commit
+.env
+.env.*
+*.key
+*.pem
+credentials.json
+
+# Python daemon
+daemon/__pycache__/
+daemon/*.pyc
+daemon/.venv/
+daemon/venv/
+
+# Build artifacts
+*.exe
+*.app
+*.apk
+*.ipa
+
+# Study guide (personal reference)
+STUDY_GUIDE.md
+
+# Docs folder
+docs/

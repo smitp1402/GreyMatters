@@ -1,0 +1,54 @@
+{
+  "id": "chemical_bonding",
+  "name": "Chemical Bonding",
+  "subject": "Chemistry",
+  "estimatedMinutes": 12,
+  "sections": [
+    {
+      "id": "cb_s1",
+      "title": "I. What Are Chemical Bonds?",
+      "content": "A chemical bond is a lasting attraction between atoms that enables the formation of molecules and compounds. Atoms bond because they are more stable when connected to other atoms than when they exist alone.\n\nThe key to understanding bonding is valence electrons — the electrons in the outermost shell of an atom. These are the electrons that participate in bonding. Atoms with full outer shells (like noble gases) are extremely stable and rarely bond. Every other atom is trying to achieve that same stability by gaining, losing, or sharing electrons.\n\nThere are three main types of chemical bonds: ionic bonds (electron transfer), covalent bonds (electron sharing), and metallic bonds (electron pooling). Each type results in different properties — ionic compounds form crystals and dissolve in water, covalent compounds form molecules with specific shapes, and metals conduct electricity.",
+      "keyTerms": ["chemical bond", "valence electrons", "ionic bond", "covalent bond", "metallic bond"]
+    },
+    {
+      "id": "cb_s2",
+      "title": "II. Ionic Bonds",
+      "content": "An ionic bond forms when one atom transfers one or more electrons to another atom. The atom that loses electrons becomes a positively charged ion (cation), and the atom that gains electrons becomes a negatively charged ion (anion). The opposite charges attract, holding the ions together.\n\nIonic bonds typically form between metals (which easily lose electrons) and nonmetals (which easily gain electrons). For example, sodium (Na) has one valence electron it wants to lose, and chlorine (Cl) has seven valence electrons and wants one more. Sodium gives its electron to chlorine, forming Na⁺ and Cl⁻. The electrostatic attraction between these ions creates sodium chloride — table salt.\n\nIonic compounds have high melting points because the electrostatic forces between ions are very strong. They form crystal lattices — regular, repeating 3D arrangements of alternating positive and negative ions. They conduct electricity when dissolved in water because the ions are free to move.",
+      "keyTerms": ["ionic bond", "cation", "anion", "electrostatic attraction", "crystal lattice"]
+    },
+    {
+      "id": "cb_s3",
+      "title": "III. Covalent Bonds",
+      "content": "A covalent bond forms when two atoms share one or more pairs of electrons. Unlike ionic bonds where electrons are transferred, covalent bonds involve mutual sharing. Both atoms contribute electrons to a shared pair that orbits both nuclei.\n\nCovalent bonds typically form between two nonmetals. For example, two hydrogen atoms each contribute one electron to form H₂. The shared pair of electrons holds both atoms together. This is a single covalent bond.\n\nAtoms can share more than one pair of electrons. A double bond shares two pairs (like O₂), and a triple bond shares three pairs (like N₂). Triple bonds are shorter and stronger than double bonds, which are shorter and stronger than single bonds.\n\nThe shape of covalent molecules is determined by VSEPR theory — electron pairs around a central atom repel each other and arrange themselves as far apart as possible. This is why water (H₂O) is bent, carbon dioxide (CO₂) is linear, and methane (CH₄) is tetrahedral.",
+      "keyTerms": ["covalent bond", "electron sharing", "single bond", "double bond", "triple bond", "VSEPR"]
+    }
+  ],
+  "flashcards": [
+    {"question": "What type of bond forms when electrons are transferred?", "answer": "Ionic bond", "explanation": "One atom loses electrons (becomes cation), another gains (becomes anion)."},
+    {"question": "What type of bond forms between two nonmetals?", "answer": "Covalent bond", "explanation": "Nonmetals share electrons rather than transferring them."},
+    {"question": "Ionic or covalent: NaCl?", "answer": "Ionic", "explanation": "Sodium (metal) transfers an electron to chlorine (nonmetal)."},
+    {"question": "Ionic or covalent: H₂O?", "answer": "Covalent", "explanation": "Hydrogen and oxygen are both nonmetals — they share electrons."},
+    {"question": "How many electron pairs are shared in a triple bond?", "answer": "Three pairs (6 electrons)", "explanation": "Like in N₂ — nitrogen needs 3 more electrons to fill its outer shell."}
+  ],
+  "simulation": {
+    "type": "bond_formation",
+    "instructions": "Drag electrons to form bonds between atoms.",
+    "elements": [
+      {"symbol": "Na", "name": "Sodium", "group": 1, "period": 3},
+      {"symbol": "Cl", "name": "Chlorine", "group": 17, "period": 3},
+      {"symbol": "H", "name": "Hydrogen", "group": 1, "period": 1},
+      {"symbol": "O", "name": "Oxygen", "group": 16, "period": 2}
+    ]
+  },
+  "gestureQuestions": [
+    {"question": "How many valence electrons does Chlorine have?", "answer": 7},
+    {"question": "How many electrons does Sodium lose in an ionic bond?", "answer": 1},
+    {"question": "How many bonds does Carbon typically form?", "answer": 4}
+  ],
+  "voiceQuestions": [
+    {"question": "What type of bond involves electron sharing?", "acceptedAnswers": ["covalent", "covalent bond", "a covalent bond"]},
+    {"question": "What is the shape of a water molecule?", "acceptedAnswers": ["bent", "angular", "v-shaped"]},
+    {"question": "What compound does NaCl represent?", "acceptedAnswers": ["table salt", "salt", "sodium chloride"]}
+  ],
+  "curiosityBomb": "The bond between nitrogen atoms in N₂ is one of the strongest bonds in nature — it takes 945 kJ/mol to break it. That's why nitrogen gas is so unreactive, and why industrial nitrogen fixation (the Haber process) requires temperatures of 450°C and pressures of 200 atmospheres."
+}
