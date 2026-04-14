@@ -54,3 +54,6 @@ Interaction/
 
 # Claude Code
 .claude/
+
+# Local drift log (our edits vs original)
+document-drift.md
