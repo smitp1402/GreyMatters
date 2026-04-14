@@ -12,6 +12,7 @@ import '../../core/models/attention_state.dart';
 import '../../core/models/topic.dart';
 import '../../core/services/attention_stream.dart';
 import '../widgets/focus_hud.dart';
+import '../widgets/periodic_table_diagram.dart';
 import 'interventions/intervention_engine.dart';
 
 /// Lesson screen — full lesson renderer following the doc structure:
@@ -544,8 +545,8 @@ class _LessonScreenState extends State<LessonScreen>
               fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.onSurface)),
           const SizedBox(height: 16),
 
-          // Render a mini periodic table grid
-          _buildMiniPeriodicTable(),
+          // Render full periodic table
+          const PeriodicTableDiagram(),
 
           const SizedBox(height: 12),
           Text(diagram.description, style: TextStyle(fontFamily: 'Georgia',
@@ -563,159 +564,6 @@ class _LessonScreenState extends State<LessonScreen>
           ],
         ],
       ),
-    );
-  }
-
-  /// Renders a simplified periodic table grid with key elements highlighted.
-  Widget _buildMiniPeriodicTable() {
-    // Simplified periodic table — 7 periods x 18 groups
-    // Only showing key representative elements
-    final Map<String, _PTElement> elements = {
-      '1,1': _PTElement('H', 1, AppColors.onSurface),
-      '1,18': _PTElement('He', 2, const Color(0xFF80CBC4)),
-      '2,1': _PTElement('Li', 3, const Color(0xFFEF5350)),
-      '2,2': _PTElement('Be', 4, const Color(0xFFFF9800)),
-      '2,13': _PTElement('B', 5, AppColors.onSurfaceVariant),
-      '2,14': _PTElement('C', 6, AppColors.onSurfaceVariant),
-      '2,15': _PTElement('N', 7, AppColors.onSurfaceVariant),
-      '2,16': _PTElement('O', 8, AppColors.onSurfaceVariant),
-      '2,17': _PTElement('F', 9, const Color(0xFFEC407A)),
-      '2,18': _PTElement('Ne', 10, const Color(0xFF80CBC4)),
-      '3,1': _PTElement('Na', 11, const Color(0xFFEF5350)),
-      '3,2': _PTElement('Mg', 12, const Color(0xFFFF9800)),
-      '3,13': _PTElement('Al', 13, AppColors.onSurfaceVariant),
-      '3,14': _PTElement('Si', 14, AppColors.onSurfaceVariant),
-      '3,15': _PTElement('P', 15, AppColors.onSurfaceVariant),
-      '3,16': _PTElement('S', 16, AppColors.onSurfaceVariant),
-      '3,17': _PTElement('Cl', 17, const Color(0xFFEC407A)),
-      '3,18': _PTElement('Ar', 18, const Color(0xFF80CBC4)),
-      '4,1': _PTElement('K', 19, const Color(0xFFEF5350)),
-      '4,2': _PTElement('Ca', 20, const Color(0xFFFF9800)),
-      '4,3': _PTElement('Sc', 21, const Color(0xFF42A5F5)),
-      '4,6': _PTElement('Cr', 24, const Color(0xFF42A5F5)),
-      '4,8': _PTElement('Fe', 26, const Color(0xFF42A5F5)),
-      '4,11': _PTElement('Cu', 29, const Color(0xFF42A5F5)),
-      '4,12': _PTElement('Zn', 30, const Color(0xFF42A5F5)),
-      '4,17': _PTElement('Br', 35, const Color(0xFFEC407A)),
-      '4,18': _PTElement('Kr', 36, const Color(0xFF80CBC4)),
-      '5,1': _PTElement('Rb', 37, const Color(0xFFEF5350)),
-      '5,18': _PTElement('Xe', 54, const Color(0xFF80CBC4)),
-      '6,1': _PTElement('Cs', 55, const Color(0xFFEF5350)),
-      '6,11': _PTElement('Au', 79, const Color(0xFF42A5F5)),
-      '6,18': _PTElement('Rn', 86, const Color(0xFF80CBC4)),
-    };
-
-    return Column(
-      children: [
-        // Group labels
-        Row(
-          children: [
-            const SizedBox(width: 24),
-            ...List.generate(18, (g) {
-              return Expanded(
-                child: Center(
-                  child: Text(
-                    '${g + 1}',
-                    style: TextStyle(fontFamily: 'Consolas', fontSize: 7,
-                        color: AppColors.outline.withValues(alpha: 0.4)),
-                  ),
-                ),
-              );
-            }),
-          ],
-        ),
-        const SizedBox(height: 2),
-        // Grid rows
-        ...List.generate(7, (period) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 2),
-            child: Row(
-              children: [
-                // Period label
-                SizedBox(
-                  width: 24,
-                  child: Text(
-                    '${period + 1}',
-                    style: TextStyle(fontFamily: 'Consolas', fontSize: 8,
-                        color: AppColors.outline.withValues(alpha: 0.4)),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                ...List.generate(18, (group) {
-                  final key = '${period + 1},${group + 1}';
-                  final el = elements[key];
-
-                  if (el == null) {
-                    return Expanded(
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: Container(
-                          margin: const EdgeInsets.all(0.5),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerLowest.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(1),
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-
-                  return Expanded(
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: Tooltip(
-                        message: '${el.symbol} (${el.atomicNum})',
-                        child: Container(
-                          margin: const EdgeInsets.all(0.5),
-                          decoration: BoxDecoration(
-                            color: el.color.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(2),
-                            border: Border.all(color: el.color.withValues(alpha: 0.3), width: 0.5),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            el.symbol,
-                            style: TextStyle(fontFamily: 'Consolas', fontSize: 8,
-                                fontWeight: FontWeight.w700, color: el.color),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            ),
-          );
-        }),
-        const SizedBox(height: 12),
-        // Legend
-        Wrap(
-          spacing: 16,
-          runSpacing: 6,
-          children: [
-            _legendItem(const Color(0xFFEF5350), 'Alkali Metals'),
-            _legendItem(const Color(0xFFFF9800), 'Alkaline Earth'),
-            _legendItem(const Color(0xFF42A5F5), 'Transition Metals'),
-            _legendItem(const Color(0xFFEC407A), 'Halogens'),
-            _legendItem(const Color(0xFF80CBC4), 'Noble Gases'),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _legendItem(Color color, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(width: 10, height: 10,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-                border: Border.all(color: color.withValues(alpha: 0.5), width: 0.5))),
-        const SizedBox(width: 4),
-        Text(label, style: TextStyle(fontFamily: 'Consolas', fontSize: 9,
-            color: AppColors.outline.withValues(alpha: 0.7))),
-      ],
     );
   }
 
@@ -1036,9 +884,3 @@ class _LessonScreenState extends State<LessonScreen>
   }
 }
 
-class _PTElement {
-  final String symbol;
-  final int atomicNum;
-  final Color color;
-  const _PTElement(this.symbol, this.atomicNum, this.color);
-}
