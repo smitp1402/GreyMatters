@@ -51,3 +51,6 @@ docs/
 
 # Interaction lesson docs
 Interaction/
+
+# Claude Code
+.claude/
