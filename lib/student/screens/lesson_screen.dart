@@ -13,14 +13,12 @@ import '../../core/services/attention_stream.dart';
 import '../widgets/focus_hud.dart';
 import 'interventions/intervention_engine.dart';
 
-/// Lesson screen — full-screen content renderer with HUD and pacing engine.
-///
-/// Displays topic content in a low-stimulation design (dark bg, serif font).
-/// Pacing engine listens to AttentionStream and pauses content on drift/lost,
-/// resumes on recovery to focused.
+/// Lesson screen — full lesson renderer following the doc structure:
+/// text → diagram → video → callout → checkpoint per section.
+/// Sidebar with section locking (unlock via checkpoint).
+/// Focus HUD at bottom, pacing engine pauses on drift.
 class LessonScreen extends StatefulWidget {
   final String topicId;
-
   const LessonScreen({super.key, required this.topicId});
 
   @override
@@ -33,26 +31,29 @@ class _LessonScreenState extends State<LessonScreen>
   bool _loading = true;
   int _currentSectionIndex = 0;
 
-  // Pacing engine state
+  // Section locking: index of highest unlocked section
+  int _unlockedUpTo = 0;
+  // Checkpoint state per section
+  final Map<int, bool> _checkpointCompleted = {};
+  int? _selectedOption;
+  bool? _checkpointCorrect;
+
+  // Pacing
   bool _paused = false;
   AttentionLevel _currentLevel = AttentionLevel.focused;
   StreamSubscription<AttentionState>? _attentionSub;
   int _driftSeconds = 0;
   Timer? _driftTimer;
 
-  // Intervention engine
+  // Interventions
   final _interventionEngine = InterventionEngine();
   bool _showingIntervention = false;
   String? _currentFormat;
 
-  // Session tracking
+  // Session
   final _sessionStart = DateTime.now();
   int _driftCount = 0;
-
-  // Scroll
   final _scrollController = ScrollController();
-
-  // Pause overlay animation
   late final AnimationController _pauseAnim;
 
   @override
@@ -84,39 +85,27 @@ class _LessonScreenState extends State<LessonScreen>
   void _startPacingEngine() {
     _attentionSub = AttentionStream.instance.stream.listen((state) {
       if (!mounted) return;
-
-      final previousLevel = _currentLevel;
       _currentLevel = state.level;
-
-      // Transition to drifting/lost → pause
       if (!_paused &&
           (state.level == AttentionLevel.drifting ||
               state.level == AttentionLevel.lost)) {
         _onDriftDetected();
       }
-
-      // Transition back to focused → resume
-      if (_paused && state.level == AttentionLevel.focused) {
+      if (_paused &&
+          !_showingIntervention &&
+          state.level == AttentionLevel.focused) {
         _onFocusRecovered();
       }
     });
   }
 
   void _onDriftDetected() {
-    setState(() {
-      _paused = true;
-      _driftCount++;
-      _driftSeconds = 0;
-    });
+    setState(() { _paused = true; _driftCount++; _driftSeconds = 0; });
     _pauseAnim.forward();
-
-    // Track drift duration
     _driftTimer?.cancel();
     _driftTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       setState(() => _driftSeconds++);
-
-      // After 4 seconds of drift, launch intervention
       if (_driftSeconds >= 4 && !_showingIntervention && !_interventionEngine.isActive) {
         _launchIntervention();
       }
@@ -129,25 +118,17 @@ class _LessonScreenState extends State<LessonScreen>
       topicId: widget.topicId,
       subject: _topic?.subject ?? '',
     );
-
     final format = _interventionEngine.selectNextFormat();
-    setState(() {
-      _showingIntervention = true;
-      _currentFormat = format;
-    });
+    setState(() { _showingIntervention = true; _currentFormat = format; });
   }
 
   void _onInterventionComplete() {
-    // Check if attention recovered (simplified — check current level)
     final recovered = _currentLevel == AttentionLevel.focused;
     _interventionEngine.reportResult(_currentFormat!, recovered);
-
     if (!recovered && _interventionEngine.hasMoreFormats) {
-      // Cascade to next format
-      final nextFormat = _interventionEngine.selectNextFormat();
-      setState(() => _currentFormat = nextFormat);
+      final next = _interventionEngine.selectNextFormat();
+      setState(() => _currentFormat = next);
     } else {
-      // Either recovered or exhausted all formats — resume
       _onFocusRecovered();
     }
   }
@@ -156,36 +137,44 @@ class _LessonScreenState extends State<LessonScreen>
     _driftTimer?.cancel();
     _pauseAnim.reverse();
     _interventionEngine.reset();
+    setState(() { _paused = false; _showingIntervention = false; _currentFormat = null; });
+  }
 
+  void _goToSection(int index) {
+    if (index > _unlockedUpTo) return;
     setState(() {
-      _paused = false;
-      _showingIntervention = false;
-      _currentFormat = null;
+      _currentSectionIndex = index;
+      _selectedOption = null;
+      _checkpointCorrect = null;
     });
+    _scrollController.animateTo(0,
+        duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+  }
+
+  void _onCheckpointAnswer(int optionIndex) {
+    final cp = _topic!.sections[_currentSectionIndex].checkpoint;
+    if (cp == null) return;
+    final correct = optionIndex == cp.correctIndex;
+    setState(() {
+      _selectedOption = optionIndex;
+      _checkpointCorrect = correct;
+    });
+    if (correct) {
+      setState(() {
+        _checkpointCompleted[_currentSectionIndex] = true;
+        if (_currentSectionIndex + 1 > _unlockedUpTo &&
+            _currentSectionIndex + 1 < _topic!.sections.length) {
+          _unlockedUpTo = _currentSectionIndex + 1;
+        }
+      });
+    }
   }
 
   void _nextSection() {
     if (_topic != null && _currentSectionIndex < _topic!.sections.length - 1) {
-      setState(() => _currentSectionIndex++);
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      _goToSection(_currentSectionIndex + 1);
     } else {
-      // All sections complete → session end summary
       context.go('/student/session-end');
-    }
-  }
-
-  void _prevSection() {
-    if (_currentSectionIndex > 0) {
-      setState(() => _currentSectionIndex--);
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
     }
   }
 
@@ -206,193 +195,194 @@ class _LessonScreenState extends State<LessonScreen>
         body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
-
     if (_topic == null) {
       return Scaffold(
         backgroundColor: AppColors.surface,
         body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-              const SizedBox(height: 16),
-              Text(
-                'Failed to load topic: ${widget.topicId}',
-                style: const TextStyle(color: AppColors.onSurface),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => context.go('/student'),
-                child: const Text('BACK TO DASHBOARD'),
-              ),
-            ],
-          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+            const SizedBox(height: 16),
+            Text('Failed to load topic: ${widget.topicId}',
+                style: const TextStyle(color: AppColors.onSurface)),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => context.go('/student'),
+              child: const Text('BACK TO DASHBOARD'),
+            ),
+          ]),
         ),
       );
     }
 
     final topic = _topic!;
     final section = topic.sections[_currentSectionIndex];
+    final progress = (_currentSectionIndex + (_checkpointCompleted.containsKey(_currentSectionIndex) ? 1 : 0)) / topic.sections.length;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: Stack(
         children: [
-          // Main content
           Column(
             children: [
-              // Top bar
-              _buildTopBar(topic),
-
-              // Content area
+              _buildTopBar(topic, progress),
               Expanded(
-                child: _buildContentArea(topic, section),
+                child: Row(
+                  children: [
+                    _buildSidebar(topic),
+                    Expanded(child: _buildContent(section)),
+                  ],
+                ),
               ),
-
-              // Focus HUD
               const FocusHud(),
             ],
           ),
-
-          // Intervention or pause overlay
           if (_showingIntervention && _currentFormat != null)
             Container(
               color: AppColors.surface,
-              child: InterventionEngine.buildFormatScreen(
-                format: _currentFormat!,
-                topicId: widget.topicId,
-                onComplete: _onInterventionComplete,
+              child: Column(
+                children: [
+                  // Keep HUD visible during intervention
+                  Expanded(
+                    child: InterventionEngine.buildFormatScreen(
+                      format: _currentFormat!,
+                      topicId: widget.topicId,
+                      onComplete: _onInterventionComplete,
+                    ),
+                  ),
+                  const FocusHud(),
+                ],
               ),
             )
           else if (_paused)
-            _buildPauseOverlay(),
+            _buildPauseOverlay(section),
         ],
       ),
     );
   }
 
-  Widget _buildTopBar(Topic topic) {
-    final elapsed = DateTime.now().difference(_sessionStart);
-    final minutes = elapsed.inMinutes;
-    final seconds = elapsed.inSeconds % 60;
+  // ── Top Bar ──────────────────────────────────────────────
 
+  Widget _buildTopBar(Topic topic, double progress) {
+    final elapsed = DateTime.now().difference(_sessionStart);
     return Container(
       height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       color: AppColors.surfaceContainer,
       child: Row(
         children: [
-          // Back button
           IconButton(
             icon: const Icon(Icons.arrow_back, size: 20, color: AppColors.outline),
             onPressed: () => context.go('/student'),
           ),
-
-          const SizedBox(width: 12),
-
-          // Topic info
+          const SizedBox(width: 8),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(topic.subject.toUpperCase(),
+                  style: const TextStyle(fontFamily: 'Consolas', fontSize: 9,
+                      fontWeight: FontWeight.w700, letterSpacing: 2.0, color: AppColors.primary)),
+              Text(topic.name,
+                  style: const TextStyle(fontFamily: 'Segoe UI', fontSize: 14,
+                      fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+            ],
+          ),
+          const SizedBox(width: 20),
+          // Progress bar
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  topic.name.toUpperCase(),
-                  style: const TextStyle(
-                    fontFamily: 'Segoe UI',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 2.0,
-                    color: AppColors.primary,
-                  ),
+                Row(
+                  children: [
+                    Text('Progress', style: TextStyle(fontFamily: 'Consolas',
+                        fontSize: 9, color: AppColors.outline.withValues(alpha: 0.6))),
+                    const Spacer(),
+                    Text('${(progress * 100).round()}%', style: TextStyle(fontFamily: 'Consolas',
+                        fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.focused)),
+                  ],
                 ),
-                Text(
-                  'Section ${_currentSectionIndex + 1} of ${topic.sections.length} · ${topic.subject}',
-                  style: const TextStyle(
-                    fontFamily: 'Consolas',
-                    fontSize: 10,
-                    color: AppColors.outline,
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: AppColors.surfaceContainerHighest,
+                    valueColor: const AlwaysStoppedAnimation(AppColors.focused),
+                    minHeight: 4,
                   ),
                 ),
               ],
             ),
           ),
-
-          // Session timer
+          const SizedBox(width: 20),
           Text(
-            '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
-            style: const TextStyle(
-              fontFamily: 'Consolas',
-              fontSize: 14,
-              color: AppColors.onSurfaceVariant,
-            ),
-          ),
-
-          const SizedBox(width: 16),
-
-          // Drift counter
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: _driftCount > 0
-                  ? AppColors.drifting.withValues(alpha: 0.15)
-                  : AppColors.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              '$_driftCount drifts',
-              style: TextStyle(
-                fontFamily: 'Consolas',
-                fontSize: 11,
-                color: _driftCount > 0 ? AppColors.drifting : AppColors.outline,
-              ),
-            ),
+            '${elapsed.inMinutes.toString().padLeft(2, '0')}:${(elapsed.inSeconds % 60).toString().padLeft(2, '0')}',
+            style: const TextStyle(fontFamily: 'Consolas', fontSize: 14, color: AppColors.onSurfaceVariant),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContentArea(Topic topic, Section section) {
-    return Row(
-      children: [
-        // Left sidebar — section navigation
-        Container(
-          width: 220,
-          color: AppColors.surfaceContainerLow,
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'SECTIONS',
-                  style: TextStyle(
-                    fontFamily: 'Consolas',
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 3.0,
-                    color: AppColors.outline,
-                  ),
-                ),
+  // ── Sidebar ──────────────────────────────────────────────
+
+  Widget _buildSidebar(Topic topic) {
+    return Container(
+      width: 220,
+      color: AppColors.surfaceContainerLow,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(topic.subject.toUpperCase(),
+                    style: TextStyle(fontFamily: 'Consolas', fontSize: 9,
+                        fontWeight: FontWeight.w700, letterSpacing: 2.0,
+                        color: AppColors.outline.withValues(alpha: 0.6))),
+                const SizedBox(height: 4),
+                Text(topic.name,
+                    style: const TextStyle(fontFamily: 'Segoe UI', fontSize: 14,
+                        fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+              ],
+            ),
+          ),
+          // Progress bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: (_unlockedUpTo + (_checkpointCompleted.containsKey(_unlockedUpTo) ? 1 : 0)) / topic.sections.length,
+                backgroundColor: AppColors.surfaceContainerHighest,
+                valueColor: const AlwaysStoppedAnimation(AppColors.focused),
+                minHeight: 4,
               ),
-              const SizedBox(height: 12),
-              ...List.generate(topic.sections.length, (i) {
-                final isActive = i == _currentSectionIndex;
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Section list
+          Expanded(
+            child: ListView.builder(
+              itemCount: topic.sections.length,
+              padding: EdgeInsets.zero,
+              itemBuilder: (_, i) {
                 final s = topic.sections[i];
+                final isActive = i == _currentSectionIndex;
+                final isLocked = i > _unlockedUpTo;
+                final isCompleted = _checkpointCompleted.containsKey(i);
+
                 return InkWell(
-                  onTap: () {
-                    setState(() => _currentSectionIndex = i);
-                    _scrollController.animateTo(0,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeOut);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  onTap: isLocked ? null : () => _goToSection(i),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
                       color: isActive
-                          ? AppColors.secondaryContainer.withValues(alpha: 0.3)
+                          ? AppColors.secondaryContainer.withValues(alpha: 0.2)
                           : Colors.transparent,
                       border: Border(
                         left: BorderSide(
@@ -401,247 +391,401 @@ class _LessonScreenState extends State<LessonScreen>
                         ),
                       ),
                     ),
-                    child: Text(
-                      s.title,
-                      style: TextStyle(
-                        fontFamily: 'Georgia',
-                        fontSize: 13,
-                        color: isActive ? AppColors.primary : AppColors.onSurfaceVariant,
-                        fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ),
-        ),
-
-        // Main content
-        Expanded(
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 40),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 700),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Section title
-                  Text(
-                    section.title,
-                    style: const TextStyle(
-                      fontFamily: 'Georgia',
-                      fontSize: 28,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.onSurface,
-                      height: 1.3,
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Content paragraphs
-                  ...section.content.split('\n\n').map(
-                    (paragraph) => Padding(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      child: Text(
-                        paragraph.trim(),
-                        style: const TextStyle(
-                          fontFamily: 'Georgia',
-                          fontSize: 16,
-                          color: AppColors.onSurfaceVariant,
-                          height: 1.8,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Key terms
-                  if (section.keyTerms.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerHigh,
-                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                        border: Border.all(
-                          color: AppColors.outlineVariant.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Opacity(
+                      opacity: isLocked ? 0.4 : 1.0,
+                      child: Row(
                         children: [
-                          const Text(
-                            'KEY TERMS',
-                            style: TextStyle(
-                              fontFamily: 'Consolas',
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 3.0,
-                              color: AppColors.outline,
+                          // Status icon
+                          if (isCompleted)
+                            const Icon(Icons.check_circle, size: 14, color: AppColors.focused)
+                          else if (isLocked)
+                            const Icon(Icons.lock, size: 14, color: AppColors.outline)
+                          else
+                            Icon(Icons.circle_outlined, size: 14,
+                                color: isActive ? AppColors.primary : AppColors.outline),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(s.title,
+                                    style: TextStyle(
+                                      fontFamily: 'Georgia', fontSize: 13,
+                                      color: isActive ? AppColors.primary : AppColors.onSurfaceVariant,
+                                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                                    )),
+                                if (s.subtitle != null)
+                                  Text(s.subtitle!,
+                                      style: TextStyle(fontFamily: 'Consolas', fontSize: 9,
+                                          color: AppColors.outline.withValues(alpha: 0.5))),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: section.keyTerms.map((term) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  term,
-                                  style: const TextStyle(
-                                    fontFamily: 'Segoe UI',
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
                           ),
                         ],
                       ),
                     ),
-                  ],
-
-                  const SizedBox(height: 40),
-
-                  // Navigation buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      if (_currentSectionIndex > 0)
-                        TextButton.icon(
-                          onPressed: _prevSection,
-                          icon: const Icon(Icons.arrow_back, size: 16),
-                          label: const Text('Previous Section'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.outline,
-                          ),
-                        )
-                      else
-                        const SizedBox.shrink(),
-                      ElevatedButton(
-                        onPressed: _nextSection,
-                        child: Text(
-                          _currentSectionIndex < topic.sections.length - 1
-                              ? 'CONTINUE TO NEXT SECTION'
-                              : 'COMPLETE LESSON',
-                        ),
-                      ),
-                    ],
                   ),
-
-                  const SizedBox(height: 40),
-                ],
-              ),
+                );
+              },
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildPauseOverlay() {
+  // ── Content ──────────────────────────────────────────────
+
+  Widget _buildContent(Section section) {
+    return SingleChildScrollView(
+      controller: _scrollController,
+      padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 40),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 700),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Section title
+            Text(section.title,
+                style: const TextStyle(fontFamily: 'Georgia', fontSize: 28,
+                    fontWeight: FontWeight.w600, color: AppColors.onSurface, height: 1.3)),
+            if (section.subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(section.subtitle!,
+                  style: TextStyle(fontFamily: 'Consolas', fontSize: 11,
+                      color: AppColors.outline.withValues(alpha: 0.6))),
+            ],
+            const SizedBox(height: 28),
+
+            // Paragraphs
+            ...section.paragraphs.map((p) => Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: Text(p,
+                      style: const TextStyle(fontFamily: 'Georgia', fontSize: 16,
+                          color: AppColors.onSurfaceVariant, height: 1.8, letterSpacing: 0.2)),
+                )),
+
+            // Key terms
+            if (section.keyTerms.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8, runSpacing: 8,
+                children: section.keyTerms.map((t) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(t, style: const TextStyle(fontFamily: 'Segoe UI',
+                          fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.primary)),
+                    )).toList(),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // Diagram
+            if (section.diagram != null) _buildDiagram(section.diagram!),
+
+            // Video
+            if (section.video != null) _buildVideo(section.video!),
+
+            // Callout
+            if (section.callout != null) _buildCallout(section.callout!),
+
+            // Checkpoint
+            if (section.checkpoint != null) _buildCheckpoint(section.checkpoint!),
+
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDiagram(DiagramSpec diagram) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 28),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.schema, size: 16, color: AppColors.primary.withValues(alpha: 0.7)),
+              const SizedBox(width: 8),
+              Text('DIAGRAM', style: TextStyle(fontFamily: 'Consolas', fontSize: 10,
+                  fontWeight: FontWeight.w700, letterSpacing: 3.0, color: AppColors.outline)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(diagram.title, style: const TextStyle(fontFamily: 'Segoe UI',
+              fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+          const SizedBox(height: 8),
+          Text(diagram.description, style: TextStyle(fontFamily: 'Georgia',
+              fontSize: 14, color: AppColors.onSurfaceVariant.withValues(alpha: 0.8), height: 1.5)),
+          if (diagram.interactiveHint != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.touch_app, size: 14, color: AppColors.primary.withValues(alpha: 0.5)),
+                const SizedBox(width: 6),
+                Text(diagram.interactiveHint!, style: TextStyle(fontFamily: 'Consolas',
+                    fontSize: 10, fontStyle: FontStyle.italic, color: AppColors.primary.withValues(alpha: 0.5))),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVideo(VideoEmbed video) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 28),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.play_circle, size: 16, color: AppColors.lost.withValues(alpha: 0.7)),
+              const SizedBox(width: 8),
+              Text('VIDEO', style: TextStyle(fontFamily: 'Consolas', fontSize: 10,
+                  fontWeight: FontWeight.w700, letterSpacing: 3.0, color: AppColors.outline)),
+              const Spacer(),
+              Text(video.duration, style: TextStyle(fontFamily: 'Consolas', fontSize: 10,
+                  color: AppColors.outline.withValues(alpha: 0.5))),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(video.title, style: const TextStyle(fontFamily: 'Segoe UI',
+              fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+          if (video.description != null) ...[
+            const SizedBox(height: 6),
+            Text(video.description!, style: TextStyle(fontFamily: 'Georgia',
+                fontSize: 13, color: AppColors.onSurfaceVariant.withValues(alpha: 0.7))),
+          ],
+          const SizedBox(height: 12),
+          Text('${video.startTime} → ${video.endTime}',
+              style: TextStyle(fontFamily: 'Consolas', fontSize: 11, color: AppColors.outline)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCallout(CalloutBox callout) {
+    final Color accentColor;
+    final IconData icon;
+    final String label;
+    switch (callout.type) {
+      case 'did_you_know':
+        accentColor = AppColors.tertiary; icon = Icons.lightbulb; label = 'DID YOU KNOW?';
+      case 'real_world':
+        accentColor = AppColors.focused; icon = Icons.public; label = 'REAL WORLD';
+      case 'remember':
+        accentColor = AppColors.primary; icon = Icons.bookmark; label = 'REMEMBER THIS';
+      case 'common_mistake':
+        accentColor = AppColors.lost; icon = Icons.warning_amber; label = 'COMMON MISTAKE';
+      default:
+        accentColor = AppColors.primary; icon = Icons.info; label = 'NOTE';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 28),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: accentColor.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border(left: BorderSide(color: accentColor, width: 4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: accentColor),
+              const SizedBox(width: 8),
+              Text(label, style: TextStyle(fontFamily: 'Consolas', fontSize: 10,
+                  fontWeight: FontWeight.w700, letterSpacing: 3.0, color: accentColor)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(callout.content, style: TextStyle(fontFamily: 'Georgia',
+              fontSize: 15, color: AppColors.onSurface.withValues(alpha: 0.9), height: 1.6)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCheckpoint(Checkpoint cp) {
+    final answered = _selectedOption != null;
+    final completed = _checkpointCompleted.containsKey(_currentSectionIndex);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 28),
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border.all(
+          color: completed ? AppColors.focused.withValues(alpha: 0.3) : AppColors.outlineVariant.withValues(alpha: 0.2),
+          width: completed ? 2 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(completed ? Icons.check_circle : Icons.quiz, size: 16,
+                  color: completed ? AppColors.focused : AppColors.primary),
+              const SizedBox(width: 8),
+              Text(completed ? 'CHECKPOINT COMPLETE' : 'QUICK CHECK',
+                  style: TextStyle(fontFamily: 'Consolas', fontSize: 10,
+                      fontWeight: FontWeight.w700, letterSpacing: 3.0,
+                      color: completed ? AppColors.focused : AppColors.outline)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(cp.question, style: const TextStyle(fontFamily: 'Georgia',
+              fontSize: 17, fontWeight: FontWeight.w600, color: AppColors.onSurface, height: 1.4)),
+          const SizedBox(height: 16),
+          // Options
+          ...List.generate(cp.options.length, (i) {
+            final isSelected = _selectedOption == i;
+            final isCorrect = i == cp.correctIndex;
+            Color optionColor = AppColors.surfaceContainerLow;
+            Color textColor = AppColors.onSurfaceVariant;
+
+            if (answered) {
+              if (isCorrect) {
+                optionColor = AppColors.focused.withValues(alpha: 0.15);
+                textColor = AppColors.focused;
+              } else if (isSelected && !_checkpointCorrect!) {
+                optionColor = AppColors.lost.withValues(alpha: 0.15);
+                textColor = AppColors.lost;
+              }
+            }
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Material(
+                color: optionColor,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                child: InkWell(
+                  onTap: answered && _checkpointCorrect! ? null : () => _onCheckpointAnswer(i),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    child: Row(
+                      children: [
+                        if (answered && isCorrect)
+                          const Icon(Icons.check_circle, size: 18, color: AppColors.focused)
+                        else if (answered && isSelected)
+                          const Icon(Icons.cancel, size: 18, color: AppColors.lost)
+                        else
+                          Icon(Icons.radio_button_unchecked, size: 18,
+                              color: AppColors.outline.withValues(alpha: 0.4)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(cp.options[i], style: TextStyle(
+                              fontFamily: 'Georgia', fontSize: 14, color: textColor)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+          // Feedback
+          if (answered) ...[
+            const SizedBox(height: 12),
+            Text(
+              _checkpointCorrect! ? cp.onCorrect : cp.onWrong,
+              style: TextStyle(
+                fontFamily: 'Georgia', fontSize: 14, fontStyle: FontStyle.italic,
+                color: _checkpointCorrect! ? AppColors.focused : AppColors.drifting,
+                height: 1.5,
+              ),
+            ),
+          ],
+          // Next section button (after correct answer)
+          if (completed) ...[
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _nextSection,
+              child: Text(
+                _currentSectionIndex < (_topic?.sections.length ?? 1) - 1
+                    ? 'CONTINUE TO NEXT SECTION'
+                    : 'COMPLETE LESSON',
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ── Pause Overlay ────────────────────────────────────────
+
+  Widget _buildPauseOverlay(Section section) {
     return AnimatedBuilder(
       animation: _pauseAnim,
       builder: (_, __) => Opacity(
         opacity: _pauseAnim.value,
         child: Container(
-          color: AppColors.surface.withValues(alpha: 0.85),
+          color: AppColors.surface.withValues(alpha: 0.9),
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Attention icon
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: (_currentLevel == AttentionLevel.lost
-                            ? AppColors.lost
-                            : AppColors.drifting)
-                        .withValues(alpha: 0.15),
-                  ),
-                  child: Icon(
-                    _currentLevel == AttentionLevel.lost
-                        ? Icons.warning_amber
-                        : Icons.pause_circle_outline,
-                    size: 40,
-                    color: _currentLevel == AttentionLevel.lost
-                        ? AppColors.lost
-                        : AppColors.drifting,
-                  ),
+                Icon(
+                  _currentLevel == AttentionLevel.lost ? Icons.warning_amber : Icons.pause_circle_outline,
+                  size: 64,
+                  color: _currentLevel == AttentionLevel.lost ? AppColors.lost : AppColors.drifting,
                 ),
-
+                const SizedBox(height: 20),
+                Text(
+                  _currentLevel == AttentionLevel.lost ? 'FOCUS LOST' : 'ATTENTION DRIFTING',
+                  style: TextStyle(fontFamily: 'Consolas', fontSize: 18, fontWeight: FontWeight.w700,
+                      letterSpacing: 3.0,
+                      color: _currentLevel == AttentionLevel.lost ? AppColors.lost : AppColors.drifting),
+                ),
+                const SizedBox(height: 10),
+                const Text('Content paused. Refocus to continue.',
+                    style: TextStyle(fontFamily: 'Georgia', fontStyle: FontStyle.italic,
+                        fontSize: 16, color: AppColors.onSurfaceVariant)),
+                const SizedBox(height: 6),
+                Text('Drifting for $_driftSeconds seconds',
+                    style: const TextStyle(fontFamily: 'Consolas', fontSize: 12, color: AppColors.outline)),
+                if (section.recapOnReturn != null) ...[
+                  const SizedBox(height: 16),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: Text(section.recapOnReturn!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontFamily: 'Georgia', fontSize: 14,
+                            fontStyle: FontStyle.italic, color: AppColors.primary.withValues(alpha: 0.7))),
+                  ),
+                ],
                 const SizedBox(height: 24),
-
-                Text(
-                  _currentLevel == AttentionLevel.lost
-                      ? 'FOCUS LOST'
-                      : 'ATTENTION DRIFTING',
-                  style: TextStyle(
-                    fontFamily: 'Consolas',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 3.0,
-                    color: _currentLevel == AttentionLevel.lost
-                        ? AppColors.lost
-                        : AppColors.drifting,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                const Text(
-                  'Content paused. Refocus to continue.',
-                  style: TextStyle(
-                    fontFamily: 'Georgia',
-                    fontStyle: FontStyle.italic,
-                    fontSize: 16,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  'Drifting for $_driftSeconds seconds',
-                  style: const TextStyle(
-                    fontFamily: 'Consolas',
-                    fontSize: 12,
-                    color: AppColors.outline,
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Manual resume button (fallback)
                 OutlinedButton(
                   onPressed: _onFocusRecovered,
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.outlineVariant),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  child: const Text(
-                    'RESUME MANUALLY',
-                    style: TextStyle(
-                      fontFamily: 'Segoe UI',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 2.0,
-                      color: AppColors.outline,
-                    ),
-                  ),
+                  style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.outlineVariant)),
+                  child: const Text('RESUME MANUALLY',
+                      style: TextStyle(fontFamily: 'Segoe UI', fontSize: 12,
+                          fontWeight: FontWeight.w600, letterSpacing: 2.0, color: AppColors.outline)),
                 ),
               ],
             ),

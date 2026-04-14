@@ -2,61 +2,244 @@
   "id": "periodic_table",
   "name": "The Periodic Table",
   "subject": "Chemistry",
+  "grade": "Grade 11-12",
   "estimatedMinutes": 10,
   "sections": [
     {
       "id": "pt_s1",
-      "title": "I. History & Organization",
-      "content": "The periodic table is one of the most important tools in chemistry. It organizes all known elements — 118 in total — by their atomic number, electron configuration, and recurring chemical properties.\n\nIn 1869, Russian chemist Dmitri Mendeleev published the first widely recognized periodic table. His genius was not just in arranging the elements, but in leaving gaps for elements that had not yet been discovered. He predicted the properties of gallium, scandium, and germanium years before they were found in nature.\n\nThe modern periodic table arranges elements in order of increasing atomic number (the number of protons in the nucleus). Elements in the same column (group) share similar chemical properties because they have the same number of valence electrons — the electrons in the outermost shell that participate in chemical bonding.\n\nThe table is divided into 18 groups (columns) and 7 periods (rows). As you move left to right across a period, atomic number increases by one. As you move down a group, atoms get larger because each new period adds another electron shell.",
-      "keyTerms": ["atomic number", "electron configuration", "valence electrons", "groups", "periods"]
+      "title": "I. History & Organisation",
+      "subtitle": "Groups, periods, Mendeleev",
+      "paragraphs": [
+        "The periodic table is one of the most important tools in chemistry. It organises all 118 known elements by their atomic number, electron configuration, and recurring chemical properties. Every element that exists — from the hydrogen in water to the gold in jewellery — has its place on this table.",
+        "In 1869, Russian chemist Dmitri Mendeleev published the first widely recognised periodic table. His genius was not just in arranging the elements — it was in leaving deliberate gaps where elements should exist but had not yet been discovered. He predicted the properties of gallium, scandium, and germanium years before they were found in nature. When gallium was discovered in 1875, its density, melting point, and atomic mass matched Mendeleev's prediction almost exactly.",
+        "The modern periodic table arranges elements in order of increasing atomic number — the number of protons in the nucleus. Elements in the same column, called a group, share similar chemical properties because they have the same number of valence electrons. Valence electrons are the electrons in the outermost shell — the ones that participate in chemical bonding.",
+        "The table is divided into 18 groups (vertical columns) and 7 periods (horizontal rows). As you move left to right across a period, atomic number increases by exactly one each step. As you move down a group, atoms get progressively larger because each new period adds a complete new electron shell around the nucleus."
+      ],
+      "keyTerms": ["atomic number", "electron configuration", "valence electrons", "groups", "periods", "Mendeleev"],
+      "diagram": {
+        "title": "Structure of the Periodic Table",
+        "description": "Simplified periodic table grid showing groups (columns), periods (rows), and the d-block transition metals gap. Arrows indicate: atomic number increases left to right, each row adds an electron shell.",
+        "interactiveHint": "Tap any region to see details"
+      },
+      "video": {
+        "title": "CrashCourse Chemistry — The Periodic Table",
+        "youtubeId": "0RRVV4Diomg",
+        "startTime": "0:45",
+        "endTime": "2:30",
+        "duration": "1 min 45 sec",
+        "description": "Mendeleev's story, how the table is organised, groups and periods explained visually"
+      },
+      "callout": {
+        "type": "did_you_know",
+        "content": "Mendeleev was so confident in his system that he publicly predicted three missing elements in 1871. He called them eka-boron, eka-aluminium, and eka-silicon. Within 15 years all three were discovered — scandium, gallium, and germanium — and every property matched his predictions."
+      },
+      "checkpoint": {
+        "question": "As you move left to right across a period, what happens to the atomic number?",
+        "options": [
+          "It decreases by one each step",
+          "It stays the same throughout the period",
+          "It increases by one each step",
+          "It doubles with each new element"
+        ],
+        "correctIndex": 2,
+        "onCorrect": "Correct — each step right adds exactly one proton to the nucleus. Section II now unlocked. Progress: 25%.",
+        "onWrong": "Not quite — atomic number = number of protons, and each element has exactly one more proton than the last. Try again."
+      },
+      "interventionMap": {
+        "mild": {
+          "format": "flashcard",
+          "description": "5 cards covering groups, periods, atomic number."
+        },
+        "moderate": {
+          "format": "simulation",
+          "description": "Drag elements into correct period bucket. Elements: H, Li, Na, K, Rb."
+        },
+        "severe": {
+          "format": "voice",
+          "description": "App speaks: 'Say the atomic number of Hydrogen.' Then: 'Say the atomic number of Carbon.'"
+        }
+      },
+      "recapOnReturn": "You were learning: the periodic table has 18 groups and 7 periods, arranged by increasing atomic number."
     },
     {
       "id": "pt_s2",
       "title": "II. Element Groups & Families",
-      "content": "Elements in the periodic table are categorized into several major groups based on their properties:\n\nAlkali Metals (Group 1): Lithium, sodium, potassium — these are soft, silvery metals that react violently with water. They have one valence electron, which they easily lose to form +1 ions. Sodium (Na) is found in table salt (NaCl), and potassium (K) is essential for nerve function in your body.\n\nAlkaline Earth Metals (Group 2): Beryllium, magnesium, calcium — harder than alkali metals, with two valence electrons. Calcium (Ca) builds your bones and teeth. Magnesium (Mg) is the central atom in chlorophyll, the molecule that makes plants green.\n\nHalogens (Group 17): Fluorine, chlorine, bromine, iodine — highly reactive nonmetals with seven valence electrons. They desperately want one more electron to complete their outer shell. Chlorine (Cl) disinfects swimming pools. Fluoride (F⁻) strengthens tooth enamel.\n\nNoble Gases (Group 18): Helium, neon, argon — these gases are almost completely unreactive because their outer electron shells are already full. Helium makes balloons float. Neon glows orange-red in signs. Argon fills incandescent light bulbs to prevent the filament from burning.",
-      "keyTerms": ["alkali metals", "alkaline earth metals", "halogens", "noble gases", "valence electrons"]
+      "subtitle": "Metals, halogens, nobles",
+      "paragraphs": [
+        "Elements are grouped into families based on their chemical behaviour. The most important families to know are: alkali metals (Group 1), alkaline earth metals (Group 2), transition metals (Groups 3-12), halogens (Group 17), and noble gases (Group 18). Each family has a distinctive set of properties that its members share.",
+        "Alkali metals — lithium, sodium, potassium, rubidium, caesium, and francium — are the most reactive metals on the table. They all have exactly one valence electron which they give away easily in reactions. Sodium reacts violently with water to produce sodium hydroxide and hydrogen gas. Critically, the reaction gets more violent as you move down the group — potassium ignites spontaneously, rubidium explodes. The outer electron gets further from the nucleus and is held less tightly, making it easier to lose.",
+        "Noble gases occupy Group 18 and are almost completely unreactive. Helium, neon, argon, krypton, xenon, and radon all have completely full outer electron shells. With no tendency to gain or lose electrons, they have no reason to form bonds. This is why neon signs glow without the neon reacting with the glass, the electricity, or the air around it — neon is chemically indifferent to everything around it.",
+        "Halogens in Group 17 are the polar opposite of noble gases. They are the most reactive non-metals because their outer shells need just one more electron to become full. Fluorine is so reactive it corrodes through glass. Chlorine is used to kill bacteria in swimming pools. Iodine is essential for the human thyroid gland to function. Same group, same electron need, completely different applications in the real world.",
+        "Transition metals fill the central block (Groups 3-12). Unlike the main group elements, transition metals have partially filled d-orbitals which give them unusual properties — they form coloured compounds, they can exist in multiple oxidation states, and they make excellent catalysts. Iron, copper, gold, silver, titanium, and platinum are all transition metals. Most of the metals you encounter in everyday life come from this block."
+      ],
+      "keyTerms": ["alkali metals", "noble gases", "halogens", "transition metals", "valence electron", "reactivity"],
+      "diagram": {
+        "title": "Element Families — Colour-Coded Periodic Table",
+        "description": "Full periodic table with each family highlighted: Group 1 (Red - Alkali metals), Group 2 (Orange - Alkaline earth), Groups 3-12 (Blue - Transition metals), Group 17 (Pink - Halogens), Group 18 (Teal - Noble gases).",
+        "interactiveHint": "Tap any coloured region to see: family name, group number, valence electrons, reactivity, 3 examples"
+      },
+      "video": {
+        "title": "Tyler DeWitt — Families on the Periodic Table",
+        "youtubeId": "gGFC-HUPlkY",
+        "startTime": "0:00",
+        "endTime": "2:15",
+        "duration": "2 min 15 sec",
+        "description": "Alkali metals, halogens, noble gases in plain conversational English"
+      },
+      "driftVideo": {
+        "title": "Periodic Videos — Sodium in Water",
+        "youtubeId": "HvVUtpdK7xw",
+        "startTime": "0:00",
+        "endTime": "1:00",
+        "duration": "1 min",
+        "description": "Sodium metal dropped into water — violent reaction, ignition, explosion. Shows exactly what the student was reading about when they drifted."
+      },
+      "callout": {
+        "type": "real_world",
+        "content": "You use two halogens every single morning before you leave the house. The fluoride in your toothpaste is a fluorine compound — it strengthens tooth enamel. The chloride in your table salt is a chlorine compound — sodium chloride, NaCl. Two of the most reactive non-metals on the table, made completely safe through bonding with metals."
+      },
+      "checkpoint": {
+        "question": "Why are noble gases almost completely unreactive?",
+        "options": [
+          "They are too large to form bonds with other atoms",
+          "They are gases so chemical reactions cannot occur",
+          "Their outer electron shells are completely full",
+          "They are only found in the upper atmosphere"
+        ],
+        "correctIndex": 2,
+        "onCorrect": "Correct — a full outer shell means no drive to gain or lose electrons. No electron transfer, no reaction. Section III now unlocked. Progress: 50%.",
+        "onWrong": "Not quite — think about what makes an element reactive. It is about electrons, not size or state of matter."
+      },
+      "interventionMap": {
+        "mild": {
+          "format": "flashcard",
+          "description": "5 cards on element families. Covers all major families."
+        },
+        "moderate": {
+          "format": "simulation",
+          "description": "Tap Period 2 elements in atomic number order: Li Be B C N O F Ne."
+        },
+        "severe": {
+          "format": "voice",
+          "description": "Sodium in water video (1 min). Then voice: 'What products form when sodium reacts with water?'"
+        }
+      },
+      "recapOnReturn": "You were learning: noble gases are unreactive because their outer electron shells are completely full."
     },
     {
       "id": "pt_s3",
       "title": "III. Periodic Trends",
-      "content": "The periodic table reveals powerful patterns called periodic trends. Understanding these trends lets you predict an element's behavior without memorizing every fact.\n\nAtomic Radius: Atoms get smaller as you move left to right across a period. This seems counterintuitive — you're adding more electrons — but you're also adding more protons, which pull the electrons closer to the nucleus. Moving down a group, atoms get larger because each period adds a new electron shell farther from the nucleus.\n\nElectronegativity: This measures how strongly an atom attracts electrons in a chemical bond. Fluorine is the most electronegative element (3.98 on the Pauling scale). Electronegativity increases going right across a period and decreases going down a group. This is why elements in the top-right corner (like oxygen, fluorine, chlorine) are greedy for electrons.\n\nIonization Energy: The energy required to remove an electron from an atom. Elements on the left (metals) have low ionization energy — they give up electrons easily. Elements on the right (nonmetals) have high ionization energy — they hold onto their electrons tightly. Noble gases have the highest ionization energy because their electron shells are full and stable.\n\nMetallic Character: Metals are found on the left and bottom of the table. Nonmetals are on the right and top. The diagonal staircase (boron to astatine) separates metals from nonmetals, with metalloids (silicon, germanium, arsenic) straddling the line.",
-      "keyTerms": ["atomic radius", "electronegativity", "ionization energy", "metallic character", "periodic trends"]
+      "subtitle": "Radius, ionisation, reactivity",
+      "paragraphs": [
+        "Periodic trends are predictable patterns in element properties that repeat as you move across a period or down a group. Understanding why these trends exist means you can predict the behaviour of any element on the table without memorising individual facts. There are four main trends: atomic radius, ionisation energy, electronegativity, and reactivity.",
+        "Atomic radius is the size of an atom — measured as half the distance between two identical bonded atoms. Atomic radius decreases as you move left to right across a period. This seems counterintuitive — you are adding more electrons, so why does the atom shrink? The answer is nuclear charge. Each step right adds one more proton to the nucleus. More protons means a stronger pull on the entire electron cloud, drawing it closer to the centre.",
+        "Atomic radius increases as you move down a group. Each new period adds a complete new electron shell between the nucleus and the outermost electrons. More shells means more distance. Lithium has 2 shells. Sodium has 3. Potassium has 4. Each step down Group 1 adds a whole new layer — the atom grows.",
+        "Ionisation energy is the energy required to remove one electron from a gaseous atom. It follows the opposite trend to atomic radius. Ionisation energy increases left to right across a period — more nuclear charge holds electrons more tightly. Ionisation energy decreases down a group — outer electrons are further from the nucleus and shielded by inner shells.",
+        "Electronegativity measures how strongly an atom attracts electrons in a chemical bond. Fluorine is the most electronegative element on the table. Electronegativity increases left to right across a period and decreases down a group — the same pattern as ionisation energy. Francium is the least electronegative. Fluorine is the most."
+      ],
+      "keyTerms": ["atomic radius", "ionisation energy", "electronegativity", "nuclear charge", "shielding", "periodic trends"],
+      "diagram": {
+        "title": "How Trends Move Across the Table",
+        "description": "Periodic table outline with four trend arrows: Atomic radius decreases right (red), increases down (red). Ionisation energy increases right (teal), decreases down (teal). Plus atomic radius comparison: Li(152pm) → Na(186pm) → K(227pm) → Rb(248pm) → Cs(265pm).",
+        "interactiveHint": "Tap any arrow for a detailed explanation"
+      },
+      "video": {
+        "title": "Khan Academy — Periodic Table Trends",
+        "youtubeId": "dDWEz9MpXL8",
+        "startTime": "1:10",
+        "endTime": "3:30",
+        "duration": "2 min 20 sec",
+        "description": "Atomic radius and ionisation energy trends explained visually with arrows"
+      },
+      "callout": {
+        "type": "remember",
+        "content": "Atomic radius and ionisation energy always move in opposite directions. When atomic radius is high (bottom-left), ionisation energy is low. When atomic radius is low (top-right), ionisation energy is high. You never need to memorise both — just remember they are always opposites."
+      },
+      "checkpoint": {
+        "question": "Magnesium (Mg) is in Period 3, Group 2. Aluminium (Al) is in Period 3, Group 13. Which has a larger atomic radius?",
+        "options": [
+          "Magnesium — it is further left in the period",
+          "Aluminium — it has more electrons",
+          "They are the same — same period, same size",
+          "Aluminium — higher group number means larger"
+        ],
+        "correctIndex": 0,
+        "onCorrect": "Correct — moving right across Period 3, nuclear charge increases and pulls the electron cloud inward. Magnesium is further left so its radius is larger. Section IV now unlocked. Progress: 75%.",
+        "onWrong": "Not quite — same period means same number of electron shells. The difference is nuclear charge. More protons pulls electrons closer."
+      },
+      "interventionMap": {
+        "mild": {
+          "format": "flashcard",
+          "description": "5 cards on trend directions across all four major trends."
+        },
+        "moderate": {
+          "format": "simulation",
+          "description": "Blank periodic table — drag four arrows to show correct direction of trends."
+        },
+        "severe": {
+          "format": "gesture",
+          "description": "Draw and label trend arrows from memory on blank periodic table."
+        }
+      },
+      "recapOnReturn": "You were learning: atomic radius decreases left to right — nuclear charge pulls the electron cloud inward."
     },
     {
       "id": "pt_s4",
       "title": "IV. Reading the Periodic Table",
-      "content": "Every element box on the periodic table contains essential information:\n\nThe atomic number (top) tells you how many protons are in the nucleus. This number defines the element — change the proton count and you change the element entirely. Carbon always has 6 protons. Gold always has 79.\n\nThe element symbol (center) is a one- or two-letter abbreviation. Some are intuitive: C for carbon, O for oxygen. Others come from Latin names: Fe for iron (ferrum), Au for gold (aurum), Pb for lead (plumbum), Na for sodium (natrium).\n\nThe atomic mass (bottom) is the weighted average mass of all naturally occurring isotopes. Carbon's atomic mass is 12.011, not exactly 12, because about 1.1% of natural carbon is carbon-13 (with an extra neutron).\n\nTo find the number of neutrons: subtract the atomic number from the mass number (rounded to nearest whole number). For carbon-12: 12 - 6 = 6 neutrons. For carbon-13: 13 - 6 = 7 neutrons.\n\nThe electron configuration can be derived from the element's position. Period number tells you how many electron shells. Group number (for main group elements) tells you how many valence electrons. Sodium is in Period 3, Group 1: three shells, one valence electron."
+      "subtitle": "Tiles, config, isotopes",
+      "paragraphs": [
+        "Every element tile on the periodic table contains four pieces of information: the atomic number, the element symbol, the element name, and the atomic mass. Reading these correctly is not just a skill for exams — it is the foundation of every chemistry calculation you will ever do.",
+        "The atomic number is always a whole number at the top of the tile. It tells you exactly how many protons are in the nucleus. For a neutral atom it also tells you the number of electrons. Carbon has atomic number 6: six protons in the nucleus, six electrons orbiting it. Change the proton count and you have a different element entirely.",
+        "The atomic mass shown on the tile is not a whole number — it is the weighted average mass of all naturally occurring isotopes. Carbon shows 12.011, not 12, because about 1.1% of all carbon atoms in nature are carbon-13 — one neutron heavier than common carbon-12.",
+        "The electron configuration can be read directly from an element's position for the first 20 elements. The period number tells you how many electron shells are occupied. The group number tells you how many electrons are in the outermost shell. Sodium sits in Period 3, Group 1 — 3 shells, 1 electron in the outermost. Configuration: 2,8,1. Total: 11 electrons. Atomic number: 11. They always match.",
+        "Isotopes are atoms of the same element with different numbers of neutrons. Carbon-12 has 6 protons and 6 neutrons. Carbon-13 has 6 protons and 7 neutrons. Carbon-14 has 6 protons and 8 neutrons. All three are carbon — same atomic number, same chemical behaviour — but different masses."
+      ],
+      "keyTerms": ["atomic number", "atomic mass", "element symbol", "electron configuration", "isotopes", "neutrons"],
+      "diagram": {
+        "title": "Reading an Element Tile (Carbon)",
+        "description": "Large element tile for Carbon with labelled arrows: 6 → Atomic number (protons), C → Symbol, Carbon → Name, 12.011 → Atomic mass (weighted average). Plus Sodium electron shell diagram: three concentric circles with 2, 8, 1 electrons.",
+        "interactiveHint": "Tap blurred tiles to fill in missing information"
+      },
+      "video": {
+        "title": "Professor Dave Explains — Reading the Periodic Table Tile",
+        "youtubeId": "thnDxFdkzZs",
+        "startTime": "0:30",
+        "endTime": "2:00",
+        "duration": "1 min 30 sec",
+        "description": "Walks through one complete element tile — atomic number, symbol, name, mass"
+      },
+      "callout": {
+        "type": "common_mistake",
+        "content": "Many students confuse atomic number with atomic mass. Remember: atomic number is always a whole number — it counts protons. Atomic mass is almost never a whole number — it is a weighted average of isotopes. In an exam, if you see a decimal it is always the atomic mass. If you see a whole number it is always the atomic number."
+      },
+      "checkpoint": {
+        "question": "Sodium has atomic number 11 and sits in Period 3, Group 1. What is its electron configuration?",
+        "options": [
+          "1, 10",
+          "2, 8, 1",
+          "2, 9",
+          "3, 8"
+        ],
+        "correctIndex": 1,
+        "onCorrect": "Correct — Period 3 means 3 shells. Shell 1 holds 2, shell 2 holds 8, shell 3 holds 1. Total = 11 = atomic number. Lesson complete! Progress: 100%.",
+        "onWrong": "Not quite — count the shells first (period number = number of shells), then fill them in order: 2 then 8 then the remainder."
+      },
+      "interventionMap": {
+        "mild": {
+          "format": "flashcard",
+          "description": "5 cards on reading element tiles — atomic number, mass, symbol, configuration."
+        },
+        "moderate": {
+          "format": "simulation",
+          "description": "Blank element tile with four slots. Drag correct info into each slot for Carbon, Oxygen, Sodium."
+        },
+        "severe": {
+          "format": "voice",
+          "description": "App speaks: 'Oxygen has atomic number 8. How many electrons does a neutral oxygen atom have?' Then: 'Sodium is in Period 3, Group 1. Say its electron configuration.'"
+        }
+      },
+      "recapOnReturn": "You were learning: atomic number = protons = electrons in a neutral atom. Always a whole number. Never the same as atomic mass."
     }
-  ],
-  "flashcards": [
-    {"question": "How many elements are in the periodic table?", "answer": "118 elements", "explanation": "As of 2024, 118 elements have been confirmed and named."},
-    {"question": "Who created the first widely recognized periodic table?", "answer": "Dmitri Mendeleev (1869)", "explanation": "Mendeleev organized elements by atomic weight and predicted undiscovered elements."},
-    {"question": "What determines an element's identity?", "answer": "The number of protons (atomic number)", "explanation": "Change the proton count and you change the element entirely."},
-    {"question": "Noble gas or halogen: Neon?", "answer": "Noble gas (Group 18)", "explanation": "Neon has a full outer electron shell, making it unreactive."},
-    {"question": "Which element is the most electronegative?", "answer": "Fluorine (3.98 Pauling)", "explanation": "Fluorine attracts electrons more strongly than any other element."}
-  ],
-  "simulation": {
-    "type": "element_placement",
-    "instructions": "Drag each element to the correct position on the periodic table grid.",
-    "elements": [
-      {"symbol": "Na", "name": "Sodium", "group": 1, "period": 3},
-      {"symbol": "Cl", "name": "Chlorine", "group": 17, "period": 3},
-      {"symbol": "Fe", "name": "Iron", "group": 8, "period": 4},
-      {"symbol": "He", "name": "Helium", "group": 18, "period": 1},
-      {"symbol": "Ca", "name": "Calcium", "group": 2, "period": 4}
-    ]
-  },
-  "gestureQuestions": [
-    {"question": "How many valence electrons does Sodium have?", "answer": 1},
-    {"question": "How many valence electrons does Carbon have?", "answer": 4},
-    {"question": "How many valence electrons does Chlorine have?", "answer": 7},
-    {"question": "What group are the Noble Gases in?", "answer": 18, "hint": "Hold up 1 and 8 (or approximate)"}
-  ],
-  "voiceQuestions": [
-    {"question": "What type of element is Fluorine?", "acceptedAnswers": ["halogen", "a halogen", "nonmetal", "a nonmetal"]},
-    {"question": "Name the element with atomic number 79.", "acceptedAnswers": ["gold", "au", "aurum"]},
-    {"question": "What trend increases from left to right across a period?", "acceptedAnswers": ["electronegativity", "ionization energy", "both electronegativity and ionization energy"]},
-    {"question": "What element makes up the center of chlorophyll?", "acceptedAnswers": ["magnesium", "mg"]}
   ],
   "curiosityBomb": "If you could line up every atom in your body side by side, the line would stretch about 2 light-years — halfway to the nearest star. Yet 99% of your body is made of just 6 elements from the periodic table: oxygen, carbon, hydrogen, nitrogen, calcium, and phosphorus."
 }
