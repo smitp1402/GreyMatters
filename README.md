@@ -1,4 +1,4 @@
-# NeuroLearn
+# GreyMatter
 
 EEG-adaptive learning platform — Flutter + Neurosity Crown.
 
