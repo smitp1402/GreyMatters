@@ -20,6 +20,9 @@ flutter pub get
 # Generate drift database code
 dart run build_runner build
 
+# Run on web (primary)
+flutter run -d chrome
+
 # Run on desktop
 flutter run -d windows   # or -d macos
 
