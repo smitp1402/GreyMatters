@@ -3,12 +3,6 @@
 ## Project
 EEG-adaptive learning Flutter app. Uses Neurosity Crown to detect student attention drift in real time and trigger RL-selected rescue interventions (flashcard, video, simulation, voice, gesture, curiosity bomb, draw-it).
 
-## Module ownership
-- `lib/student/`  → Smit (student module, RL agent, interventions, HUD)
-- `lib/teacher/`  → Felipe (teacher module, live monitor, session history, export)
-- `lib/core/`     → Joint (discuss before changing)
-- `daemon/`       → Smit (Python EEG research daemon)
-
 ## Frozen interface — DO NOT modify without agreement from BOTH developers
 - `lib/core/models/attention_state.dart` — AttentionState + AttentionLevel enum
 - `lib/core/models/session.dart` — Session model
