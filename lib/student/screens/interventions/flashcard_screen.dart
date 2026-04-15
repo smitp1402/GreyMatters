@@ -5,18 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/models/topic.dart';
+import '../../../core/models/topic.dart' show Flashcard, InterventionPack;
 
 /// Flashcard intervention — swipeable 5-card deck with Q&A.
 ///
 /// Student taps card to flip, then swipes or taps next.
 /// Shows score at end. Calls onComplete when done.
 class FlashcardScreen extends StatefulWidget {
+  final String subject;
   final String topicId;
   final VoidCallback onComplete;
 
   const FlashcardScreen({
     super.key,
+    required this.subject,
     required this.topicId,
     required this.onComplete,
   });
@@ -42,12 +44,12 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
   Future<void> _loadCards() async {
     try {
       final jsonStr = await rootBundle.loadString(
-        'assets/curriculum/${widget.topicId}.json',
+        'assets/curriculum/${widget.subject}/${widget.topicId}/interventions.json',
       );
       final json = jsonDecode(jsonStr) as Map<String, dynamic>;
-      final topic = Topic.fromJson(json);
+      final pack = InterventionPack.fromJson(json);
       setState(() {
-        _cards = topic.flashcards.take(5).toList();
+        _cards = pack.flashcards.take(5).toList();
         _loading = false;
       });
     } catch (e) {

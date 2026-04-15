@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/models/topic.dart';
+import '../../../core/models/topic.dart' show GestureQuestion, InterventionPack;
 
 /// Gesture intervention — hold up fingers to answer questions.
 ///
@@ -14,11 +14,13 @@ import '../../../core/models/topic.dart';
 /// access requires the MediaPipe Python server.
 /// Student answers by clicking the number or holding up fingers.
 class GestureScreen extends StatefulWidget {
+  final String subject;
   final String topicId;
   final VoidCallback onComplete;
 
   const GestureScreen({
     super.key,
+    required this.subject,
     required this.topicId,
     required this.onComplete,
   });
@@ -52,12 +54,12 @@ class _GestureScreenState extends State<GestureScreen>
   Future<void> _loadQuestions() async {
     try {
       final jsonStr = await rootBundle.loadString(
-        'assets/curriculum/${widget.topicId}.json',
+        'assets/curriculum/${widget.subject}/${widget.topicId}/interventions.json',
       );
       final json = jsonDecode(jsonStr) as Map<String, dynamic>;
-      final topic = Topic.fromJson(json);
+      final pack = InterventionPack.fromJson(json);
       setState(() {
-        _questions = topic.gestureQuestions;
+        _questions = pack.gestureQuestions;
         _loading = false;
       });
     } catch (e) {

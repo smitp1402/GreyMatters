@@ -1,0 +1,31 @@
+{
+  "topicId": "cell_structure",
+  "flashcards": [
+    {"question": "What is the powerhouse of the cell?", "answer": "Mitochondria", "explanation": "Mitochondria generate ATP through cellular respiration."},
+    {"question": "What organelle packages and ships proteins?", "answer": "Golgi Apparatus", "explanation": "Like a post office — receives, modifies, and dispatches proteins."},
+    {"question": "Prokaryotic or eukaryotic: human cells?", "answer": "Eukaryotic", "explanation": "Human cells have a membrane-bound nucleus and organelles."},
+    {"question": "What is the cell membrane made of?", "answer": "Phospholipid bilayer", "explanation": "Two layers of fat molecules forming a selective barrier."},
+    {"question": "What type of transport requires ATP?", "answer": "Active transport", "explanation": "Moving molecules against their concentration gradient needs energy."}
+  ],
+  "simulation": {
+    "type": "organelle_placement",
+    "instructions": "Drag each organelle to the correct location in the cell.",
+    "elements": [
+      {"symbol": "Nu", "name": "Nucleus", "group": 1, "period": 1},
+      {"symbol": "Mt", "name": "Mitochondria", "group": 2, "period": 1},
+      {"symbol": "ER", "name": "Endoplasmic Reticulum", "group": 3, "period": 1},
+      {"symbol": "Go", "name": "Golgi Apparatus", "group": 4, "period": 1},
+      {"symbol": "Ly", "name": "Lysosome", "group": 5, "period": 1}
+    ]
+  },
+  "gestureQuestions": [
+    {"question": "How many membranes surround the nucleus?", "answer": 2, "hint": "It's called a double membrane or nuclear envelope"},
+    {"question": "How many sodium ions does the Na/K pump move out per cycle?", "answer": 3},
+    {"question": "How many potassium ions does the Na/K pump move in per cycle?", "answer": 2}
+  ],
+  "voiceQuestions": [
+    {"question": "What organelle contains digestive enzymes?", "acceptedAnswers": ["lysosome", "lysosomes"]},
+    {"question": "What theory explains how mitochondria originated?", "acceptedAnswers": ["endosymbiotic theory", "endosymbiosis", "endosymbiotic"]},
+    {"question": "What is the energy currency of the cell?", "acceptedAnswers": ["atp", "adenosine triphosphate"]}
+  ]
+}

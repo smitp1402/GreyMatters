@@ -63,6 +63,7 @@ abstract final class AppColors {
   static const lost = Color(0xFFE53935);
 
   // -- Band power bars --
+  static const delta = Color(0xFFAB47BC); // purple — slow waves
   static const theta = Color(0xFF7E57C2);
   static const alpha = Color(0xFF42A5F5);
   static const beta = Color(0xFF66BB6A);

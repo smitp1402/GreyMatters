@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/services/supabase_config.dart';
+import 'core/services/profile_manager.dart';
 import 'core/theme/app_theme.dart';
 import 'router.dart';
 
@@ -16,11 +17,14 @@ void main() async {
     anonKey: SupabaseConfig.anonKey,
   );
 
-  runApp(const ProviderScope(child: NeuroLearnApp()));
+  // Try loading existing profile
+  await ProfileManager.instance.loadProfile();
+
+  runApp(const ProviderScope(child: GreyMattersApp()));
 }
 
-class NeuroLearnApp extends StatelessWidget {
-  const NeuroLearnApp({super.key});
+class GreyMattersApp extends StatelessWidget {
+  const GreyMattersApp({super.key});
 
   @override
   Widget build(BuildContext context) {

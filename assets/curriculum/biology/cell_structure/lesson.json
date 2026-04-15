@@ -1,0 +1,43 @@
+{
+  "id": "cell_structure",
+  "name": "Cell Structure",
+  "subject": "biology",
+  "estimatedMinutes": 12,
+  "sections": [
+    {
+      "id": "cs_s1",
+      "title": "I. The Cell — Building Block of Life",
+      "paragraphs": [
+        "Every living organism is made of cells. Some organisms like bacteria are a single cell. Humans are made of approximately 37 trillion cells, each performing specialized functions.",
+        "Cells come in two fundamental types: prokaryotic and eukaryotic. Prokaryotic cells (bacteria, archaea) are simpler — they have no membrane-bound nucleus. Their DNA floats freely in the cytoplasm. Eukaryotic cells (plants, animals, fungi) are more complex — they have a nucleus enclosed by a membrane, and many specialized compartments called organelles.",
+        "Despite their differences, all cells share three features: a cell membrane (boundary), cytoplasm (interior fluid), and DNA (genetic instructions). The cell membrane controls what enters and leaves. The cytoplasm provides a medium for chemical reactions. DNA stores the blueprint for making proteins."
+      ],
+      "keyTerms": ["prokaryotic", "eukaryotic", "cell membrane", "cytoplasm", "organelles"]
+    },
+    {
+      "id": "cs_s2",
+      "title": "II. Major Organelles",
+      "paragraphs": [
+        "Eukaryotic cells contain specialized organelles, each with a specific function:",
+        "The Nucleus is the control center. It contains DNA organized into chromosomes and is surrounded by a double membrane called the nuclear envelope. The nucleolus inside produces ribosomes.",
+        "Mitochondria are the powerhouses. They generate ATP (energy currency) through cellular respiration. They have their own DNA — evidence that they were once independent bacteria that were engulfed by ancient cells (endosymbiotic theory).",
+        "The Endoplasmic Reticulum (ER) is a network of membranes. Rough ER (studded with ribosomes) makes proteins. Smooth ER makes lipids and detoxifies chemicals.",
+        "The Golgi Apparatus packages and ships proteins. Think of it as the cell's post office — it receives proteins from the ER, modifies them, and sends them to their destinations.",
+        "Lysosomes are the recycling centers. They contain digestive enzymes that break down waste, old organelles, and foreign invaders."
+      ],
+      "keyTerms": ["nucleus", "mitochondria", "endoplasmic reticulum", "Golgi apparatus", "lysosomes", "ATP"]
+    },
+    {
+      "id": "cs_s3",
+      "title": "III. Cell Membrane & Transport",
+      "paragraphs": [
+        "The cell membrane is a phospholipid bilayer — two layers of fat molecules with their water-loving heads facing outward and water-fearing tails facing inward. This creates a selective barrier that controls what enters and exits the cell.",
+        "Small, nonpolar molecules (like oxygen and carbon dioxide) pass through freely — this is passive transport, requiring no energy. Water moves through specialized channels called aquaporins by osmosis.",
+        "Larger or charged molecules need help. Channel proteins and carrier proteins act as doors and elevators, moving specific molecules across the membrane. When this movement goes against the concentration gradient (from low to high concentration), it requires energy — this is active transport, powered by ATP.",
+        "The sodium-potassium pump is the most important active transporter in animal cells. It pumps 3 sodium ions out and 2 potassium ions in per cycle, maintaining the electrical gradient that nerve cells need to send signals."
+      ],
+      "keyTerms": ["phospholipid bilayer", "passive transport", "active transport", "osmosis", "sodium-potassium pump"]
+    }
+  ],
+  "curiosityBomb": "If you unfolded all the DNA in a single human cell and stretched it out, it would be about 2 meters long. Now multiply that by 37 trillion cells — your total DNA would stretch from the Sun to Pluto and back. All packed into a body that fits through a doorway."
+}

@@ -53,7 +53,8 @@ class _FocusHudState extends State<FocusHud> {
 
     return Container(
       height: 80,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      clipBehavior: Clip.hardEdge,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainer,
         border: Border(
@@ -78,12 +79,14 @@ class _FocusHudState extends State<FocusHud> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                _BandRow(label: 'δ', value: state?.delta ?? 0, color: AppColors.delta),
+                const SizedBox(height: 3),
                 _BandRow(label: 'θ', value: state?.theta ?? 0, color: AppColors.theta),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 _BandRow(label: 'α', value: state?.alpha ?? 0, color: AppColors.alpha),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 _BandRow(label: 'β', value: state?.beta ?? 0, color: AppColors.beta),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 _BandRow(label: 'γ', value: state?.gamma ?? 0, color: AppColors.gamma),
               ],
             ),

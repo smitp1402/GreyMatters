@@ -1,0 +1,26 @@
+{
+  "id": "covalent_bonds",
+  "name": "Covalent Bonds",
+  "subject": "chemistry",
+  "estimatedMinutes": 10,
+  "sections": [
+    {
+      "id": "cov_s1",
+      "title": "I. Electron Sharing",
+      "paragraphs": [
+        "A covalent bond forms when two atoms share one or more pairs of electrons. This type of bonding occurs primarily between nonmetal atoms, which have similar electronegativities and therefore neither atom can completely take electrons from the other.",
+        "The simplest covalent bond is in H₂ — two hydrogen atoms each contribute one electron to a shared pair. This shared pair orbits both nuclei, holding the atoms together. The bond length is the distance between the two nuclei where the attractive and repulsive forces are balanced.",
+        "Covalent bonds can be polar or nonpolar. In a nonpolar covalent bond (like H₂ or Cl₂), electrons are shared equally because both atoms have the same electronegativity. In a polar covalent bond (like H-Cl), electrons are shared unequally — they spend more time near the more electronegative atom."
+      ]
+    },
+    {
+      "id": "cov_s2",
+      "title": "II. Molecular Geometry",
+      "paragraphs": [
+        "The three-dimensional shape of a molecule is determined by VSEPR theory (Valence Shell Electron Pair Repulsion). The basic principle is simple: electron pairs around a central atom repel each other and arrange themselves as far apart as possible.",
+        "A molecule with two electron groups around the central atom is linear (180° bond angle) — like CO₂. Three electron groups form a trigonal planar arrangement (120°) — like BF₃. Four electron groups form a tetrahedral arrangement (109.5°) — like CH₄.",
+        "Lone pairs (non-bonding electron pairs) also count as electron groups. Water (H₂O) has four electron groups around oxygen (two bonding pairs, two lone pairs), giving it a bent shape. Ammonia (NH₃) has four groups (three bonding, one lone pair), giving it a trigonal pyramidal shape."
+      ]
+    }
+  ]
+}

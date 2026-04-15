@@ -1,10 +1,12 @@
 // lib/student/screens/session_code_screen.dart
 
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/services/profile_manager.dart';
+import '../../core/services/session_manager.dart';
+import '../../core/services/websocket_client.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 
@@ -21,7 +23,7 @@ class SessionCodeScreen extends StatefulWidget {
 
 class _SessionCodeScreenState extends State<SessionCodeScreen>
     with SingleTickerProviderStateMixin {
-  late final String _sessionCode;
+  String _sessionCode = '------';
   late final AnimationController _fadeIn;
   final FlutterTts _tts = FlutterTts();
   bool _copied = false;
@@ -41,20 +43,59 @@ class _SessionCodeScreenState extends State<SessionCodeScreen>
   @override
   void initState() {
     super.initState();
-    _sessionCode = _generateCode();
 
     _fadeIn = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..forward();
 
-    _initTts();
+    _initSession();
   }
 
-  String _generateCode() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1 confusion
-    final rng = Random();
-    return List.generate(6, (_) => chars[rng.nextInt(chars.length)]).join();
+  Future<void> _initSession() async {
+    debugPrint('[SessionCode] _initSession called');
+    debugPrint('[SessionCode] hasProfile=${ProfileManager.instance.hasProfile}');
+    debugPrint('[SessionCode] profileId=${ProfileManager.instance.profileId}');
+    debugPrint('[SessionCode] name=${ProfileManager.instance.name}');
+
+    var studentId = ProfileManager.instance.profileId;
+
+    // If profileId is null, try reloading from Supabase
+    if (studentId == null) {
+      debugPrint('[SessionCode] profileId null — attempting reload...');
+      await ProfileManager.instance.loadProfile();
+      studentId = ProfileManager.instance.profileId;
+      debugPrint('[SessionCode] after reload: profileId=$studentId');
+    }
+
+    if (studentId == null) {
+      debugPrint('[SessionCode] ERROR: profileId still null after reload');
+      return;
+    }
+
+    try {
+      debugPrint('[SessionCode] Starting session for student=$studentId');
+      final code = await SessionManager.instance.startSession(
+        studentId: studentId,
+        topicId: 'general',
+        topicName: 'General Session',
+        subject: 'general',
+      );
+
+      debugPrint('[SessionCode] Session started! code=$code');
+      ProfileManager.instance.setSessionCode(code);
+
+      // Tell the daemon to use this session ID in AttentionState broadcasts
+      WebSocketClient.instance.send('{"command":"set_session","session_id":"$code"}');
+
+      if (mounted) {
+        setState(() => _sessionCode = code);
+        _initTts();
+      }
+    } catch (e, stack) {
+      debugPrint('[SessionCode] ERROR starting session: $e');
+      debugPrint('$stack');
+    }
   }
 
   Future<void> _initTts() async {

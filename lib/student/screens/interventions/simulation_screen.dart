@@ -5,18 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/models/topic.dart';
+import '../../../core/models/topic.dart' show SimElement, InterventionPack;
 
 /// Simulation intervention — drag elements to correct positions.
 ///
 /// For Periodic Table: drag element symbols to the correct group/period slot.
 /// Visual snap-to-target feedback. Progress bar fills as elements are placed.
 class SimulationScreen extends StatefulWidget {
+  final String subject;
   final String topicId;
   final VoidCallback onComplete;
 
   const SimulationScreen({
     super.key,
+    required this.subject,
     required this.topicId,
     required this.onComplete,
   });
@@ -41,12 +43,12 @@ class _SimulationScreenState extends State<SimulationScreen> {
   Future<void> _loadSimulation() async {
     try {
       final jsonStr = await rootBundle.loadString(
-        'assets/curriculum/${widget.topicId}.json',
+        'assets/curriculum/${widget.subject}/${widget.topicId}/interventions.json',
       );
       final json = jsonDecode(jsonStr) as Map<String, dynamic>;
-      final topic = Topic.fromJson(json);
+      final pack = InterventionPack.fromJson(json);
       setState(() {
-        _elements = topic.simulation?.elements ?? [];
+        _elements = pack.simulation?.elements ?? [];
         _loading = false;
       });
     } catch (e) {

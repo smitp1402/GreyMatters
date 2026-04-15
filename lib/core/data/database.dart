@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'session_dao.dart';
 import 'intervention_dao.dart';
+import 'activity_progress_dao.dart';
 
 part 'database.g.dart';
 
@@ -58,25 +59,39 @@ class Baselines extends Table {
   Set<Column> get primaryKey => {studentName};
 }
 
+/// Activity progress — persistent scores for topic-specific activities.
+class ActivityProgressTable extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get activityId => text()(); // e.g. 'synthetic_alchemist'
+  TextColumn get studentName => text()();
+  IntColumn get totalScore =>
+      integer().withDefault(const Constant(0))();
+  DateTimeColumn get lastPlayedAt => dateTime()();
+}
+
 // ---------------------------------------------------------------------------
 // Database class
 // ---------------------------------------------------------------------------
 
-@DriftDatabase(tables: [Sessions, Interventions, Baselines])
+@DriftDatabase(tables: [Sessions, Interventions, Baselines, ActivityProgressTable])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
-  /// Bump this when the schema changes. Drift handles migrations.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
-  /// Expose DAOs as getters for convenient access.
   SessionDao get sessionDao => SessionDao(this);
   InterventionDao get interventionDao => InterventionDao(this);
+  ActivityProgressDao get activityProgressDao => ActivityProgressDao(this);
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) => m.createAll(),
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            await m.createTable(activityProgressTable);
+          }
+        },
       );
 }
 

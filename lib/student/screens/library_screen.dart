@@ -286,7 +286,7 @@ class _TopicCardState extends State<_TopicCard> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onTap: () => context.go('/student/lesson/${t.id}'),
+        onTap: () => context.go('/student/lesson/${t.subject.toLowerCase()}/${t.id}'),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppSpacing.radiusXl),

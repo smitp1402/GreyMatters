@@ -1,0 +1,28 @@
+{
+  "id": "cell_division",
+  "name": "Cell Division",
+  "subject": "biology",
+  "estimatedMinutes": 10,
+  "sections": [
+    {
+      "id": "cd_s1",
+      "title": "I. Why Cells Divide",
+      "paragraphs": [
+        "Cell division is the process by which a parent cell divides into two or more daughter cells. It is essential for growth, repair, and reproduction in all living organisms.",
+        "There are two main types of cell division: mitosis and meiosis. Mitosis produces two identical daughter cells and is used for growth and repair. Meiosis produces four genetically unique daughter cells and is used to create sex cells (gametes) for reproduction.",
+        "Before any cell division begins, the cell must duplicate its DNA during the S phase of the cell cycle. This ensures each daughter cell receives a complete copy of the genetic instructions."
+      ]
+    },
+    {
+      "id": "cd_s2",
+      "title": "II. Mitosis",
+      "paragraphs": [
+        "Mitosis is divided into four phases: prophase, metaphase, anaphase, and telophase.",
+        "During prophase, chromatin condenses into visible chromosomes and the nuclear envelope begins to break down. The mitotic spindle (made of microtubules) forms between the two centrosomes.",
+        "During metaphase, chromosomes line up along the middle of the cell (the metaphase plate). Spindle fibers attach to the centromere of each chromosome.",
+        "During anaphase, sister chromatids are pulled apart to opposite poles of the cell. Each chromatid is now a separate chromosome.",
+        "During telophase, nuclear envelopes reform around each set of chromosomes, and the chromosomes begin to decondense. Cytokinesis then physically divides the cell into two."
+      ]
+    }
+  ]
+}

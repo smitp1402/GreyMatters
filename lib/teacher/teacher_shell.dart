@@ -1,13 +1,15 @@
 // lib/teacher/teacher_shell.dart
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../core/services/profile_manager.dart';
 import '../core/theme/app_colors.dart';
-import 'screens/join_session_screen.dart';
+import 'screens/teacher_dashboard_screen.dart';
 
 /// Root widget for the teacher module.
 ///
-/// Shows the session code join screen. After joining, navigates
-/// to the live monitor via go_router.
+/// Shows the student list dashboard. Teacher can tap students to see
+/// performance, or join a live session by code.
 class TeacherShell extends StatelessWidget {
   const TeacherShell({super.key});
 
@@ -29,7 +31,7 @@ class TeacherShell extends StatelessWidget {
         backgroundColor: AppColors.surface,
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.only(right: 8),
             child: Chip(
               label: const Text(
                 'EDUCATOR',
@@ -46,9 +48,18 @@ class TeacherShell extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8),
             ),
           ),
+          IconButton(
+            onPressed: () {
+              ProfileManager.instance.clear();
+              context.go('/login');
+            },
+            tooltip: 'Logout',
+            icon: const Icon(Icons.logout, color: AppColors.outline, size: 22),
+          ),
+          const SizedBox(width: 8),
         ],
       ),
-      body: const JoinSessionScreen(),
+      body: const TeacherDashboardScreen(),
     );
   }
 }

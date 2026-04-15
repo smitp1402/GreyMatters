@@ -1,0 +1,11 @@
+{
+  "topicId": "periodic_table",
+  "activities": [
+    {
+      "id": "synthetic_alchemist",
+      "name": "Synthetic Alchemist",
+      "description": "Catch falling elements in atomic number order",
+      "driftTrigger": "moderate"
+    }
+  ]
+}

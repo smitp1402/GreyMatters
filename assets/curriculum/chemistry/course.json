@@ -1,0 +1,7 @@
+{
+  "id": "chemistry",
+  "name": "Chemistry",
+  "icon": "science",
+  "topicOrder": ["periodic_table", "chemical_bonding", "covalent_bonds"],
+  "unlockMode": "sequential"
+}

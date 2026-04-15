@@ -1,0 +1,31 @@
+{
+  "topicId": "periodic_table",
+  "flashcards": [
+    {"question": "What determines an element's position on the periodic table?", "answer": "Atomic number", "explanation": "Elements are arranged by increasing number of protons."},
+    {"question": "What are vertical columns on the periodic table called?", "answer": "Groups", "explanation": "Elements in the same group share similar chemical properties."},
+    {"question": "What are horizontal rows on the periodic table called?", "answer": "Periods", "explanation": "Each period adds a new electron shell."},
+    {"question": "Why are noble gases unreactive?", "answer": "Full outer electron shells", "explanation": "No tendency to gain or lose electrons means no bonding."},
+    {"question": "Which group contains the most reactive metals?", "answer": "Group 1 (Alkali metals)", "explanation": "They have one valence electron that is easily lost."}
+  ],
+  "simulation": {
+    "type": "element_placement",
+    "instructions": "Drag each element to its correct position on the grid.",
+    "elements": [
+      {"symbol": "H", "name": "Hydrogen", "group": 1, "period": 1},
+      {"symbol": "Li", "name": "Lithium", "group": 1, "period": 2},
+      {"symbol": "Na", "name": "Sodium", "group": 1, "period": 3},
+      {"symbol": "K", "name": "Potassium", "group": 1, "period": 4},
+      {"symbol": "Rb", "name": "Rubidium", "group": 1, "period": 5}
+    ]
+  },
+  "gestureQuestions": [
+    {"question": "How many groups are in the periodic table?", "answer": 18},
+    {"question": "How many periods are in the periodic table?", "answer": 7},
+    {"question": "What is the atomic number of Carbon?", "answer": 6}
+  ],
+  "voiceQuestions": [
+    {"question": "What is the atomic number of Hydrogen?", "acceptedAnswers": ["1", "one"]},
+    {"question": "What is the atomic number of Carbon?", "acceptedAnswers": ["6", "six"]},
+    {"question": "What family does Neon belong to?", "acceptedAnswers": ["noble gases", "noble gas", "group 18"]}
+  ]
+}

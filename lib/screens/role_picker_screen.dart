@@ -3,6 +3,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../core/services/profile_manager.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 
@@ -40,9 +41,36 @@ class _RolePickerScreenState extends State<RolePickerScreen>
     super.dispose();
   }
 
-  void _handleInitialize() {
-    final route = _selectedRole == _Role.student ? '/student/connect' : '/teacher';
-    context.go(route);
+  bool _saving = false;
+
+  Future<void> _handleInitialize() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your name')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+
+    try {
+      await ProfileManager.instance.saveProfile(
+        name: name,
+        role: _selectedRole == _Role.student ? 'student' : 'teacher',
+      );
+
+      if (!mounted) return;
+      final route = _selectedRole == _Role.student ? '/student/connect' : '/teacher';
+      context.go(route);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save profile: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -275,12 +303,19 @@ class _RolePickerScreenState extends State<RolePickerScreen>
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: _handleInitialize,
+            onTap: _saving ? null : _handleInitialize,
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
               child: Center(
-                child: Text(
+                child: _saving
+                    ? const SizedBox(
+                        width: 20, height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2, color: AppColors.onPrimaryContainer,
+                        ),
+                      )
+                    : const Text(
                   'INITIALIZE SESSION',
                   style: TextStyle(
                     fontFamily: 'Segoe UI',
@@ -301,7 +336,17 @@ class _RolePickerScreenState extends State<RolePickerScreen>
   Widget _buildSkipToDashboard(BuildContext context) {
     return Center(
       child: TextButton(
-        onPressed: () {
+        onPressed: () async {
+          final name = _nameController.text.trim().isEmpty
+              ? 'Scholar'
+              : _nameController.text.trim();
+          try {
+            await ProfileManager.instance.saveProfile(
+              name: name,
+              role: _selectedRole == _Role.student ? 'student' : 'teacher',
+            );
+          } catch (_) {}
+          if (!context.mounted) return;
           final route = _selectedRole == _Role.student ? '/student' : '/teacher';
           context.go(route);
         },

@@ -11,7 +11,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/models/attention_state.dart';
 import '../../core/models/topic.dart';
 import '../../core/services/attention_stream.dart';
-import '../widgets/focus_hud.dart';
+import '../../core/services/session_manager.dart';
 import '../widgets/periodic_table_diagram.dart';
 import 'interventions/intervention_engine.dart';
 
@@ -20,8 +20,9 @@ import 'interventions/intervention_engine.dart';
 /// Sidebar with section locking (unlock via checkpoint).
 /// Focus HUD at bottom, pacing engine pauses on drift.
 class LessonScreen extends StatefulWidget {
+  final String subject;
   final String topicId;
-  const LessonScreen({super.key, required this.topicId});
+  const LessonScreen({super.key, required this.subject, required this.topicId});
 
   @override
   State<LessonScreen> createState() => _LessonScreenState();
@@ -52,6 +53,9 @@ class _LessonScreenState extends State<LessonScreen>
   bool _showingIntervention = false;
   String? _currentFormat;
 
+  // Debug
+  bool _debugExpanded = false;
+
   // Session
   final _sessionStart = DateTime.now();
   int _driftCount = 0;
@@ -74,7 +78,7 @@ class _LessonScreenState extends State<LessonScreen>
   Future<void> _loadTopic() async {
     try {
       final jsonStr = await rootBundle.loadString(
-        'assets/curriculum/${widget.topicId}.json',
+        'assets/curriculum/${widget.subject}/${widget.topicId}/lesson.json',
       );
       final json = jsonDecode(jsonStr) as Map<String, dynamic>;
       setState(() {
@@ -103,6 +107,9 @@ class _LessonScreenState extends State<LessonScreen>
     _attentionSub = AttentionStream.instance.stream.listen((state) {
       if (!mounted) return;
       _currentLevel = state.level;
+
+      // Broadcast to Supabase Realtime for teacher monitoring
+      SessionManager.instance.onAttentionState(state);
 
       // Maintain rolling window of last N readings
       _recentLevels.add(state.level);
@@ -171,6 +178,24 @@ class _LessonScreenState extends State<LessonScreen>
     _recentLevels.clear();
     _driftConfirmed = false;
     setState(() { _paused = false; _showingIntervention = false; _currentFormat = null; });
+  }
+
+  void _debugForceIntervention(String format) {
+    setState(() {
+      _showingIntervention = true;
+      _currentFormat = format;
+      _paused = false;
+      _debugExpanded = false;
+    });
+  }
+
+  void _debugDismissIntervention() {
+    _interventionEngine.reset();
+    setState(() {
+      _showingIntervention = false;
+      _currentFormat = null;
+      _paused = false;
+    });
   }
 
   void _goToSection(int index) {
@@ -275,28 +300,92 @@ class _LessonScreenState extends State<LessonScreen>
                   ],
                 ),
               ),
-              const FocusHud(),
             ],
           ),
           if (_showingIntervention && _currentFormat != null)
             Container(
               color: AppColors.surface,
-              child: Column(
-                children: [
-                  // Keep HUD visible during intervention
-                  Expanded(
-                    child: InterventionEngine.buildFormatScreen(
-                      format: _currentFormat!,
-                      topicId: widget.topicId,
-                      onComplete: _onInterventionComplete,
-                    ),
-                  ),
-                  const FocusHud(),
-                ],
+              child: InterventionEngine.buildFormatScreen(
+                format: _currentFormat!,
+                subject: widget.subject,
+                topicId: widget.topicId,
+                sectionIndex: _currentSectionIndex,
+                onComplete: _onInterventionComplete,
               ),
             )
           else if (_paused)
             _buildPauseOverlay(section),
+
+          // Debug FAB
+          _buildDebugFab(),
+        ],
+      ),
+    );
+  }
+
+  // ── Debug FAB ───────────────────────────────────────────────
+
+  Widget _buildDebugFab() {
+    const formats = [
+      ('flashcard', Icons.style, 'Flashcard'),
+      ('gesture', Icons.pan_tool, 'Gesture'),
+      ('voice', Icons.mic, 'Voice'),
+      ('simulation', Icons.drag_indicator, 'Simulation'),
+      ('activity', Icons.science, 'Alchemist'),
+    ];
+
+    return Positioned(
+      right: 16,
+      bottom: 100,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // Back to lesson button (visible during intervention)
+          if (_showingIntervention)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: FloatingActionButton.extended(
+                heroTag: 'debug_back',
+                onPressed: _debugDismissIntervention,
+                backgroundColor: AppColors.lost,
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.arrow_back, size: 18),
+                label: const Text('BACK TO LESSON',
+                    style: TextStyle(fontFamily: 'Consolas', fontSize: 11,
+                        fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+              ),
+            ),
+
+          // Format buttons (visible when expanded)
+          if (_debugExpanded)
+            ...formats.map((f) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: FloatingActionButton.extended(
+                    heroTag: 'debug_${f.$1}',
+                    onPressed: () => _debugForceIntervention(f.$1),
+                    backgroundColor: AppColors.surfaceContainerHigh,
+                    foregroundColor: AppColors.primary,
+                    icon: Icon(f.$2, size: 18),
+                    label: Text(f.$3,
+                        style: const TextStyle(fontFamily: 'Consolas',
+                            fontSize: 11, fontWeight: FontWeight.w700,
+                            letterSpacing: 1.5)),
+                  ),
+                )),
+
+          // Main toggle button
+          FloatingActionButton.small(
+            heroTag: 'debug_toggle',
+            onPressed: () => setState(() => _debugExpanded = !_debugExpanded),
+            backgroundColor: _debugExpanded
+                ? AppColors.primary
+                : AppColors.surfaceContainerHighest,
+            foregroundColor: _debugExpanded
+                ? AppColors.onPrimary
+                : AppColors.outline,
+            child: Icon(_debugExpanded ? Icons.close : Icons.bug_report, size: 20),
+          ),
         ],
       ),
     );
@@ -569,8 +658,8 @@ class _LessonScreenState extends State<LessonScreen>
               fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.onSurface)),
           const SizedBox(height: 16),
 
-          // Render full periodic table
-          const PeriodicTableDiagram(),
+          // Render diagram by type
+          _buildDiagramWidget(diagram.type),
 
           const SizedBox(height: 12),
           Text(diagram.description, style: TextStyle(fontFamily: 'Georgia',
@@ -589,6 +678,15 @@ class _LessonScreenState extends State<LessonScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildDiagramWidget(String type) {
+    switch (type) {
+      case 'periodic_table':
+        return const PeriodicTableDiagram();
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   Widget _buildVideo(VideoEmbed video) {

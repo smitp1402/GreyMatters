@@ -1,0 +1,59 @@
+{
+  "subjects": [
+    {
+      "id": "chemistry",
+      "name": "Chemistry",
+      "icon": "science",
+      "color": "#6C5CE7",
+      "topics": [
+        {
+          "id": "periodic_table",
+          "name": "The Periodic Table",
+          "grade": "Grade 11-12",
+          "estimatedMinutes": 10,
+          "prereqs": []
+        },
+        {
+          "id": "chemical_bonding",
+          "name": "Chemical Bonding",
+          "grade": "Grade 11-12",
+          "estimatedMinutes": 12,
+          "prereqs": ["periodic_table"]
+        },
+        {
+          "id": "covalent_bonds",
+          "name": "Covalent Bonds",
+          "grade": "Grade 11-12",
+          "estimatedMinutes": 10,
+          "prereqs": ["chemical_bonding"]
+        }
+      ]
+    },
+    {
+      "id": "biology",
+      "name": "Biology",
+      "icon": "biotech",
+      "color": "#00B894",
+      "topics": [
+        {
+          "id": "cell_structure",
+          "name": "Cell Structure",
+          "estimatedMinutes": 12,
+          "prereqs": []
+        },
+        {
+          "id": "cell_division",
+          "name": "Cell Division",
+          "estimatedMinutes": 10,
+          "prereqs": ["cell_structure"]
+        },
+        {
+          "id": "dna_replication",
+          "name": "DNA Replication",
+          "estimatedMinutes": 10,
+          "prereqs": ["cell_division"]
+        }
+      ]
+    }
+  ]
+}

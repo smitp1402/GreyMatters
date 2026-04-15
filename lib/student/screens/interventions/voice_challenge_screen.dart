@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/models/topic.dart';
+import '../../../core/models/topic.dart' show VoiceQuestion, InterventionPack;
 
 /// Voice challenge intervention — question displayed + typed answer.
 ///
@@ -13,11 +13,13 @@ import '../../../core/models/topic.dart';
 /// Fuzzy matching against accepted answers. Falls back to typed input
 /// on all platforms for reliability.
 class VoiceChallengeScreen extends StatefulWidget {
+  final String subject;
   final String topicId;
   final VoidCallback onComplete;
 
   const VoiceChallengeScreen({
     super.key,
+    required this.subject,
     required this.topicId,
     required this.onComplete,
   });
@@ -45,12 +47,12 @@ class _VoiceChallengeScreenState extends State<VoiceChallengeScreen> {
   Future<void> _loadQuestions() async {
     try {
       final jsonStr = await rootBundle.loadString(
-        'assets/curriculum/${widget.topicId}.json',
+        'assets/curriculum/${widget.subject}/${widget.topicId}/interventions.json',
       );
       final json = jsonDecode(jsonStr) as Map<String, dynamic>;
-      final topic = Topic.fromJson(json);
+      final pack = InterventionPack.fromJson(json);
       setState(() {
-        _questions = topic.voiceQuestions;
+        _questions = pack.voiceQuestions;
         _loading = false;
       });
     } catch (e) {

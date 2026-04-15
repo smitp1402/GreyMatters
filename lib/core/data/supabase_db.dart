@@ -2,101 +2,192 @@
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Supabase data access layer — replaces drift/SQLite for web.
+/// Supabase data access layer for GreyMatters.
 ///
-/// Provides CRUD operations for sessions, interventions, and baselines
-/// using Supabase Postgres via REST API.
+/// Maps to the schema in supabase/migrations/001_full_schema.sql.
+/// Tables: profiles, sessions, attention_snapshots, interventions, baselines, teacher_monitors
+/// Views: student_topic_stats, student_summary, intervention_efficacy, teacher_student_overview
 class SupabaseDb {
   SupabaseDb._();
   static final instance = SupabaseDb._();
 
   SupabaseClient get _client => Supabase.instance.client;
 
-  // ── Sessions ──────────────────────────────────────────────
+  // ── Profiles ────────────────────────────────────────────────
 
+  /// Create or update a profile by device_id.
+  Future<Map<String, dynamic>> upsertProfile({
+    required String deviceId,
+    required String name,
+    required String role,
+    String? gradeLevel,
+    String? avatarUrl,
+    List<String> subjects = const [],
+  }) async {
+    final data = await _client.from('profiles').upsert(
+      {
+        'device_id': deviceId,
+        'name': name,
+        'role': role,
+        'grade_level': gradeLevel,
+        'avatar_url': avatarUrl,
+        'subjects': subjects,
+      },
+      onConflict: 'device_id',
+    ).select().single();
+    return data;
+  }
+
+  /// Get profile by device_id. Returns null if not found.
+  Future<Map<String, dynamic>?> profileByDeviceId(String deviceId) async {
+    return await _client
+        .from('profiles')
+        .select()
+        .eq('device_id', deviceId)
+        .maybeSingle();
+  }
+
+  /// Get profile by UUID.
+  Future<Map<String, dynamic>?> profileById(String id) async {
+    return await _client
+        .from('profiles')
+        .select()
+        .eq('id', id)
+        .maybeSingle();
+  }
+
+  // ── Sessions ────────────────────────────────────────────────
+
+  /// Insert a new session at session start.
   Future<void> insertSession({
     required String sessionId,
-    required String studentName,
-    required String topic,
+    required String studentId,
+    required String topicId,
+    required String topicName,
     required String subject,
+    int? totalSections,
+    double? baselineRatio,
   }) async {
     await _client.from('sessions').insert({
-      'session_id': sessionId,
-      'student_name': studentName,
-      'topic': topic,
+      'id': sessionId,
+      'student_id': studentId,
+      'topic_id': topicId,
+      'topic_name': topicName,
       'subject': subject,
-      'started_at': DateTime.now().toUtc().toIso8601String(),
+      'total_sections': totalSections,
+      'baseline_ratio': baselineRatio,
+      'status': 'active',
     });
   }
 
-  Future<void> updateSession({
+  /// Update session with final stats when it ends.
+  Future<void> endSession({
     required String sessionId,
-    double? avgFocusScore,
-    int? interventionCount,
-    int? lessonsCompleted,
-    DateTime? endedAt,
+    required double avgFocusScore,
+    double? minFocusScore,
+    double? maxFocusScore,
+    required int driftCount,
+    required int interventionCount,
+    required int sectionsCompleted,
+    required int durationSec,
   }) async {
-    final updates = <String, dynamic>{};
-    if (avgFocusScore != null) updates['avg_focus_score'] = avgFocusScore;
-    if (interventionCount != null) updates['intervention_count'] = interventionCount;
-    if (lessonsCompleted != null) updates['lessons_completed'] = lessonsCompleted;
-    if (endedAt != null) updates['ended_at'] = endedAt.toUtc().toIso8601String();
-
-    if (updates.isNotEmpty) {
-      await _client.from('sessions').update(updates).eq('session_id', sessionId);
-    }
+    await _client.from('sessions').update({
+      'ended_at': DateTime.now().toUtc().toIso8601String(),
+      'avg_focus_score': avgFocusScore,
+      'min_focus_score': minFocusScore,
+      'max_focus_score': maxFocusScore,
+      'drift_count': driftCount,
+      'intervention_count': interventionCount,
+      'sections_completed': sectionsCompleted,
+      'duration_sec': durationSec,
+      'status': 'completed',
+    }).eq('id', sessionId);
   }
 
-  Future<List<Map<String, dynamic>>> allSessions() async {
+  /// Mark session as abandoned (e.g., app closed mid-session).
+  Future<void> abandonSession(String sessionId) async {
+    await _client.from('sessions').update({
+      'ended_at': DateTime.now().toUtc().toIso8601String(),
+      'status': 'abandoned',
+    }).eq('id', sessionId);
+  }
+
+  /// Get active session by ID (for teacher joining).
+  Future<Map<String, dynamic>?> activeSessionById(String sessionId) async {
+    return await _client
+        .from('sessions')
+        .select('*, profiles!sessions_student_id_fkey(name)')
+        .eq('id', sessionId)
+        .eq('status', 'active')
+        .maybeSingle();
+  }
+
+  /// All sessions for a student, newest first.
+  Future<List<Map<String, dynamic>>> sessionsForStudent(String studentId) async {
     final data = await _client
         .from('sessions')
         .select()
+        .eq('student_id', studentId)
         .order('started_at', ascending: false);
     return List<Map<String, dynamic>>.from(data);
   }
 
-  Future<Map<String, dynamic>?> sessionById(String sessionId) async {
+  // ── Attention Snapshots ─────────────────────────────────────
+
+  /// Batch insert sampled attention snapshots after session ends.
+  Future<void> insertSnapshots(List<Map<String, dynamic>> snapshots) async {
+    if (snapshots.isEmpty) return;
+    await _client.from('attention_snapshots').insert(snapshots);
+  }
+
+  /// Get snapshots for a session (for focus timeline).
+  Future<List<Map<String, dynamic>>> snapshotsForSession(String sessionId) async {
     final data = await _client
-        .from('sessions')
+        .from('attention_snapshots')
         .select()
         .eq('session_id', sessionId)
-        .maybeSingle();
+        .order('recorded_at', ascending: true);
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  // ── Interventions ───────────────────────────────────────────
+
+  /// Insert intervention when triggered.
+  Future<Map<String, dynamic>> insertIntervention({
+    required String sessionId,
+    required String studentId,
+    required String format,
+    required String triggerLevel,
+    int? driftDurationSec,
+    double? focusBefore,
+  }) async {
+    final data = await _client.from('interventions').insert({
+      'session_id': sessionId,
+      'student_id': studentId,
+      'format': format,
+      'trigger_level': triggerLevel,
+      'drift_duration_sec': driftDurationSec,
+      'focus_before': focusBefore,
+    }).select().single();
     return data;
   }
 
-  Stream<List<Map<String, dynamic>>> watchSessions() {
-    return _client
-        .from('sessions')
-        .stream(primaryKey: ['session_id'])
-        .order('started_at', ascending: false);
-  }
-
-  // ── Interventions ─────────────────────────────────────────
-
-  Future<void> insertIntervention({
-    required String sessionId,
-    required int driftDurationSec,
-    required String formatShown,
-  }) async {
-    await _client.from('interventions').insert({
-      'session_id': sessionId,
-      'drift_duration_sec': driftDurationSec,
-      'format_shown': formatShown,
-      'triggered_at': DateTime.now().toUtc().toIso8601String(),
-    });
-  }
-
-  Future<void> updateIntervention({
-    required int id,
+  /// Update intervention with outcome after recovery measurement.
+  Future<void> completeIntervention({
+    required String interventionId,
     required bool recovered,
     required double reward,
+    double? focusAfter,
   }) async {
     await _client.from('interventions').update({
       'recovered': recovered,
       'reward': reward,
-    }).eq('id', id);
+      'focus_after': focusAfter,
+      'completed_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', interventionId);
   }
 
+  /// All interventions for a session.
   Future<List<Map<String, dynamic>>> interventionsForSession(String sessionId) async {
     final data = await _client
         .from('interventions')
@@ -106,6 +197,7 @@ class SupabaseDb {
     return List<Map<String, dynamic>>.from(data);
   }
 
+  /// Watch interventions for a session in realtime (teacher feed).
   Stream<List<Map<String, dynamic>>> watchInterventions(String sessionId) {
     return _client
         .from('interventions')
@@ -114,33 +206,129 @@ class SupabaseDb {
         .order('triggered_at', ascending: true);
   }
 
-  // ── Baselines ─────────────────────────────────────────────
+  // ── Baselines ───────────────────────────────────────────────
 
-  Future<void> upsertBaseline({
-    required String studentName,
-    required double baselineIndex,
-    required double theta,
-    required double alpha,
-    required double beta,
-    required double gamma,
+  /// Insert calibration baseline.
+  Future<void> insertBaseline({
+    required String sessionId,
+    required String studentId,
+    required double baselineRatio,
+    double? delta,
+    double? theta,
+    double? alpha,
+    double? beta,
+    double? gamma,
   }) async {
-    await _client.from('baselines').upsert({
-      'student_name': studentName,
-      'baseline_index': baselineIndex,
+    await _client.from('baselines').insert({
+      'session_id': sessionId,
+      'student_id': studentId,
+      'baseline_ratio': baselineRatio,
+      'delta': delta,
       'theta': theta,
       'alpha': alpha,
       'beta': beta,
       'gamma': gamma,
-      'calibrated_at': DateTime.now().toUtc().toIso8601String(),
     });
   }
 
-  Future<Map<String, dynamic>?> baselineForStudent(String studentName) async {
+  /// Latest baseline for a student.
+  Future<Map<String, dynamic>?> latestBaseline(String studentId) async {
     final data = await _client
         .from('baselines')
         .select()
-        .eq('student_name', studentName)
+        .eq('student_id', studentId)
+        .order('calibrated_at', ascending: false)
+        .limit(1)
         .maybeSingle();
     return data;
+  }
+
+  // ── Teacher Monitors ────────────────────────────────────────
+
+  /// Record that a teacher joined a session.
+  Future<void> joinSession({
+    required String teacherId,
+    required String sessionId,
+    required String studentId,
+  }) async {
+    await _client.from('teacher_monitors').upsert(
+      {
+        'teacher_id': teacherId,
+        'session_id': sessionId,
+        'student_id': studentId,
+      },
+      onConflict: 'teacher_id,session_id',
+    );
+  }
+
+  /// Record that a teacher left a session.
+  Future<void> leaveSession({
+    required String teacherId,
+    required String sessionId,
+  }) async {
+    await _client.from('teacher_monitors').update({
+      'left_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('teacher_id', teacherId).eq('session_id', sessionId);
+  }
+
+  // ── Profile Queries ──────────────────────────────────────────
+
+  /// All student profiles (for teacher dashboard).
+  Future<List<Map<String, dynamic>>> allStudentProfiles() async {
+    final data = await _client
+        .from('profiles')
+        .select()
+        .eq('role', 'student')
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  /// All currently active sessions (for showing LIVE badges).
+  Future<List<Map<String, dynamic>>> allActiveSessions() async {
+    final data = await _client
+        .from('sessions')
+        .select()
+        .eq('status', 'active');
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  // ── Computed Views (read-only) ──────────────────────────────
+
+  /// Student dashboard: per-topic stats.
+  Future<List<Map<String, dynamic>>> studentTopicStats(String studentId) async {
+    final data = await _client
+        .from('student_topic_stats')
+        .select()
+        .eq('student_id', studentId);
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  /// Student summary for header greeting.
+  Future<Map<String, dynamic>?> studentSummary(String studentId) async {
+    return await _client
+        .from('student_summary')
+        .select()
+        .eq('student_id', studentId)
+        .maybeSingle();
+  }
+
+  /// Intervention efficacy — best format per topic.
+  Future<List<Map<String, dynamic>>> interventionEfficacy(String studentId) async {
+    final data = await _client
+        .from('intervention_efficacy')
+        .select()
+        .eq('student_id', studentId)
+        .eq('format_rank', 1);
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  /// Teacher's student overview — all students they've monitored.
+  Future<List<Map<String, dynamic>>> teacherStudentOverview(String teacherId) async {
+    final data = await _client
+        .from('teacher_student_overview')
+        .select()
+        .eq('teacher_id', teacherId)
+        .order('last_monitored_at', ascending: false);
+    return List<Map<String, dynamic>>.from(data);
   }
 }

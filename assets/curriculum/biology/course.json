@@ -1,0 +1,7 @@
+{
+  "id": "biology",
+  "name": "Biology",
+  "icon": "biotech",
+  "topicOrder": ["cell_structure", "cell_division", "dna_replication"],
+  "unlockMode": "sequential"
+}

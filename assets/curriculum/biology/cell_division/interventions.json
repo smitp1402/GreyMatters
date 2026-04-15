@@ -1,0 +1,16 @@
+{
+  "topicId": "cell_division",
+  "flashcards": [
+    {"question": "How many daughter cells does mitosis produce?", "answer": "Two identical cells", "explanation": "Both cells have the same number of chromosomes as the parent."},
+    {"question": "During which phase do chromosomes line up in the middle?", "answer": "Metaphase", "explanation": "The chromosomes align at the metaphase plate."},
+    {"question": "What structure pulls chromosomes apart?", "answer": "Spindle fibers (microtubules)", "explanation": "They attach to centromeres and pull sister chromatids to opposite poles."}
+  ],
+  "gestureQuestions": [
+    {"question": "How many phases does mitosis have?", "answer": 4},
+    {"question": "How many daughter cells does meiosis produce?", "answer": 4}
+  ],
+  "voiceQuestions": [
+    {"question": "What phase comes after metaphase?", "acceptedAnswers": ["anaphase"]},
+    {"question": "What type of cell division produces gametes?", "acceptedAnswers": ["meiosis"]}
+  ]
+}

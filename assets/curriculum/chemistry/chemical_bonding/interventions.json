@@ -1,0 +1,30 @@
+{
+  "topicId": "chemical_bonding",
+  "flashcards": [
+    {"question": "What type of bond forms when electrons are transferred?", "answer": "Ionic bond", "explanation": "One atom loses electrons (becomes cation), another gains (becomes anion)."},
+    {"question": "What type of bond forms between two nonmetals?", "answer": "Covalent bond", "explanation": "Nonmetals share electrons rather than transferring them."},
+    {"question": "Ionic or covalent: NaCl?", "answer": "Ionic", "explanation": "Sodium (metal) transfers an electron to chlorine (nonmetal)."},
+    {"question": "Ionic or covalent: H₂O?", "answer": "Covalent", "explanation": "Hydrogen and oxygen are both nonmetals — they share electrons."},
+    {"question": "How many electron pairs are shared in a triple bond?", "answer": "Three pairs (6 electrons)", "explanation": "Like in N₂ — nitrogen needs 3 more electrons to fill its outer shell."}
+  ],
+  "simulation": {
+    "type": "bond_formation",
+    "instructions": "Drag electrons to form bonds between atoms.",
+    "elements": [
+      {"symbol": "Na", "name": "Sodium", "group": 1, "period": 3},
+      {"symbol": "Cl", "name": "Chlorine", "group": 17, "period": 3},
+      {"symbol": "H", "name": "Hydrogen", "group": 1, "period": 1},
+      {"symbol": "O", "name": "Oxygen", "group": 16, "period": 2}
+    ]
+  },
+  "gestureQuestions": [
+    {"question": "How many valence electrons does Chlorine have?", "answer": 7},
+    {"question": "How many electrons does Sodium lose in an ionic bond?", "answer": 1},
+    {"question": "How many bonds does Carbon typically form?", "answer": 4}
+  ],
+  "voiceQuestions": [
+    {"question": "What type of bond involves electron sharing?", "acceptedAnswers": ["covalent", "covalent bond", "a covalent bond"]},
+    {"question": "What is the shape of a water molecule?", "acceptedAnswers": ["bent", "angular", "v-shaped"]},
+    {"question": "What compound does NaCl represent?", "acceptedAnswers": ["table salt", "salt", "sodium chloride"]}
+  ]
+}

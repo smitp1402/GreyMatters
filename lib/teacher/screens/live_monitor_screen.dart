@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/models/attention_state.dart';
 import '../../core/services/attention_stream.dart';
+import '../../core/services/realtime_broadcast.dart';
 
 /// Teacher live monitor — real-time focus data for a specific student session.
 ///
@@ -22,7 +23,8 @@ class LiveMonitorScreen extends StatefulWidget {
 }
 
 class _LiveMonitorScreenState extends State<LiveMonitorScreen> {
-  StreamSubscription<AttentionState>? _sub;
+  StreamSubscription<AttentionState>? _localSub;
+  StreamSubscription<AttentionState>? _realtimeSub;
   AttentionState? _latest;
   final List<AttentionState> _history = [];
   final List<_InterventionEvent> _interventionEvents = [];
@@ -34,16 +36,24 @@ class _LiveMonitorScreenState extends State<LiveMonitorScreen> {
   @override
   void initState() {
     super.initState();
-    // Subscribe to the filtered stream for this session
-    _sub = AttentionStream.instance
-        .forSession(widget.sessionCode)
-        .listen(_onData);
 
-    // Also listen to unfiltered stream as fallback (demo/mock sessions use "demo" as session ID)
-    _sub = AttentionStream.instance.stream.listen(_onData);
+    // Primary: Supabase Realtime Broadcast (works across any network)
+    _connectRealtime();
 
-    // Detect session end: no data for 10 seconds
+    // Fallback: local WebSocket stream (same machine / same WiFi)
+    _localSub = AttentionStream.instance.stream.listen(_onData);
+
+    // Detect session end: no data for 15 seconds
     _resetNoDataTimer();
+  }
+
+  Future<void> _connectRealtime() async {
+    try {
+      await RealtimeBroadcast.instance.subscribeToSession(widget.sessionCode);
+      _realtimeSub = RealtimeBroadcast.instance.stream.listen(_onData);
+    } catch (_) {
+      // Realtime unavailable — fall back to local stream
+    }
   }
 
   void _onData(AttentionState state) {
@@ -79,7 +89,9 @@ class _LiveMonitorScreenState extends State<LiveMonitorScreen> {
 
   @override
   void dispose() {
-    _sub?.cancel();
+    _localSub?.cancel();
+    _realtimeSub?.cancel();
+    RealtimeBroadcast.instance.unsubscribe();
     _noDataTimer?.cancel();
     super.dispose();
   }

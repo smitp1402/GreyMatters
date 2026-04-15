@@ -1,0 +1,31 @@
+{
+  "topicId": "dna_replication",
+  "flashcards": [
+    {"question": "What enzyme unzips the DNA double helix?", "answer": "Helicase", "explanation": "Helicase breaks hydrogen bonds between base pairs at the replication fork."},
+    {"question": "What are the short fragments on the lagging strand called?", "answer": "Okazaki fragments", "explanation": "Named after Reiji and Tsuneko Okazaki who discovered them in 1968."},
+    {"question": "What does semiconservative mean?", "answer": "Each new DNA has one old strand and one new strand", "explanation": "Proven by the Meselson-Stahl experiment using nitrogen isotopes."},
+    {"question": "What enzyme seals gaps in the DNA backbone?", "answer": "DNA Ligase", "explanation": "It joins Okazaki fragments and seals nicks after primer replacement."},
+    {"question": "What structures protect chromosome ends?", "answer": "Telomeres", "explanation": "They shorten with each division — linked to aging."}
+  ],
+  "simulation": {
+    "type": "replication_steps",
+    "instructions": "Drag each enzyme to the correct step in DNA replication.",
+    "elements": [
+      {"symbol": "He", "name": "Helicase", "group": 1, "period": 1},
+      {"symbol": "Pr", "name": "Primase", "group": 2, "period": 1},
+      {"symbol": "P3", "name": "DNA Pol III", "group": 3, "period": 1},
+      {"symbol": "P1", "name": "DNA Pol I", "group": 4, "period": 1},
+      {"symbol": "Li", "name": "Ligase", "group": 5, "period": 1}
+    ]
+  },
+  "gestureQuestions": [
+    {"question": "How many strands does a DNA molecule have?", "answer": 2},
+    {"question": "Adenine pairs with how many hydrogen bonds to Thymine?", "answer": 2},
+    {"question": "Guanine pairs with how many hydrogen bonds to Cytosine?", "answer": 3}
+  ],
+  "voiceQuestions": [
+    {"question": "What base does Adenine pair with?", "acceptedAnswers": ["thymine", "t"]},
+    {"question": "What enzyme adds new nucleotides during replication?", "acceptedAnswers": ["dna polymerase", "polymerase", "dna polymerase 3", "dna pol 3"]},
+    {"question": "What is the name for errors in DNA that are not repaired?", "acceptedAnswers": ["mutations", "mutation", "a mutation"]}
+  ]
+}

@@ -11,6 +11,7 @@ import 'flashcard_screen.dart';
 import 'simulation_screen.dart';
 import 'gesture_screen.dart';
 import 'voice_challenge_screen.dart';
+import '../activities/activity_registry.dart';
 
 /// Callback when intervention completes (recovered or not).
 typedef InterventionCallback = void Function(bool recovered, String format);
@@ -86,20 +87,37 @@ class InterventionEngine {
   /// Build the widget for a given format.
   static Widget buildFormatScreen({
     required String format,
+    required String subject,
     required String topicId,
+    int sectionIndex = 0,
     required VoidCallback onComplete,
   }) {
+    // Check for topic-specific activity first
+    if (format == 'activity') {
+      final activityId = ActivityRegistry.activityForTopic(subject, topicId);
+      if (activityId != null) {
+        final widget = ActivityRegistry.build(
+          activityId: activityId,
+          subject: subject,
+          topicId: topicId,
+          sectionIndex: sectionIndex,
+          onComplete: onComplete,
+        );
+        if (widget != null) return widget;
+      }
+    }
+
     switch (format) {
       case 'flashcard':
-        return FlashcardScreen(topicId: topicId, onComplete: onComplete);
+        return FlashcardScreen(subject: subject, topicId: topicId, onComplete: onComplete);
       case 'simulation':
-        return SimulationScreen(topicId: topicId, onComplete: onComplete);
+        return SimulationScreen(subject: subject, topicId: topicId, onComplete: onComplete);
       case 'gesture':
-        return GestureScreen(topicId: topicId, onComplete: onComplete);
+        return GestureScreen(subject: subject, topicId: topicId, onComplete: onComplete);
       case 'voice':
-        return VoiceChallengeScreen(topicId: topicId, onComplete: onComplete);
+        return VoiceChallengeScreen(subject: subject, topicId: topicId, onComplete: onComplete);
       default:
-        return FlashcardScreen(topicId: topicId, onComplete: onComplete);
+        return FlashcardScreen(subject: subject, topicId: topicId, onComplete: onComplete);
     }
   }
 }

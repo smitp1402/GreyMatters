@@ -214,7 +214,7 @@ class CrownEngine:
         logger.info(f"Baseline index: {self._baseline_index:.3f}")
         return self._baseline_index
 
-    def compute(self, session_id: str) -> AttentionState:
+    def compute(self, session_id: str) -> Optional[AttentionState]:
         """Compute current AttentionState from live EEG."""
         if self._board is None:
             raise RuntimeError("Crown not connected")
@@ -223,6 +223,10 @@ class CrownEngine:
 
         # Print raw data summary so we can verify Crown is streaming
         n_channels, n_samples = data.shape
+        if n_samples == 0:
+            logger.warning("[RAW] No samples received — Crown not streaming")
+            return None
+
         logger.info(
             f"[RAW] channels={n_channels} samples={n_samples} | "
             f"ch0 range=[{data[0].min():.1f}, {data[0].max():.1f}] | "
@@ -422,6 +426,9 @@ class AttentionServer:
         tick = 0
         while self._running:
             state = self._compute()
+            if state is None:
+                await asyncio.sleep(1.0)
+                continue
             tick += 1
 
             # Print live data to terminal
@@ -448,7 +455,7 @@ class AttentionServer:
 
             await asyncio.sleep(1.0)
 
-    def _compute(self) -> AttentionState:
+    def _compute(self) -> Optional[AttentionState]:
         if self._mock_gen is not None:
             return self._mock_gen.next(self._session_id)
         elif self._crown is not None:

@@ -1,0 +1,17 @@
+{
+  "topicId": "covalent_bonds",
+  "flashcards": [
+    {"question": "What type of bond shares electrons equally?", "answer": "Nonpolar covalent bond", "explanation": "Both atoms have the same electronegativity, like H₂ or Cl₂."},
+    {"question": "What is the bond angle in a tetrahedral molecule?", "answer": "109.5°", "explanation": "Like methane (CH₄) — four electron groups spread maximally apart."},
+    {"question": "What theory predicts molecular shape?", "answer": "VSEPR theory", "explanation": "Valence Shell Electron Pair Repulsion — electron groups repel to maximum distance."}
+  ],
+  "gestureQuestions": [
+    {"question": "How many bonding pairs does water have?", "answer": 2},
+    {"question": "How many lone pairs does water have?", "answer": 2},
+    {"question": "What is the bond angle in a linear molecule?", "answer": 180, "hint": "Think of CO₂"}
+  ],
+  "voiceQuestions": [
+    {"question": "What shape is a water molecule?", "acceptedAnswers": ["bent", "angular", "v-shaped", "v shape"]},
+    {"question": "What shape is methane?", "acceptedAnswers": ["tetrahedral", "tetrahedron"]}
+  ]
+}

@@ -13,10 +13,18 @@ import 'rl_agent.dart';
 ///
 /// Avoids repeating formats already tried in the current cascade.
 class RuleBasedAgent implements RLAgent {
-  static const _allFormats = ['flashcard', 'simulation', 'voice', 'gesture'];
+  static const _allFormats = ['flashcard', 'simulation', 'voice', 'gesture', 'activity'];
 
   @override
   String selectFormat(InterventionState state) {
+    // Topic-specific activity for periodic_table at moderate drift (8-20s)
+    if (state.topicId == 'periodic_table' &&
+        state.driftDurationSec >= 8 &&
+        state.driftDurationSec < 20 &&
+        !state.formatsTried.contains('activity')) {
+      return 'activity';
+    }
+
     // Determine preferred format based on drift severity
     final String preferred;
 

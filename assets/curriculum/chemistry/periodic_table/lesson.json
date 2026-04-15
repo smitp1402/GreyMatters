@@ -1,7 +1,7 @@
 {
   "id": "periodic_table",
   "name": "The Periodic Table",
-  "subject": "Chemistry",
+  "subject": "chemistry",
   "grade": "Grade 11-12",
   "estimatedMinutes": 10,
   "sections": [
@@ -17,6 +17,7 @@
       ],
       "keyTerms": ["atomic number", "electron configuration", "valence electrons", "groups", "periods", "Mendeleev"],
       "diagram": {
+        "type": "periodic_table",
         "title": "Structure of the Periodic Table",
         "description": "Simplified periodic table grid showing groups (columns), periods (rows), and the d-block transition metals gap. Arrows indicate: atomic number increases left to right, each row adds an electron shell.",
         "interactiveHint": "Tap any region to see details"
@@ -46,18 +47,9 @@
         "onWrong": "Not quite — atomic number = number of protons, and each element has exactly one more proton than the last. Try again."
       },
       "interventionMap": {
-        "mild": {
-          "format": "flashcard",
-          "description": "5 cards covering groups, periods, atomic number."
-        },
-        "moderate": {
-          "format": "simulation",
-          "description": "Drag elements into correct period bucket. Elements: H, Li, Na, K, Rb."
-        },
-        "severe": {
-          "format": "voice",
-          "description": "App speaks: 'Say the atomic number of Hydrogen.' Then: 'Say the atomic number of Carbon.'"
-        }
+        "mild": { "format": "flashcard", "description": "5 cards covering groups, periods, atomic number." },
+        "moderate": { "format": "simulation", "description": "Drag elements into correct period bucket. Elements: H, Li, Na, K, Rb." },
+        "severe": { "format": "voice", "description": "App speaks: 'Say the atomic number of Hydrogen.' Then: 'Say the atomic number of Carbon.'" }
       },
       "recapOnReturn": "You were learning: the periodic table has 18 groups and 7 periods, arranged by increasing atomic number."
     },
@@ -74,6 +66,7 @@
       ],
       "keyTerms": ["alkali metals", "noble gases", "halogens", "transition metals", "valence electron", "reactivity"],
       "diagram": {
+        "type": "periodic_table",
         "title": "Element Families — Colour-Coded Periodic Table",
         "description": "Full periodic table with each family highlighted: Group 1 (Red - Alkali metals), Group 2 (Orange - Alkaline earth), Groups 3-12 (Blue - Transition metals), Group 17 (Pink - Halogens), Group 18 (Teal - Noble gases).",
         "interactiveHint": "Tap any coloured region to see: family name, group number, valence electrons, reactivity, 3 examples"
@@ -111,18 +104,9 @@
         "onWrong": "Not quite — think about what makes an element reactive. It is about electrons, not size or state of matter."
       },
       "interventionMap": {
-        "mild": {
-          "format": "flashcard",
-          "description": "5 cards on element families. Covers all major families."
-        },
-        "moderate": {
-          "format": "simulation",
-          "description": "Tap Period 2 elements in atomic number order: Li Be B C N O F Ne."
-        },
-        "severe": {
-          "format": "voice",
-          "description": "Sodium in water video (1 min). Then voice: 'What products form when sodium reacts with water?'"
-        }
+        "mild": { "format": "flashcard", "description": "5 cards on element families. Covers all major families." },
+        "moderate": { "format": "simulation", "description": "Tap Period 2 elements in atomic number order: Li Be B C N O F Ne." },
+        "severe": { "format": "voice", "description": "Sodium in water video (1 min). Then voice: 'What products form when sodium reacts with water?'" }
       },
       "recapOnReturn": "You were learning: noble gases are unreactive because their outer electron shells are completely full."
     },
@@ -139,6 +123,7 @@
       ],
       "keyTerms": ["atomic radius", "ionisation energy", "electronegativity", "nuclear charge", "shielding", "periodic trends"],
       "diagram": {
+        "type": "periodic_table",
         "title": "How Trends Move Across the Table",
         "description": "Periodic table outline with four trend arrows: Atomic radius decreases right (red), increases down (red). Ionisation energy increases right (teal), decreases down (teal). Plus atomic radius comparison: Li(152pm) → Na(186pm) → K(227pm) → Rb(248pm) → Cs(265pm).",
         "interactiveHint": "Tap any arrow for a detailed explanation"
@@ -168,18 +153,9 @@
         "onWrong": "Not quite — same period means same number of electron shells. The difference is nuclear charge. More protons pulls electrons closer."
       },
       "interventionMap": {
-        "mild": {
-          "format": "flashcard",
-          "description": "5 cards on trend directions across all four major trends."
-        },
-        "moderate": {
-          "format": "simulation",
-          "description": "Blank periodic table — drag four arrows to show correct direction of trends."
-        },
-        "severe": {
-          "format": "gesture",
-          "description": "Draw and label trend arrows from memory on blank periodic table."
-        }
+        "mild": { "format": "flashcard", "description": "5 cards on trend directions across all four major trends." },
+        "moderate": { "format": "simulation", "description": "Blank periodic table — drag four arrows to show correct direction of trends." },
+        "severe": { "format": "gesture", "description": "Draw and label trend arrows from memory on blank periodic table." }
       },
       "recapOnReturn": "You were learning: atomic radius decreases left to right — nuclear charge pulls the electron cloud inward."
     },
@@ -196,6 +172,7 @@
       ],
       "keyTerms": ["atomic number", "atomic mass", "element symbol", "electron configuration", "isotopes", "neutrons"],
       "diagram": {
+        "type": "element_tile",
         "title": "Reading an Element Tile (Carbon)",
         "description": "Large element tile for Carbon with labelled arrows: 6 → Atomic number (protons), C → Symbol, Carbon → Name, 12.011 → Atomic mass (weighted average). Plus Sodium electron shell diagram: three concentric circles with 2, 8, 1 electrons.",
         "interactiveHint": "Tap blurred tiles to fill in missing information"
@@ -225,18 +202,9 @@
         "onWrong": "Not quite — count the shells first (period number = number of shells), then fill them in order: 2 then 8 then the remainder."
       },
       "interventionMap": {
-        "mild": {
-          "format": "flashcard",
-          "description": "5 cards on reading element tiles — atomic number, mass, symbol, configuration."
-        },
-        "moderate": {
-          "format": "simulation",
-          "description": "Blank element tile with four slots. Drag correct info into each slot for Carbon, Oxygen, Sodium."
-        },
-        "severe": {
-          "format": "voice",
-          "description": "App speaks: 'Oxygen has atomic number 8. How many electrons does a neutral oxygen atom have?' Then: 'Sodium is in Period 3, Group 1. Say its electron configuration.'"
-        }
+        "mild": { "format": "flashcard", "description": "5 cards on reading element tiles — atomic number, mass, symbol, configuration." },
+        "moderate": { "format": "simulation", "description": "Blank element tile with four slots. Drag correct info into each slot for Carbon, Oxygen, Sodium." },
+        "severe": { "format": "voice", "description": "App speaks: 'Oxygen has atomic number 8. How many electrons does a neutral oxygen atom have?' Then: 'Sodium is in Period 3, Group 1. Say its electron configuration.'" }
       },
       "recapOnReturn": "You were learning: atomic number = protons = electrons in a neutral atom. Always a whole number. Never the same as atomic mass."
     }

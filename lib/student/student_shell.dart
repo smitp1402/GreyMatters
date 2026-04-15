@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/services/attention_stream_provider.dart';
+import '../core/services/profile_manager.dart';
 import '../core/services/websocket_client.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
@@ -24,6 +25,83 @@ class StudentShell extends ConsumerStatefulWidget {
 
 class _StudentShellState extends ConsumerState<StudentShell> {
   int _selectedIndex = 0;
+
+  void _logout() {
+    ProfileManager.instance.clear();
+    context.go('/login');
+  }
+
+  void _showSettings() {
+    final code = ProfileManager.instance.lastSessionCode;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.surfaceContainerHigh,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusLg)),
+        title: const Text('Settings',
+            style: TextStyle(fontFamily: 'Segoe UI', fontWeight: FontWeight.w700,
+                fontSize: 18, color: AppColors.onSurface)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Session code
+            Text('SESSION CODE',
+                style: TextStyle(fontFamily: 'Consolas', fontSize: 10,
+                    fontWeight: FontWeight.w700, letterSpacing: 2.0,
+                    color: AppColors.outline.withValues(alpha: 0.6))),
+            const SizedBox(height: 8),
+            if (code != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  children: [
+                    Text(code,
+                        style: const TextStyle(fontFamily: 'Consolas', fontSize: 28,
+                            fontWeight: FontWeight.w700, letterSpacing: 6.0,
+                            color: AppColors.primary)),
+                    const SizedBox(height: 4),
+                    Text('Share this code with your teacher to connect',
+                        style: TextStyle(fontFamily: 'Georgia', fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                            color: AppColors.onSurfaceVariant.withValues(alpha: 0.6))),
+                  ],
+                ),
+              )
+            else
+              Text('No active session. Start a session to generate a code.',
+                  style: TextStyle(fontFamily: 'Georgia', fontSize: 13,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.onSurfaceVariant.withValues(alpha: 0.6))),
+
+            const SizedBox(height: 20),
+
+            // Profile info
+            Text('PROFILE',
+                style: TextStyle(fontFamily: 'Consolas', fontSize: 10,
+                    fontWeight: FontWeight.w700, letterSpacing: 2.0,
+                    color: AppColors.outline.withValues(alpha: 0.6))),
+            const SizedBox(height: 8),
+            Text(ProfileManager.instance.name ?? 'Unknown',
+                style: const TextStyle(fontFamily: 'Segoe UI', fontSize: 14,
+                    color: AppColors.onSurface)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CLOSE'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,10 +163,11 @@ class _StudentShellState extends ConsumerState<StudentShell> {
           // Headset connection status
           _buildHeadsetStatus(ref),
           const SizedBox(width: 16),
-          // Profile icon
+          // Profile / logout
           IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.account_circle, color: AppColors.primary, size: 28),
+            onPressed: _logout,
+            tooltip: 'Logout',
+            icon: const Icon(Icons.logout, color: AppColors.outline, size: 22),
           ),
         ],
       ),
@@ -270,7 +349,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
           const SizedBox(height: 24),
 
           // Settings / Support
-          _sidebarSmallItem(Icons.settings, 'Settings'),
+          _sidebarSmallItem(Icons.settings, 'Settings', onTap: _showSettings),
           _sidebarSmallItem(Icons.help_outline, 'Support'),
 
           const SizedBox(height: 24),
@@ -316,14 +395,14 @@ class _StudentShellState extends ConsumerState<StudentShell> {
     );
   }
 
-  Widget _sidebarSmallItem(IconData icon, String label) {
+  Widget _sidebarSmallItem(IconData icon, String label, {VoidCallback? onTap}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
         child: InkWell(
-          onTap: () {},
+          onTap: onTap ?? () {},
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

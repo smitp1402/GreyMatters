@@ -1,9 +1,12 @@
 // lib/core/models/topic.dart
 
-/// Curriculum data model — represents a single topic with all its content
-/// and intervention materials. Loaded from JSON files in assets/curriculum/.
-///
-/// Each section follows: text → diagram → video → callout → checkpoint → intervention map.
+// Curriculum data models — split into Lesson (content) and InterventionPack
+// (interactive challenges). Loaded from JSON files in assets/curriculum/.
+//
+// Structure: assets/curriculum/{subject}/{topicId}/lesson.json
+//            assets/curriculum/{subject}/{topicId}/interventions.json
+
+// ── Lesson (content only) ───────────────────────────────────────────────
 
 class Topic {
   final String id;
@@ -22,17 +25,7 @@ class Topic {
     this.grade,
     required this.sections,
     this.curiosityBomb,
-    this.flashcards = const [],
-    this.simulation,
-    this.gestureQuestions = const [],
-    this.voiceQuestions = const [],
   });
-
-  // Legacy fields for intervention screens (old-format JSONs)
-  final List<Flashcard> flashcards;
-  final SimulationConfig? simulation;
-  final List<GestureQuestion> gestureQuestions;
-  final List<VoiceQuestion> voiceQuestions;
 
   factory Topic.fromJson(Map<String, dynamic> j) => Topic(
         id: j['id'] as String,
@@ -44,15 +37,40 @@ class Topic {
             .map((s) => Section.fromJson(s as Map<String, dynamic>))
             .toList(),
         curiosityBomb: j['curiosityBomb'] as String?,
+      );
+}
+
+// ── InterventionPack (challenges loaded separately) ─────────────────────
+
+class InterventionPack {
+  final String topicId;
+  final List<Flashcard> flashcards;
+  final SimulationConfig? simulation;
+  final List<GestureQuestion> gestureQuestions;
+  final List<VoiceQuestion> voiceQuestions;
+
+  const InterventionPack({
+    required this.topicId,
+    this.flashcards = const [],
+    this.simulation,
+    this.gestureQuestions = const [],
+    this.voiceQuestions = const [],
+  });
+
+  factory InterventionPack.fromJson(Map<String, dynamic> j) =>
+      InterventionPack(
+        topicId: j['topicId'] as String,
         flashcards: (j['flashcards'] as List?)
                 ?.map((f) => Flashcard.fromJson(f as Map<String, dynamic>))
                 .toList() ??
             [],
         simulation: j['simulation'] != null
-            ? SimulationConfig.fromJson(j['simulation'] as Map<String, dynamic>)
+            ? SimulationConfig.fromJson(
+                j['simulation'] as Map<String, dynamic>)
             : null,
         gestureQuestions: (j['gestureQuestions'] as List?)
-                ?.map((g) => GestureQuestion.fromJson(g as Map<String, dynamic>))
+                ?.map(
+                    (g) => GestureQuestion.fromJson(g as Map<String, dynamic>))
                 .toList() ??
             [],
         voiceQuestions: (j['voiceQuestions'] as List?)
@@ -61,6 +79,72 @@ class Topic {
             [],
       );
 }
+
+// ── CurriculumIndex (master catalog) ────────────────────────────────────
+
+class CurriculumIndex {
+  final List<SubjectEntry> subjects;
+
+  const CurriculumIndex({required this.subjects});
+
+  factory CurriculumIndex.fromJson(Map<String, dynamic> j) => CurriculumIndex(
+        subjects: (j['subjects'] as List)
+            .map((s) => SubjectEntry.fromJson(s as Map<String, dynamic>))
+            .toList(),
+      );
+}
+
+class SubjectEntry {
+  final String id;
+  final String name;
+  final String icon;
+  final String? color;
+  final List<TopicEntry> topics;
+
+  const SubjectEntry({
+    required this.id,
+    required this.name,
+    required this.icon,
+    this.color,
+    required this.topics,
+  });
+
+  factory SubjectEntry.fromJson(Map<String, dynamic> j) => SubjectEntry(
+        id: j['id'] as String,
+        name: j['name'] as String,
+        icon: j['icon'] as String,
+        color: j['color'] as String?,
+        topics: (j['topics'] as List)
+            .map((t) => TopicEntry.fromJson(t as Map<String, dynamic>))
+            .toList(),
+      );
+}
+
+class TopicEntry {
+  final String id;
+  final String name;
+  final String? grade;
+  final int estimatedMinutes;
+  final List<String> prereqs;
+
+  const TopicEntry({
+    required this.id,
+    required this.name,
+    this.grade,
+    required this.estimatedMinutes,
+    this.prereqs = const [],
+  });
+
+  factory TopicEntry.fromJson(Map<String, dynamic> j) => TopicEntry(
+        id: j['id'] as String,
+        name: j['name'] as String,
+        grade: j['grade'] as String?,
+        estimatedMinutes: j['estimatedMinutes'] as int,
+        prereqs: (j['prereqs'] as List?)?.cast<String>() ?? [],
+      );
+}
+
+// ── Section ─────────────────────────────────────────────────────────────
 
 class Section {
   final String id;
@@ -124,25 +208,31 @@ class Section {
           ? Checkpoint.fromJson(j['checkpoint'] as Map<String, dynamic>)
           : null,
       interventionMap: j['interventionMap'] != null
-          ? InterventionMap.fromJson(j['interventionMap'] as Map<String, dynamic>)
+          ? InterventionMap.fromJson(
+              j['interventionMap'] as Map<String, dynamic>)
           : null,
       recapOnReturn: j['recapOnReturn'] as String?,
     );
   }
 }
 
+// ── Content block types ─────────────────────────────────────────────────
+
 class DiagramSpec {
+  final String type;
   final String title;
   final String description;
   final String? interactiveHint;
 
   const DiagramSpec({
+    this.type = 'generic',
     required this.title,
     required this.description,
     this.interactiveHint,
   });
 
   factory DiagramSpec.fromJson(Map<String, dynamic> j) => DiagramSpec(
+        type: j['type'] as String? ?? 'generic',
         title: j['title'] as String,
         description: j['description'] as String,
         interactiveHint: j['interactiveHint'] as String?,
@@ -177,7 +267,7 @@ class VideoEmbed {
 }
 
 class CalloutBox {
-  final String type; // "did_you_know", "real_world", "remember", "common_mistake"
+  final String type;
   final String content;
 
   const CalloutBox({required this.type, required this.content});
@@ -225,8 +315,10 @@ class InterventionMap {
 
   factory InterventionMap.fromJson(Map<String, dynamic> j) => InterventionMap(
         mild: InterventionLevel.fromJson(j['mild'] as Map<String, dynamic>),
-        moderate: InterventionLevel.fromJson(j['moderate'] as Map<String, dynamic>),
-        severe: InterventionLevel.fromJson(j['severe'] as Map<String, dynamic>),
+        moderate:
+            InterventionLevel.fromJson(j['moderate'] as Map<String, dynamic>),
+        severe:
+            InterventionLevel.fromJson(j['severe'] as Map<String, dynamic>),
       );
 }
 
@@ -243,14 +335,15 @@ class InterventionLevel {
       );
 }
 
-// Legacy models kept for backward compatibility with other topic JSONs
+// ── Intervention data models ────────────────────────────────────────────
 
 class Flashcard {
   final String question;
   final String answer;
   final String? explanation;
 
-  const Flashcard({required this.question, required this.answer, this.explanation});
+  const Flashcard(
+      {required this.question, required this.answer, this.explanation});
 
   factory Flashcard.fromJson(Map<String, dynamic> j) => Flashcard(
         question: j['question'] as String,
@@ -264,9 +357,13 @@ class SimulationConfig {
   final String instructions;
   final List<SimElement> elements;
 
-  const SimulationConfig({required this.type, required this.instructions, required this.elements});
+  const SimulationConfig(
+      {required this.type,
+      required this.instructions,
+      required this.elements});
 
-  factory SimulationConfig.fromJson(Map<String, dynamic> j) => SimulationConfig(
+  factory SimulationConfig.fromJson(Map<String, dynamic> j) =>
+      SimulationConfig(
         type: j['type'] as String,
         instructions: j['instructions'] as String,
         elements: (j['elements'] as List)
@@ -281,7 +378,11 @@ class SimElement {
   final int group;
   final int period;
 
-  const SimElement({required this.symbol, required this.name, required this.group, required this.period});
+  const SimElement(
+      {required this.symbol,
+      required this.name,
+      required this.group,
+      required this.period});
 
   factory SimElement.fromJson(Map<String, dynamic> j) => SimElement(
         symbol: j['symbol'] as String,
@@ -296,7 +397,8 @@ class GestureQuestion {
   final int answer;
   final String? hint;
 
-  const GestureQuestion({required this.question, required this.answer, this.hint});
+  const GestureQuestion(
+      {required this.question, required this.answer, this.hint});
 
   factory GestureQuestion.fromJson(Map<String, dynamic> j) => GestureQuestion(
         question: j['question'] as String,
@@ -309,7 +411,8 @@ class VoiceQuestion {
   final String question;
   final List<String> acceptedAnswers;
 
-  const VoiceQuestion({required this.question, required this.acceptedAnswers});
+  const VoiceQuestion(
+      {required this.question, required this.acceptedAnswers});
 
   factory VoiceQuestion.fromJson(Map<String, dynamic> j) => VoiceQuestion(
         question: j['question'] as String,

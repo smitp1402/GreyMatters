@@ -527,9 +527,9 @@ class _CalibrationScreenState extends State<CalibrationScreen>
               const SizedBox(height: 16),
 
               TextButton(
-                onPressed: () => context.go('/student/debug-stream'),
+                onPressed: () => context.go('/student/session-ready'),
                 child: const Text(
-                  '← BACK TO STREAM',
+                  'SKIP CALIBRATION (DEV)',
                   style: TextStyle(
                     fontFamily: 'Segoe UI',
                     fontSize: 12,
