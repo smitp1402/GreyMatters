@@ -112,24 +112,27 @@ class _RolePickerScreenState extends State<RolePickerScreen>
 
           // Main content
           Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 480),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Brand header
-                    _buildBrandHeader(context),
-                    const SizedBox(height: 40),
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 480),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Brand header
+                      _buildBrandHeader(context),
+                      const SizedBox(height: 40),
 
-                    // Glass login card
-                    _buildLoginCard(context),
-                    const SizedBox(height: 48),
+                      // Glass login card
+                      _buildLoginCard(context),
+                      const SizedBox(height: 48),
 
-                    // Compliance branding
-                    _buildComplianceBranding(context),
-                  ],
+                      // Compliance branding
+                      _buildComplianceBranding(context),
+                    ],
+                  ),
                 ),
               ),
             ),

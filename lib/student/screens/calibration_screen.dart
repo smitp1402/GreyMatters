@@ -363,14 +363,16 @@ class _CalibrationScreenState extends State<CalibrationScreen>
 
   Widget _buildPreparationView() {
     return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Brain icon
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(32),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Brain icon
               Container(
                 width: 80,
                 height: 80,
@@ -542,6 +544,7 @@ class _CalibrationScreenState extends State<CalibrationScreen>
             ],
           ),
         ),
+      ),
       ),
     );
   }
