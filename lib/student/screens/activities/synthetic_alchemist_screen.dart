@@ -73,7 +73,7 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
 
     _fallController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 4000),
     );
     _fallController.addStatusListener(_onFallComplete);
     _fallController.forward();
@@ -106,8 +106,7 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
   void _onTap() {
     if (_tapped || _missed || _gameOver) return;
 
-    // Check if element is in the interaction zone (bottom 25%)
-    if (_fallController.value < 0.75) return;
+    // Element is clickable anywhere during its fall
 
     // Correct tap
     setState(() => _tapped = true);

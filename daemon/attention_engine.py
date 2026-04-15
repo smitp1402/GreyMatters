@@ -43,15 +43,36 @@ SAMPLING_RATE = 256  # Crown Hz
 WINDOW_SAMPLES = SAMPLING_RATE * 4  # 4-second rolling window
 
 BANDS = {
+    "delta": (2, 4),
     "theta": (4, 8),
     "alpha": (8, 13),
     "beta": (13, 30),
     "gamma": (30, 45),
 }
 
-FOCUSED_THRESHOLD = 1.5
-LOST_THRESHOLD = 2.2
+# ── Formula V1 (active): (theta + alpha) / beta ──────────────────────
+# Thresholds are now set per-student during calibration (mean + N×std).
+# These are fallback defaults only used if calibration fails.
+FOCUSED_THRESHOLD_DEFAULT = 1.5
+LOST_THRESHOLD_DEFAULT    = 2.2
+# How many std deviations from baseline mean to set thresholds:
+FOCUSED_STD_MULT = 2     # mean + 2×std → drifting starts
+LOST_STD_MULT    = 4     # mean + 4×std → lost starts
 HYSTERESIS_WINDOWS = 2
+
+# ── Formula V2 (inactive): composite engagement score ─────────────────
+# beta/theta   — primary: active thinking vs mind-wandering (eyes-open safe)
+# gamma boost  — reward for active problem-solving bursts
+# alpha penalty — only extreme alpha (eyes-closed drowsiness),
+#                 NOT moderate alpha which is normal during relaxed reading
+# W_BETA_THETA = 0.55       # main driver
+# W_GAMMA      = 0.25       # cognitive effort bonus
+# W_ALPHA_PEN  = 0.20       # eyes-closed penalty (only when alpha dominates)
+# ALPHA_PENALTY_ONSET = 0.35 # alpha proportion above which penalty kicks in
+#
+# FOCUSED_THRESHOLD_V2 = 0.45   # engagement score above this = focused
+# DRIFTING_THRESHOLD_V2 = 0.30  # below this = lost, between = drifting
+# HYSTERESIS_WINDOWS_V2 = 3
 
 
 # ── Data Models ──────────────────────────────────────────────────────────
@@ -66,6 +87,7 @@ class AttentionLevel(str, Enum):
 class AttentionState:
     session_id: str
     focus_score: float
+    delta: float
     theta: float
     alpha: float
     beta: float
@@ -125,19 +147,23 @@ class MockGenerator:
         # Add natural noise
         focus = float(np.clip(base_focus + self._rng.normal(0, 0.03), 0.0, 1.0))
 
-        # Band powers correlated with focus
+        # Band powers correlated with engagement (not just eye state)
+        delta = float(np.clip(0.15 + (1 - focus) * 0.2 + self._rng.normal(0, 0.02), 0.05, 1.0))
         theta = float(np.clip(0.3 + (1 - focus) * 0.4 + self._rng.normal(0, 0.03), 0.05, 1.0))
         alpha = float(np.clip(0.25 + (1 - focus) * 0.3 + self._rng.normal(0, 0.03), 0.05, 1.0))
         beta = float(np.clip(0.35 + focus * 0.35 + self._rng.normal(0, 0.03), 0.05, 1.0))
         gamma = float(np.clip(0.1 + focus * 0.2 + self._rng.normal(0, 0.02), 0.02, 1.0))
 
         # Normalize to sum to 1
-        total = theta + alpha + beta + gamma
-        theta, alpha, beta, gamma = theta / total, alpha / total, beta / total, gamma / total
+        total = delta + theta + alpha + beta + gamma
+        delta, theta, alpha, beta, gamma = (
+            delta / total, theta / total, alpha / total, beta / total, gamma / total
+        )
 
         return AttentionState(
             session_id=session_id,
             focus_score=round(focus, 3),
+            delta=round(delta, 4),
             theta=round(theta, 4),
             alpha=round(alpha, 4),
             beta=round(beta, 4),
@@ -155,7 +181,11 @@ class CrownEngine:
     def __init__(self) -> None:
         self._board: Optional[object] = None
         self._baseline_index: float = 1.0
+        self._baseline_bt: float = 1.0  # baseline beta/theta ratio
         self._recent_indices: list[float] = []
+        # Per-student thresholds — set during calibration
+        self._focused_threshold: float = FOCUSED_THRESHOLD_DEFAULT
+        self._lost_threshold: float = LOST_THRESHOLD_DEFAULT
 
     def connect(self) -> None:
         try:
@@ -179,39 +209,62 @@ class CrownEngine:
             raise
 
     def calibrate(self, duration_sec: int = 30) -> float:
-        """Run calibration and return baseline index."""
+        """Run calibration: compute baseline mean AND std, set per-student thresholds."""
         if self._board is None:
             raise RuntimeError("Crown not connected")
 
         logger.info(f"Calibrating for {duration_sec}s...")
 
-        # Print raw samples every 5s during calibration so we can see data flowing
+        # Collect per-second index samples during calibration
+        cal_indices: list[float] = []
+
         for elapsed in range(duration_sec):
             time.sleep(1)
+            # Grab last 1 second of data
+            chunk = self._board.get_current_board_data(SAMPLING_RATE)
+            if chunk.shape[1] >= SAMPLING_RATE // 2:
+                bp = self._compute_band_powers(chunk[[4, 5], :])
+                idx = (bp["theta"] + bp["alpha"]) / max(bp["beta"], 0.001)
+                cal_indices.append(idx)
+
             if elapsed % 5 == 4:
-                peek = self._board.get_current_board_data(SAMPLING_RATE)
-                n_ch, n_samp = peek.shape
+                n_ch, n_samp = chunk.shape
                 logger.info(
                     f"[CAL {elapsed+1}s] channels={n_ch} samples={n_samp} | "
-                    f"F5 last5=[{', '.join(f'{v:.1f}' for v in peek[4, -5:])}] | "
-                    f"F6 last5=[{', '.join(f'{v:.1f}' for v in peek[5, -5:])}]"
+                    f"indices so far: {len(cal_indices)} | "
+                    f"F5 last5=[{', '.join(f'{v:.1f}' for v in chunk[4, -5:])}] | "
+                    f"F6 last5=[{', '.join(f'{v:.1f}' for v in chunk[5, -5:])}]"
                 )
 
-        data = self._board.get_board_data()
-        logger.info(f"[CAL DONE] total samples collected: {data.shape[1]}")
-
-        if data.shape[1] < SAMPLING_RATE:
-            logger.warning("Not enough calibration data, using default baseline")
+        if len(cal_indices) < 5:
+            logger.warning("Not enough calibration samples, using default thresholds")
             return 1.0
 
-        # Compute baseline from frontal channels
-        band_powers = self._compute_band_powers(data[[4, 5], :])
+        # Compute mean and std of attention index during focused calibration
+        cal_mean = float(np.mean(cal_indices))
+        cal_std = float(np.std(cal_indices))
+
+        # Set per-student thresholds based on their natural variability
+        self._baseline_index = cal_mean
+        self._focused_threshold = cal_mean + FOCUSED_STD_MULT * cal_std
+        self._lost_threshold = cal_mean + LOST_STD_MULT * cal_std
+
+        # Also compute beta/theta baseline for V2 formula (kept for reference)
+        data = self._board.get_board_data()
+        if data.shape[1] >= SAMPLING_RATE:
+            bp = self._compute_band_powers(data[[4, 5], :])
+            self._baseline_bt = bp["beta"] / max(bp["theta"], 0.001)
+
         logger.info(
-            f"[CAL BANDS] θ={band_powers['theta']:.4f} α={band_powers['alpha']:.4f} "
-            f"β={band_powers['beta']:.4f} γ={band_powers['gamma']:.4f}"
+            f"[CAL DONE] samples={len(cal_indices)} "
+            f"mean={cal_mean:.3f} std={cal_std:.3f}"
         )
-        self._baseline_index = (band_powers["theta"] + band_powers["alpha"]) / max(band_powers["beta"], 0.001)
-        logger.info(f"Baseline index: {self._baseline_index:.3f}")
+        logger.info(
+            f"[CAL THRESHOLDS] focused ≤ {self._focused_threshold:.3f} "
+            f"(mean+{FOCUSED_STD_MULT}×std) | "
+            f"lost > {self._lost_threshold:.3f} "
+            f"(mean+{LOST_STD_MULT}×std)"
+        )
         return self._baseline_index
 
     def compute(self, session_id: str) -> Optional[AttentionState]:
@@ -247,26 +300,43 @@ class CrownEngine:
         frontal = data[[4, 5], :]
         bp = self._compute_band_powers(frontal)
         logger.info(
-            f"[BAND] raw powers: θ={bp['theta']:.4f} α={bp['alpha']:.4f} "
-            f"β={bp['beta']:.4f} γ={bp['gamma']:.4f}"
+            f"[BAND] raw: δ={bp['delta']:.4f} θ={bp['theta']:.4f} "
+            f"α={bp['alpha']:.4f} β={bp['beta']:.4f} γ={bp['gamma']:.4f}"
         )
 
-        # Normalize
+        # Normalize band powers to proportions (sum to 1)
         total = sum(bp.values())
-        norm = {k: v / total for k, v in bp.items()}
+        norm = {k: v / total for k, v in bp.items()} if total > 0 else bp
 
-        # Attention index
+        # ── V1 (active): (theta + alpha) / beta ──────────────
+        # Thresholds are on raw index scale (set during calibration as mean + N×std)
         attn_index = (bp["theta"] + bp["alpha"]) / max(bp["beta"], 0.001)
-        normalized = attn_index / self._baseline_index
+        level = self._classify(attn_index)
+        # Focus score: 1.0 at baseline mean, 0.0 at lost threshold
+        focus_range = max(self._lost_threshold - self._baseline_index, 0.001)
+        focus = float(np.clip(1.0 - (attn_index - self._baseline_index) / focus_range, 0.0, 1.0))
 
-        # Classify with hysteresis
-        level = self._classify(normalized)
+        logger.info(
+            f"[ATTN] index={attn_index:.3f} thresholds=[{self._focused_threshold:.3f},{self._lost_threshold:.3f}] "
+            f"→ focus={focus:.3f} level={level.value}"
+        )
 
-        focus = float(np.clip(1.0 - (normalized - 1.0) * 0.5, 0.0, 1.0))
+        # ── V2 (inactive): composite engagement score ──────────
+        # bt_ratio = bp["beta"] / max(bp["theta"], 0.001)
+        # bt_baseline = self._baseline_bt if hasattr(self, '_baseline_bt') else 1.0
+        # bt_norm = min(bt_ratio / max(bt_baseline, 0.001), 2.0) / 2.0
+        # gamma_norm = min(norm["gamma"] / 0.15, 1.0)
+        # alpha_excess = max(norm["alpha"] - ALPHA_PENALTY_ONSET, 0.0) / (1.0 - ALPHA_PENALTY_ONSET)
+        # alpha_pen = alpha_excess
+        # engagement = W_BETA_THETA * bt_norm + W_GAMMA * gamma_norm - W_ALPHA_PEN * alpha_pen
+        # engagement = float(np.clip(engagement, 0.0, 1.0))
+        # level = self._classify_v2(engagement)
+        # focus = engagement
 
         return AttentionState(
             session_id=session_id,
             focus_score=round(focus, 3),
+            delta=round(norm.get("delta", 0), 4),
             theta=round(norm["theta"], 4),
             alpha=round(norm["alpha"], 4),
             beta=round(norm["beta"], 4),
@@ -292,20 +362,33 @@ class CrownEngine:
             powers[band] = float(np.mean(ch_powers))
         return powers
 
-    def _classify(self, normalized_index: float) -> AttentionLevel:
-        self._recent_indices.append(normalized_index)
+    # ── V1 classifier (active): per-student thresholds from calibration ──
+    def _classify(self, raw_index: float) -> AttentionLevel:
+        self._recent_indices.append(raw_index)
         if len(self._recent_indices) > HYSTERESIS_WINDOWS:
             self._recent_indices.pop(0)
-
         if len(self._recent_indices) < HYSTERESIS_WINDOWS:
             return AttentionLevel.focused
-
         avg = sum(self._recent_indices) / len(self._recent_indices)
-        if avg <= FOCUSED_THRESHOLD:
+        if avg <= self._focused_threshold:
             return AttentionLevel.focused
-        elif avg <= LOST_THRESHOLD:
+        elif avg <= self._lost_threshold:
             return AttentionLevel.drifting
         return AttentionLevel.lost
+
+    # ── V2 classifier (inactive): higher engagement = more focused ──
+    # def _classify_v2(self, engagement_score: float) -> AttentionLevel:
+    #     self._recent_indices.append(engagement_score)
+    #     if len(self._recent_indices) > 3:
+    #         self._recent_indices.pop(0)
+    #     if len(self._recent_indices) < 3:
+    #         return AttentionLevel.focused
+    #     avg = sum(self._recent_indices) / len(self._recent_indices)
+    #     if avg >= 0.45:
+    #         return AttentionLevel.focused
+    #     elif avg >= 0.30:
+    #         return AttentionLevel.drifting
+    #     return AttentionLevel.lost
 
     def disconnect(self) -> None:
         if self._board is not None:

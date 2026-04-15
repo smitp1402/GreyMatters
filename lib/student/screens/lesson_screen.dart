@@ -52,9 +52,14 @@ class _LessonScreenState extends State<LessonScreen>
   final _interventionEngine = InterventionEngine();
   bool _showingIntervention = false;
   String? _currentFormat;
+  bool _showingGoodJob = false;
+  // Cooldown: ignore EEG readings for 5s after transitions to prevent flapping.
+  DateTime? _cooldownUntil;
 
   // Debug
   bool _debugExpanded = false;
+  bool _debugPanelOpen = false;
+  AttentionState? _latestState;
 
   // Session
   final _sessionStart = DateTime.now();
@@ -107,9 +112,19 @@ class _LessonScreenState extends State<LessonScreen>
     _attentionSub = AttentionStream.instance.stream.listen((state) {
       if (!mounted) return;
       _currentLevel = state.level;
+      _latestState = state;
+
+      // Rebuild when debug panel is open so it shows live data
+      if (_debugPanelOpen) setState(() {});
 
       // Broadcast to Supabase Realtime for teacher monitoring
       SessionManager.instance.onAttentionState(state);
+
+      // Skip window updates during cooldown after transitions
+      if (_cooldownUntil != null && DateTime.now().isBefore(_cooldownUntil!)) {
+        return;
+      }
+      _cooldownUntil = null;
 
       // Maintain rolling window of last N readings
       _recentLevels.add(state.level);
@@ -133,6 +148,16 @@ class _LessonScreenState extends State<LessonScreen>
         _driftConfirmed = false;
         _onFocusRecovered();
       }
+
+      // Periodic table: if attention recovers mid-intervention, show
+      // "Good job!" and resume the lesson immediately.
+      if (_showingIntervention &&
+          widget.topicId == 'periodic_table' &&
+          !_showingGoodJob &&
+          driftCount < _driftConfirmCount &&
+          state.level == AttentionLevel.focused) {
+        _showGoodJobAndResume();
+      }
     });
   }
 
@@ -151,6 +176,16 @@ class _LessonScreenState extends State<LessonScreen>
   }
 
   void _launchIntervention() {
+    // For periodic_table, always launch the custom activity directly
+    // (bypasses RL agent without removing it).
+    debugPrint('[INTERVENTION] topicId="${widget.topicId}" → ${widget.topicId == 'periodic_table' ? 'ACTIVITY' : 'RL agent'}');
+    if (widget.topicId == 'periodic_table') {
+      _recentLevels.clear();
+      _cooldownUntil = DateTime.now().add(const Duration(seconds: 5));
+      setState(() { _showingIntervention = true; _currentFormat = 'activity'; });
+      return;
+    }
+
     _interventionEngine.start(
       driftDurationSec: _driftSeconds,
       topicId: widget.topicId,
@@ -161,6 +196,12 @@ class _LessonScreenState extends State<LessonScreen>
   }
 
   void _onInterventionComplete() {
+    // For periodic_table, skip cascade — go straight back to lesson.
+    if (widget.topicId == 'periodic_table') {
+      _onFocusRecovered();
+      return;
+    }
+
     final recovered = _currentLevel == AttentionLevel.focused;
     _interventionEngine.reportResult(_currentFormat!, recovered);
     if (!recovered && _interventionEngine.hasMoreFormats) {
@@ -171,11 +212,21 @@ class _LessonScreenState extends State<LessonScreen>
     }
   }
 
+  void _showGoodJobAndResume() {
+    setState(() { _showingGoodJob = true; _showingIntervention = false; _currentFormat = null; });
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      setState(() => _showingGoodJob = false);
+      _onFocusRecovered();
+    });
+  }
+
   void _onFocusRecovered() {
     _driftTimer?.cancel();
     _pauseAnim.reverse();
     _interventionEngine.reset();
     _recentLevels.clear();
+    _cooldownUntil = DateTime.now().add(const Duration(seconds: 5));
     _driftConfirmed = false;
     setState(() { _paused = false; _showingIntervention = false; _currentFormat = null; });
   }
@@ -302,7 +353,34 @@ class _LessonScreenState extends State<LessonScreen>
               ),
             ],
           ),
-          if (_showingIntervention && _currentFormat != null)
+          if (_showingGoodJob)
+            Container(
+              color: AppColors.surface,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.celebration, size: 64, color: AppColors.focused),
+                    const SizedBox(height: 16),
+                    Text('Good job!',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.focused,
+                        fontFamily: 'Consolas',
+                      )),
+                    const SizedBox(height: 8),
+                    Text('Your focus is back — resuming lesson...',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.outline,
+                        fontFamily: 'Consolas',
+                      )),
+                  ],
+                ),
+              ),
+            )
+          else if (_showingIntervention && _currentFormat != null)
             Container(
               color: AppColors.surface,
               child: InterventionEngine.buildFormatScreen(
@@ -316,6 +394,9 @@ class _LessonScreenState extends State<LessonScreen>
           else if (_paused)
             _buildPauseOverlay(section),
 
+          // Debug EEG panel
+          if (_debugPanelOpen) _buildDebugPanel(),
+
           // Debug FAB
           _buildDebugFab(),
         ],
@@ -323,7 +404,190 @@ class _LessonScreenState extends State<LessonScreen>
     );
   }
 
-  // ── Debug FAB ───────────────────────────────────────────────
+  // ── Debug EEG Panel ─────────────────────────────────────────
+
+  Widget _buildDebugPanel() {
+    final s = _latestState;
+    final driftCount = _recentLevels
+        .where((l) => l == AttentionLevel.drifting || l == AttentionLevel.lost)
+        .length;
+    final windowSize = _recentLevels.length;
+    final threshold = _driftConfirmCount;
+
+    final Color levelColor;
+    switch (_currentLevel) {
+      case AttentionLevel.focused:
+        levelColor = AppColors.focused;
+      case AttentionLevel.drifting:
+        levelColor = AppColors.drifting;
+      case AttentionLevel.lost:
+        levelColor = AppColors.lost;
+    }
+
+    return Positioned(
+      left: 16,
+      bottom: 16,
+      child: Container(
+        width: 320,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface.withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: levelColor.withValues(alpha: 0.4)),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 12)],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  width: 10, height: 10,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: levelColor),
+                ),
+                const SizedBox(width: 8),
+                Text('EEG DEBUG',
+                  style: TextStyle(fontFamily: 'Consolas', fontSize: 11,
+                    fontWeight: FontWeight.w700, letterSpacing: 2, color: AppColors.outline)),
+                const Spacer(),
+                Text(_currentLevel.name.toUpperCase(),
+                  style: TextStyle(fontFamily: 'Consolas', fontSize: 12,
+                    fontWeight: FontWeight.w700, color: levelColor)),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Focus score bar
+            _debugRow('FOCUS SCORE', s != null ? '${(s.focusScore * 100).toStringAsFixed(1)}%' : '--'),
+            const SizedBox(height: 4),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: s?.focusScore ?? 0,
+                minHeight: 8,
+                backgroundColor: AppColors.surfaceContainerLowest,
+                valueColor: AlwaysStoppedAnimation(levelColor),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Band powers
+            if (s != null) ...[
+              _debugRow('B/T RATIO', s.betaTheta.toStringAsFixed(3)),
+              _debugRow('T/A RATIO', s.thetaAlpha.toStringAsFixed(3)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _debugBand('d', s.delta, AppColors.outline),
+                  _debugBand('t', s.theta, AppColors.lost),
+                  _debugBand('a', s.alpha, AppColors.drifting),
+                  _debugBand('b', s.beta, AppColors.focused),
+                  _debugBand('g', s.gamma, AppColors.primary),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            // Drift detection state
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('ROLLING WINDOW  [$windowSize/$_driftWindowSize]',
+                    style: TextStyle(fontFamily: 'Consolas', fontSize: 9,
+                      fontWeight: FontWeight.w700, letterSpacing: 1.5, color: AppColors.outline)),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: List.generate(_driftWindowSize, (i) {
+                      if (i >= _recentLevels.length) {
+                        return _windowDot(AppColors.surfaceContainerLowest);
+                      }
+                      final l = _recentLevels[i];
+                      final c = l == AttentionLevel.focused
+                          ? AppColors.focused
+                          : l == AttentionLevel.drifting
+                              ? AppColors.drifting
+                              : AppColors.lost;
+                      return _windowDot(c);
+                    }),
+                  ),
+                  const SizedBox(height: 8),
+                  _debugRow('DRIFT COUNT', '$driftCount / $threshold'),
+                  _debugRow('DRIFT TIMER', _paused ? '${_driftSeconds}s (>=4 triggers)' : 'inactive'),
+                  _debugRow('INTERVENTION', _showingIntervention ? 'ACTIVE ($_currentFormat)' : 'none'),
+                  _debugRow('WILL TRIGGER?',
+                    driftCount >= threshold
+                        ? 'YES - threshold met'
+                        : 'NO - need ${threshold - driftCount} more',
+                    valueColor: driftCount >= threshold ? AppColors.lost : AppColors.focused),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _debugRow(String label, String value, {Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontFamily: 'Consolas', fontSize: 10,
+            color: AppColors.outline, letterSpacing: 0.5)),
+          Text(value, style: TextStyle(fontFamily: 'Consolas', fontSize: 10,
+            fontWeight: FontWeight.w700, color: valueColor ?? AppColors.onSurface)),
+        ],
+      ),
+    );
+  }
+
+  Widget _debugBand(String label, double value, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(label, style: TextStyle(fontFamily: 'Consolas', fontSize: 9,
+            fontWeight: FontWeight.w700, color: color)),
+          const SizedBox(height: 2),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: value.clamp(0.0, 1.0).toDouble(),
+              minHeight: 4,
+              backgroundColor: AppColors.surfaceContainerLowest,
+              valueColor: AlwaysStoppedAnimation(color),
+            ),
+          ),
+          Text(value.toStringAsFixed(2),
+            style: TextStyle(fontFamily: 'Consolas', fontSize: 8, color: AppColors.outline)),
+        ],
+      ),
+    );
+  }
+
+  Widget _windowDot(Color color) {
+    return Expanded(
+      child: Container(
+        height: 14,
+        margin: const EdgeInsets.symmetric(horizontal: 1),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(3),
+        ),
+      ),
+    );
+  }
+
+  // ── Debug FAB ─────────────────────────────────────────────────
 
   Widget _buildDebugFab() {
     const formats = [
@@ -373,6 +637,26 @@ class _LessonScreenState extends State<LessonScreen>
                             letterSpacing: 1.5)),
                   ),
                 )),
+
+          // Live EEG debug panel toggle
+          if (_debugExpanded)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: FloatingActionButton.extended(
+                heroTag: 'debug_panel',
+                onPressed: () => setState(() => _debugPanelOpen = !_debugPanelOpen),
+                backgroundColor: _debugPanelOpen
+                    ? AppColors.focused
+                    : AppColors.surfaceContainerHigh,
+                foregroundColor: _debugPanelOpen
+                    ? Colors.white
+                    : AppColors.primary,
+                icon: Icon(_debugPanelOpen ? Icons.visibility_off : Icons.visibility, size: 18),
+                label: Text(_debugPanelOpen ? 'Hide EEG' : 'Show EEG',
+                    style: const TextStyle(fontFamily: 'Consolas', fontSize: 11,
+                        fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+              ),
+            ),
 
           // Main toggle button
           FloatingActionButton.small(
