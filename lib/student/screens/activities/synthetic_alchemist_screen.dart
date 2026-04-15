@@ -1,6 +1,7 @@
 // lib/student/screens/activities/synthetic_alchemist_screen.dart
 
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../../../core/models/element_data.dart';
@@ -30,6 +31,12 @@ class SyntheticAlchemistScreen extends StatefulWidget {
   final String topicId;
   final int sectionIndex;
   final VoidCallback onComplete;
+  /// Which element index to start from (resumes across interventions).
+  final int startIndex;
+  /// How many elements to tap before the activity ends.
+  final int targetTaps;
+  /// Called when game ends, reports how many elements were tapped total.
+  final ValueChanged<int>? onProgress;
 
   const SyntheticAlchemistScreen({
     super.key,
@@ -37,6 +44,9 @@ class SyntheticAlchemistScreen extends StatefulWidget {
     required this.topicId,
     required this.sectionIndex,
     required this.onComplete,
+    this.startIndex = 0,
+    this.targetTaps = 10,
+    this.onProgress,
   });
 
   @override
@@ -50,7 +60,7 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
   late final AnimationController _fallController;
 
   // Game state
-  int _currentIndex = 0;
+  late int _currentIndex;
   int _sessionScore = 0;
   int _totalScore = 0;
   int _remainingSeconds = 60;
@@ -58,6 +68,8 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
   bool _missed = false;   // true during amber flash (0.3s)
   bool _gameOver = false;
   Timer? _countdownTimer;
+  double _dropX = 0.5; // normalized horizontal position (0.0 to 1.0)
+  final _rng = Random();
 
   // TTS
   final FlutterTts _tts = FlutterTts();
@@ -69,6 +81,7 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.startIndex;
     _initTts();
 
     _fallController = AnimationController(
@@ -76,6 +89,7 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
       duration: const Duration(milliseconds: 4000),
     );
     _fallController.addStatusListener(_onFallComplete);
+    _dropX = _rng.nextDouble();
     _fallController.forward();
 
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -97,7 +111,10 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
     setState(() => _missed = true);
     Future.delayed(const Duration(milliseconds: 300), () {
       if (!mounted || _gameOver) return;
-      setState(() => _missed = false);
+      setState(() {
+        _missed = false;
+        _dropX = _rng.nextDouble();
+      });
       _fallController.reset();
       _fallController.forward();
     });
@@ -118,9 +135,11 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
       setState(() {
         _tapped = false;
         _currentIndex++;
+        _dropX = _rng.nextDouble();
       });
 
-      if (_currentIndex >= allElements.length) {
+      if (_currentIndex >= allElements.length ||
+          _sessionScore >= widget.targetTaps) {
         _endGame(showRecap: true);
         return;
       }
@@ -136,6 +155,7 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
     _countdownTimer?.cancel();
     _fallController.stop();
     _totalScore += _sessionScore;
+    widget.onProgress?.call(_currentIndex);
 
     if (showRecap) {
       setState(() {}); // trigger rebuild to show recap
@@ -400,9 +420,10 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
                 animation: _fallController,
                 builder: (_, __) {
                   final top = _fallController.value * (areaHeight - tileSize);
+                  final maxLeft = constraints.maxWidth - tileSize;
                   return Positioned(
                     top: top,
-                    left: (constraints.maxWidth - tileSize) / 2,
+                    left: _dropX * maxLeft,
                     child: _buildFallingTile(tileSize),
                   );
                 },
