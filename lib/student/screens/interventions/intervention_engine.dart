@@ -69,13 +69,17 @@ class InterventionEngine {
     final reward = recovered ? 1.0 : -1.0;
     _agent.updateReward(format, reward);
 
-    if (recovered || _formatsTried.length >= 4) {
+    // Periodic table uses a single activity — no cascade, end after one run.
+    final singleShot = _topicId == 'periodic_table';
+
+    if (recovered || singleShot || _formatsTried.length >= 4) {
       _active = false;
     }
   }
 
   /// Check if more formats are available in the cascade.
-  bool get hasMoreFormats => _formatsTried.length < 4;
+  bool get hasMoreFormats =>
+      _topicId != 'periodic_table' && _formatsTried.length < 4;
 
   /// Reset the engine.
   void reset() {

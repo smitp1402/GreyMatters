@@ -39,6 +39,12 @@ class AttentionState {
   // Per-channel signal quality (0-100%), keyed by channel label
   final Map<String, double> signalQuality;
 
+  // Personalized thresholds from calibration (daemon-side). 0.0 if not yet
+  // calibrated. Optional fields — older daemon builds won't include them.
+  final double baselineRatio;
+  final double focusedThreshold;
+  final double lostThreshold;
+
   const AttentionState({
     required this.sessionId,
     required this.focusScore,
@@ -53,6 +59,9 @@ class AttentionState {
     required this.betaTheta,
     required this.betaAlphaTheta,
     required this.signalQuality,
+    this.baselineRatio = 0.0,
+    this.focusedThreshold = 0.0,
+    this.lostThreshold = 0.0,
   });
 
   /// Deserialise from WebSocket JSON emitted by the Python daemon.
@@ -75,6 +84,9 @@ class AttentionState {
               (k, v) => MapEntry(k, (v as num).toDouble()),
             ) ??
             const {},
+        baselineRatio: (j['baseline_ratio'] as num?)?.toDouble() ?? 0.0,
+        focusedThreshold: (j['focused_threshold'] as num?)?.toDouble() ?? 0.0,
+        lostThreshold: (j['lost_threshold'] as num?)?.toDouble() ?? 0.0,
       );
 
   /// Serialise to JSON (used for local persistence and Supabase sync).
@@ -92,6 +104,9 @@ class AttentionState {
         'beta_theta': betaTheta,
         'beta_alpha_theta': betaAlphaTheta,
         'signal_quality': signalQuality,
+        'baseline_ratio': baselineRatio,
+        'focused_threshold': focusedThreshold,
+        'lost_threshold': lostThreshold,
       };
 
   @override

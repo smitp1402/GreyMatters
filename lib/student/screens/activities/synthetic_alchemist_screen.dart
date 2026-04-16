@@ -1,6 +1,7 @@
 // lib/student/screens/activities/synthetic_alchemist_screen.dart
 
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../../../core/models/element_data.dart';
@@ -59,6 +60,10 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
   bool _gameOver = false;
   Timer? _countdownTimer;
 
+  // Horizontal drop position (fraction 0.0-1.0 of play area width)
+  final Random _rng = Random();
+  double _dropFraction = 0.5;
+
   // TTS
   final FlutterTts _tts = FlutterTts();
 
@@ -73,9 +78,10 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
 
     _fallController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 5000),
     );
     _fallController.addStatusListener(_onFallComplete);
+    _pickDropPosition();
     _fallController.forward();
 
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -83,6 +89,11 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
       setState(() => _remainingSeconds--);
       if (_remainingSeconds <= 0) _endGame(showRecap: true);
     });
+  }
+
+  void _pickDropPosition() {
+    // Random horizontal position across the play area.
+    _dropFraction = _rng.nextDouble();
   }
 
   Future<void> _initTts() async {
@@ -97,7 +108,10 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
     setState(() => _missed = true);
     Future.delayed(const Duration(milliseconds: 300), () {
       if (!mounted || _gameOver) return;
-      setState(() => _missed = false);
+      setState(() {
+        _missed = false;
+        _pickDropPosition();
+      });
       _fallController.reset();
       _fallController.forward();
     });
@@ -106,10 +120,7 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
   void _onTap() {
     if (_tapped || _missed || _gameOver) return;
 
-    // Check if element is in the interaction zone (bottom 25%)
-    if (_fallController.value < 0.75) return;
-
-    // Correct tap
+    // Tap anywhere on screen breaks the element — no interaction-zone gate.
     setState(() => _tapped = true);
     _tts.speak(_currentElement.name);
     _sessionScore++;
@@ -119,6 +130,7 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
       setState(() {
         _tapped = false;
         _currentIndex++;
+        _pickDropPosition();
       });
 
       if (_currentIndex >= allElements.length) {
@@ -362,48 +374,19 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
         builder: (context, constraints) {
           final areaHeight = constraints.maxHeight;
           final tileSize = 80.0;
-          final interactionZoneTop = areaHeight * 0.75;
 
           return Stack(
             children: [
-              // Interaction zone strip
-              Positioned(
-                left: 0,
-                right: 0,
-                top: interactionZoneTop,
-                bottom: 0,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(
-                        color: (_tapped ? _teal : _missed ? _amber : _teal).withValues(alpha: 0.3),
-                        width: 1.5,
-                      ),
-                    ),
-                    color: (_tapped ? _teal : _missed ? _amber : _teal).withValues(alpha: 0.04),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'INTERACTION_ZONE_ACTIVE',
-                      style: TextStyle(
-                        fontFamily: 'Consolas',
-                        fontSize: 9,
-                        letterSpacing: 3.0,
-                        color: _teal.withValues(alpha: 0.3),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
               // Falling element tile
               AnimatedBuilder(
                 animation: _fallController,
                 builder: (_, __) {
                   final top = _fallController.value * (areaHeight - tileSize);
+                  final maxLeft = constraints.maxWidth - tileSize;
+                  final left = (maxLeft > 0 ? maxLeft : 0) * _dropFraction;
                   return Positioned(
                     top: top,
-                    left: (constraints.maxWidth - tileSize) / 2,
+                    left: left,
                     child: _buildFallingTile(tileSize),
                   );
                 },

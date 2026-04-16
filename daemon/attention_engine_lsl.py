@@ -122,6 +122,11 @@ class AttentionState:
     beta_theta: float
     beta_alpha_theta: float
     signal_quality: dict[str, float]
+    # Personalized thresholds shipped with every reading so the client can
+    # render debug overlays that compare ratio vs threshold per window.
+    baseline_ratio: float = 0.0
+    focused_threshold: float = 0.0
+    lost_threshold: float = 0.0
 
     def to_json(self) -> str:
         return json.dumps(asdict(self))
@@ -295,6 +300,9 @@ class MockGenerator:
             beta_theta=beta_theta,
             beta_alpha_theta=beta_alpha_theta,
             signal_quality=signal_quality,
+            baseline_ratio=1.5,
+            focused_threshold=1.3,
+            lost_threshold=1.1,
         )
 
 
@@ -593,6 +601,9 @@ class CrownEngineLSL:
             beta_theta=ratios["beta_theta"],
             beta_alpha_theta=ratios["beta_alpha_theta"],
             signal_quality=signal_quality,
+            baseline_ratio=round(self._baseline_ratio, 4),
+            focused_threshold=round(self._focused_threshold, 4),
+            lost_threshold=round(self._lost_threshold, 4),
         )
 
     def _classify(self, raw_ratio: float) -> AttentionLevel:

@@ -17,11 +17,9 @@ class RuleBasedAgent implements RLAgent {
 
   @override
   String selectFormat(InterventionState state) {
-    // Topic-specific activity for periodic_table at moderate drift (8-20s)
-    if (state.topicId == 'periodic_table' &&
-        state.driftDurationSec >= 8 &&
-        state.driftDurationSec < 20 &&
-        !state.formatsTried.contains('activity')) {
+    // Periodic table uses a single themed intervention activity (Synthetic Alchemist)
+    // that matches the system aesthetic. Bypasses the RL cascade entirely.
+    if (state.topicId == 'periodic_table') {
       return 'activity';
     }
 

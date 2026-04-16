@@ -55,6 +55,12 @@ class _LessonScreenState extends State<LessonScreen>
 
   // Debug
   bool _debugExpanded = false;
+  bool _eegDebugVisible = false;
+
+  // Latest state + rolling buffer of readings (parallel to _recentLevels) for
+  // the EEG debug overlay: shows ratio + verdict per window.
+  AttentionState? _latestState;
+  final List<AttentionState> _recentReadings = [];
 
   // Session
   final _sessionStart = DateTime.now();
@@ -107,14 +113,26 @@ class _LessonScreenState extends State<LessonScreen>
     _attentionSub = AttentionStream.instance.stream.listen((state) {
       if (!mounted) return;
       _currentLevel = state.level;
+      _latestState = state;
 
-      // Broadcast to Supabase Realtime for teacher monitoring
+      // Broadcast to Supabase Realtime for teacher monitoring (always on).
       SessionManager.instance.onAttentionState(state);
+
+      // Drift detection runs only during session content, not during an
+      // active intervention activity. The activity has its own UI flow and
+      // EEG readings there shouldn't feed the pacing engine.
+      if (_showingIntervention) {
+        // Still trigger a rebuild so the debug panel shows the live ratio.
+        if (_eegDebugVisible) setState(() {});
+        return;
+      }
 
       // Maintain rolling window of last N readings
       _recentLevels.add(state.level);
+      _recentReadings.add(state);
       if (_recentLevels.length > _driftWindowSize) {
         _recentLevels.removeAt(0);
+        _recentReadings.removeAt(0);
       }
 
       // Count how many of the last N readings are drifting or lost
@@ -127,12 +145,14 @@ class _LessonScreenState extends State<LessonScreen>
         _onDriftDetected();
       }
       if (_paused &&
-          !_showingIntervention &&
           driftCount < _driftConfirmCount &&
           state.level == AttentionLevel.focused) {
         _driftConfirmed = false;
         _onFocusRecovered();
       }
+
+      // Keep the debug overlay live.
+      if (_eegDebugVisible) setState(() {});
     });
   }
 
@@ -318,6 +338,9 @@ class _LessonScreenState extends State<LessonScreen>
 
           // Debug FAB
           _buildDebugFab(),
+
+          // EEG debug overlay
+          if (_eegDebugVisible) _buildEegDebugPanel(),
         ],
       ),
     );
@@ -374,6 +397,26 @@ class _LessonScreenState extends State<LessonScreen>
                   ),
                 )),
 
+          // EEG debug toggle button
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: FloatingActionButton.small(
+              heroTag: 'eeg_debug_toggle',
+              onPressed: () =>
+                  setState(() => _eegDebugVisible = !_eegDebugVisible),
+              backgroundColor: _eegDebugVisible
+                  ? AppColors.focused
+                  : AppColors.surfaceContainerHighest,
+              foregroundColor: _eegDebugVisible
+                  ? AppColors.onPrimary
+                  : AppColors.outline,
+              child: Icon(
+                _eegDebugVisible ? Icons.waves : Icons.graphic_eq,
+                size: 18,
+              ),
+            ),
+          ),
+
           // Main toggle button
           FloatingActionButton.small(
             heroTag: 'debug_toggle',
@@ -390,6 +433,252 @@ class _LessonScreenState extends State<LessonScreen>
       ),
     );
   }
+
+  // ── EEG Debug Panel ──────────────────────────────────────
+  //
+  // Lives behind the EEG toggle FAB. Shows, per-window:
+  //   • the β/(α+θ) ratio that produced the verdict
+  //   • the level (focused / drifting / lost) as a coloured chip
+  //   • thresholds from calibration, so you can eyeball why each
+  //     window was classified the way it was
+  // Plus aggregate drift count vs confirm threshold and the
+  // "will trigger?" verdict that decides whether an intervention fires.
+
+  Widget _buildEegDebugPanel() {
+    final state = _latestState;
+    final driftCount = _recentLevels
+        .where((l) => l == AttentionLevel.drifting || l == AttentionLevel.lost)
+        .length;
+    final willTrigger = driftCount >= _driftConfirmCount;
+
+    return Positioned(
+      left: 16,
+      bottom: 16,
+      child: Container(
+        width: 360,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerHigh.withValues(alpha: 0.96),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Row(
+              children: [
+                Icon(Icons.graphic_eq, size: 14, color: AppColors.focused),
+                const SizedBox(width: 8),
+                const Text(
+                  'EEG DEBUG',
+                  style: TextStyle(
+                    fontFamily: 'Consolas',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 2.0,
+                    color: AppColors.focused,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  _levelLabel(_currentLevel),
+                  style: TextStyle(
+                    fontFamily: 'Consolas',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                    color: _levelColor(_currentLevel),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Current ratio + thresholds
+            _debugKV('RATIO β/(α+θ)',
+                state == null ? '—' : state.betaAlphaTheta.toStringAsFixed(3)),
+            _debugKV('FOCUS SCORE',
+                state == null ? '—' : state.focusScore.toStringAsFixed(3)),
+            _debugKV(
+              'THRESHOLDS',
+              state == null
+                  ? '—'
+                  : 'F≥${state.focusedThreshold.toStringAsFixed(2)}  '
+                      'L<${state.lostThreshold.toStringAsFixed(2)}',
+            ),
+            _debugKV('BASELINE',
+                state == null ? '—' : state.baselineRatio.toStringAsFixed(3)),
+
+            const SizedBox(height: 10),
+            Text(
+              'ROLLING WINDOW [${_recentLevels.length}/$_driftWindowSize]',
+              style: TextStyle(
+                fontFamily: 'Consolas',
+                fontSize: 9,
+                letterSpacing: 2.0,
+                color: AppColors.outline.withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 6),
+
+            // Per-window ratio + verdict (oldest → newest, left → right)
+            _buildWindowChips(),
+
+            const SizedBox(height: 10),
+            _debugKV('DRIFT COUNT', '$driftCount / $_driftConfirmCount'),
+            _debugKV('DRIFT TIMER', _paused ? '${_driftSeconds}s' : 'inactive'),
+            _debugKV(
+              'WILL TRIGGER?',
+              willTrigger
+                  ? 'YES — ≥$_driftConfirmCount drifting'
+                  : 'NO — need ${_driftConfirmCount - driftCount} more',
+              valueColor: willTrigger ? AppColors.lost : AppColors.focused,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _debugKV(String k, String v, {Color? valueColor}) => Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Row(
+          children: [
+            Text(
+              k,
+              style: TextStyle(
+                fontFamily: 'Consolas',
+                fontSize: 10,
+                letterSpacing: 1.5,
+                color: AppColors.outline.withValues(alpha: 0.7),
+              ),
+            ),
+            const Spacer(),
+            Text(
+              v,
+              style: TextStyle(
+                fontFamily: 'Consolas',
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: valueColor ?? AppColors.onSurface,
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _buildWindowChips() {
+    if (_recentReadings.isEmpty) {
+      return Text(
+        'waiting for stream…',
+        style: TextStyle(
+          fontFamily: 'Consolas',
+          fontSize: 10,
+          color: AppColors.outline.withValues(alpha: 0.5),
+        ),
+      );
+    }
+    return Column(
+      children: [
+        for (int i = 0; i < _recentReadings.length; i++)
+          _buildWindowRow(i, _recentReadings[i]),
+      ],
+    );
+  }
+
+  Widget _buildWindowRow(int index, AttentionState r) {
+    final color = _levelColor(r.level);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        children: [
+          // Slot index
+          SizedBox(
+            width: 20,
+            child: Text(
+              '#${index + 1}'.padLeft(3),
+              style: TextStyle(
+                fontFamily: 'Consolas',
+                fontSize: 9,
+                color: AppColors.outline.withValues(alpha: 0.5),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Ratio
+          SizedBox(
+            width: 58,
+            child: Text(
+              r.betaAlphaTheta.toStringAsFixed(3),
+              style: const TextStyle(
+                fontFamily: 'Consolas',
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppColors.onSurface,
+              ),
+            ),
+          ),
+          // Threshold comparator
+          Expanded(
+            child: Text(
+              _thresholdComparator(r),
+              style: TextStyle(
+                fontFamily: 'Consolas',
+                fontSize: 10,
+                color: AppColors.outline.withValues(alpha: 0.6),
+              ),
+            ),
+          ),
+          // Verdict chip
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(3),
+              border: Border.all(color: color.withValues(alpha: 0.4)),
+            ),
+            child: Text(
+              _levelLabel(r.level),
+              style: TextStyle(
+                fontFamily: 'Consolas',
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.0,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _thresholdComparator(AttentionState r) {
+    if (r.focusedThreshold <= 0 && r.lostThreshold <= 0) return '(uncal)';
+    if (r.betaAlphaTheta >= r.focusedThreshold) {
+      return '≥ F(${r.focusedThreshold.toStringAsFixed(2)})';
+    }
+    if (r.betaAlphaTheta >= r.lostThreshold) {
+      return 'F>r≥L (${r.lostThreshold.toStringAsFixed(2)}‥${r.focusedThreshold.toStringAsFixed(2)})';
+    }
+    return '< L(${r.lostThreshold.toStringAsFixed(2)})';
+  }
+
+  String _levelLabel(AttentionLevel l) => switch (l) {
+        AttentionLevel.focused => 'FOCUSED',
+        AttentionLevel.drifting => 'DRIFTING',
+        AttentionLevel.lost => 'LOST',
+      };
+
+  Color _levelColor(AttentionLevel l) => switch (l) {
+        AttentionLevel.focused => AppColors.focused,
+        AttentionLevel.drifting => AppColors.drifting,
+        AttentionLevel.lost => AppColors.lost,
+      };
 
   // ── Top Bar ──────────────────────────────────────────────
 
