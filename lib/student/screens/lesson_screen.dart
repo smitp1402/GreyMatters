@@ -455,7 +455,7 @@ class _LessonScreenState extends State<LessonScreen>
       left: 16,
       bottom: 16,
       child: Container(
-        width: 360,
+        width: 440,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerHigh.withValues(alpha: 0.96),
@@ -498,11 +498,30 @@ class _LessonScreenState extends State<LessonScreen>
             ),
             const SizedBox(height: 10),
 
-            // Current ratio + thresholds
+            // Focus score with horizontal bar (compact view)
+            _buildFocusScoreBar(state),
+            const SizedBox(height: 10),
+
+            // B/T and T/A ratios (compact)
+            _debugKV('B/T RATIO',
+                state == null ? '—' : state.betaTheta.toStringAsFixed(3)),
+            _debugKV('T/A RATIO',
+                state == null ? '—' : state.thetaAlpha.toStringAsFixed(3)),
+            const SizedBox(height: 10),
+
+            // 5-band mini strip: d, t, a, b, g
+            _buildBandStrip(state),
+            const SizedBox(height: 10),
+
+            // Detailed ratio + thresholds (kept from original)
             _debugKV('RATIO β/(α+θ)',
                 state == null ? '—' : state.betaAlphaTheta.toStringAsFixed(3)),
-            _debugKV('FOCUS SCORE',
-                state == null ? '—' : state.focusScore.toStringAsFixed(3)),
+            _debugKV('ALPHA (8-12 Hz)',
+                state == null ? '—' : state.alpha.toStringAsFixed(3)),
+            _debugKV('BETA  (12-30 Hz)',
+                state == null ? '—' : state.beta.toStringAsFixed(3)),
+            _debugKV('THETA (4-8 Hz)',
+                state == null ? '—' : state.theta.toStringAsFixed(3)),
             _debugKV(
               'THRESHOLDS',
               state == null
@@ -525,12 +544,25 @@ class _LessonScreenState extends State<LessonScreen>
             ),
             const SizedBox(height: 6),
 
-            // Per-window ratio + verdict (oldest → newest, left → right)
+            // Compact squares strip (visual summary, like image 2)
+            _buildWindowSquares(),
+            const SizedBox(height: 8),
+
+            // Per-window ratio + verdict (detailed, oldest → newest)
             _buildWindowChips(),
 
             const SizedBox(height: 10),
             _debugKV('DRIFT COUNT', '$driftCount / $_driftConfirmCount'),
             _debugKV('DRIFT TIMER', _paused ? '${_driftSeconds}s' : 'inactive'),
+            _debugKV(
+              'INTERVENTION',
+              _showingIntervention && _currentFormat != null
+                  ? _currentFormat!.toUpperCase()
+                  : 'none',
+              valueColor: _showingIntervention
+                  ? AppColors.drifting
+                  : AppColors.onSurface,
+            ),
             _debugKV(
               'WILL TRIGGER?',
               willTrigger
@@ -571,6 +603,145 @@ class _LessonScreenState extends State<LessonScreen>
         ),
       );
 
+  // Focus score % + big horizontal bar (compact view, from image 2).
+  Widget _buildFocusScoreBar(AttentionState? s) {
+    final score = s?.focusScore ?? 0;
+    final pct = (score * 100).round();
+    final color = _levelColor(_currentLevel);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'FOCUS SCORE',
+              style: TextStyle(
+                fontFamily: 'Consolas',
+                fontSize: 10,
+                letterSpacing: 1.5,
+                color: AppColors.outline.withValues(alpha: 0.7),
+              ),
+            ),
+            const Spacer(),
+            Text(
+              s == null ? '—' : '$pct%',
+              style: const TextStyle(
+                fontFamily: 'Consolas',
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurface,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(3),
+          child: SizedBox(
+            height: 10,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: score),
+              duration: const Duration(milliseconds: 400),
+              builder: (_, v, __) => LinearProgressIndicator(
+                value: v.clamp(0.0, 1.0),
+                backgroundColor: AppColors.surfaceContainerLowest,
+                valueColor: AlwaysStoppedAnimation(color),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 5-band mini strip: d, t, a, b, g (compact view, from image 2).
+  Widget _buildBandStrip(AttentionState? s) {
+    final entries = [
+      ('d', s?.delta ?? 0, AppColors.delta),
+      ('t', s?.theta ?? 0, AppColors.theta),
+      ('a', s?.alpha ?? 0, AppColors.alpha),
+      ('b', s?.beta ?? 0, AppColors.beta),
+      ('g', s?.gamma ?? 0, AppColors.gamma),
+    ];
+    final maxVal = entries.map((e) => e.$2).fold<double>(1e-6, (m, v) => v > m ? v : m);
+    return Row(
+      children: entries.map((e) {
+        final label = e.$1;
+        final val = e.$2;
+        final color = e.$3;
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: Column(
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Consolas',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: SizedBox(
+                    height: 6,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: val / maxVal),
+                      duration: const Duration(milliseconds: 400),
+                      builder: (_, v, __) => LinearProgressIndicator(
+                        value: v.clamp(0.0, 1.0),
+                        backgroundColor: AppColors.surfaceContainerLowest,
+                        valueColor: AlwaysStoppedAnimation(color),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  s == null ? '—' : val.toStringAsFixed(2),
+                  style: TextStyle(
+                    fontFamily: 'Consolas',
+                    fontSize: 10,
+                    color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // Small colored squares — one per window slot (compact view, from image 2).
+  Widget _buildWindowSquares() {
+    return Row(
+      children: List.generate(_driftWindowSize, (i) {
+        final filled = i < _recentLevels.length;
+        final color = filled ? _levelColor(_recentLevels[i]) : AppColors.outline;
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Container(
+              height: 20,
+              decoration: BoxDecoration(
+                color: filled ? color.withValues(alpha: 0.25) : Colors.transparent,
+                borderRadius: BorderRadius.circular(3),
+                border: Border.all(
+                  color: color.withValues(alpha: filled ? 0.7 : 0.2),
+                  width: 1.5,
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
   Widget _buildWindowChips() {
     if (_recentReadings.isEmpty) {
       return Text(
@@ -582,25 +753,60 @@ class _LessonScreenState extends State<LessonScreen>
         ),
       );
     }
-    return Column(
+
+    final labelStyle = TextStyle(
+      fontFamily: 'Consolas',
+      fontSize: 9,
+      letterSpacing: 1.2,
+      color: AppColors.outline.withValues(alpha: 0.6),
+    );
+
+    // Label column on the left — metric names stacked vertically.
+    final labelColumn = Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          SizedBox(height: 14, child: Text('#', style: labelStyle)),
+          SizedBox(height: 16, child: Text('β/(α+θ)', style: labelStyle)),
+          SizedBox(height: 14, child: Text('α', style: labelStyle)),
+          SizedBox(height: 14, child: Text('β', style: labelStyle)),
+          SizedBox(height: 14, child: Text('θ', style: labelStyle)),
+          SizedBox(height: 18, child: Text('STATE', style: labelStyle)),
+        ],
+      ),
+    );
+
+    // One column per reading (#1 leftmost → #N rightmost).
+    final slotColumns = <Widget>[
+      for (int i = 0; i < _recentReadings.length; i++)
+        Expanded(child: _buildWindowSlot(i, _recentReadings[i])),
+    ];
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (int i = 0; i < _recentReadings.length; i++)
-          _buildWindowRow(i, _recentReadings[i]),
+        labelColumn,
+        Expanded(child: Row(children: slotColumns)),
       ],
     );
   }
 
-  Widget _buildWindowRow(int index, AttentionState r) {
+  Widget _buildWindowSlot(int index, AttentionState r) {
     final color = _levelColor(r.level);
+    final bandStyle = TextStyle(
+      fontFamily: 'Consolas',
+      fontSize: 9,
+      color: AppColors.onSurfaceVariant.withValues(alpha: 0.85),
+    );
     return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
-      child: Row(
+      padding: const EdgeInsets.symmetric(horizontal: 1),
+      child: Column(
         children: [
-          // Slot index
           SizedBox(
-            width: 20,
+            height: 14,
             child: Text(
-              '#${index + 1}'.padLeft(3),
+              '#${index + 1}',
               style: TextStyle(
                 fontFamily: 'Consolas',
                 fontSize: 9,
@@ -608,64 +814,74 @@ class _LessonScreenState extends State<LessonScreen>
               ),
             ),
           ),
-          const SizedBox(width: 6),
-          // Ratio
           SizedBox(
-            width: 58,
-            child: Text(
-              r.betaAlphaTheta.toStringAsFixed(3),
-              style: const TextStyle(
-                fontFamily: 'Consolas',
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColors.onSurface,
+            height: 16,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                r.betaAlphaTheta.toStringAsFixed(2),
+                style: const TextStyle(
+                  fontFamily: 'Consolas',
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onSurface,
+                ),
               ),
             ),
           ),
-          // Threshold comparator
-          Expanded(
-            child: Text(
-              _thresholdComparator(r),
-              style: TextStyle(
-                fontFamily: 'Consolas',
-                fontSize: 10,
-                color: AppColors.outline.withValues(alpha: 0.6),
-              ),
+          SizedBox(
+            height: 14,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(r.alpha.toStringAsFixed(2), style: bandStyle),
             ),
           ),
-          // Verdict chip
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(3),
-              border: Border.all(color: color.withValues(alpha: 0.4)),
+          SizedBox(
+            height: 14,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(r.beta.toStringAsFixed(2), style: bandStyle),
             ),
-            child: Text(
-              _levelLabel(r.level),
-              style: TextStyle(
-                fontFamily: 'Consolas',
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.0,
-                color: color,
+          ),
+          SizedBox(
+            height: 14,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(r.theta.toStringAsFixed(2), style: bandStyle),
+            ),
+          ),
+          SizedBox(
+            height: 18,
+            child: Container(
+              margin: const EdgeInsets.only(top: 2),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(2),
+                border: Border.all(color: color.withValues(alpha: 0.4)),
+              ),
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: Text(
+                      _levelLabel(r.level).substring(0, 3),
+                      style: TextStyle(
+                        fontFamily: 'Consolas',
+                        fontSize: 8,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
         ],
       ),
     );
-  }
-
-  String _thresholdComparator(AttentionState r) {
-    if (r.focusedThreshold <= 0 && r.lostThreshold <= 0) return '(uncal)';
-    if (r.betaAlphaTheta >= r.focusedThreshold) {
-      return '≥ F(${r.focusedThreshold.toStringAsFixed(2)})';
-    }
-    if (r.betaAlphaTheta >= r.lostThreshold) {
-      return 'F>r≥L (${r.lostThreshold.toStringAsFixed(2)}‥${r.focusedThreshold.toStringAsFixed(2)})';
-    }
-    return '< L(${r.lostThreshold.toStringAsFixed(2)})';
   }
 
   String _levelLabel(AttentionLevel l) => switch (l) {

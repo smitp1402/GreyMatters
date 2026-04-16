@@ -13,6 +13,9 @@ const _teal = Color(0xFF26A69A);
 const _amber = Color(0xFFFFA000);
 const _gridLineColor = Color(0x0ABDC1D7);
 
+// Max elements the student can catch per session before the recap triggers.
+const _maxElementsPerSession = 10;
+
 // Section-specific recap sentences from the spec
 const _recaps = [
   'The elements you just tapped are in order of atomic number — the same principle Mendeleev used to build the table.',
@@ -133,7 +136,8 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
         _pickDropPosition();
       });
 
-      if (_currentIndex >= allElements.length) {
+      if (_sessionScore >= _maxElementsPerSession ||
+          _currentIndex >= allElements.length) {
         _endGame(showRecap: true);
         return;
       }
@@ -353,7 +357,7 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
               style: TextStyle(fontFamily: 'Consolas', fontSize: 8,
                   letterSpacing: 2.0, color: AppColors.outline.withValues(alpha: 0.5))),
           const SizedBox(height: 4),
-          Text('$_sessionScore',
+          Text('$_sessionScore / $_maxElementsPerSession',
               style: const TextStyle(fontFamily: 'Consolas', fontSize: 28,
                   fontWeight: FontWeight.w700, color: _teal)),
           Text('caught',

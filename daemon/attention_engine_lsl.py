@@ -38,7 +38,7 @@ import sys
 import time
 import threading
 from argparse import ArgumentParser
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Set
@@ -127,6 +127,10 @@ class AttentionState:
     baseline_ratio: float = 0.0
     focused_threshold: float = 0.0
     lost_threshold: float = 0.0
+    # Absolute band powers (µV²/Hz, pre-normalization) — lets the dashboard
+    # show the raw Neurosity-style "Absolute Power by Band" view so off-head
+    # noise is obvious (tiny bars) instead of hidden by share normalization.
+    band_powers_absolute: dict[str, float] = field(default_factory=dict)
 
     def to_json(self) -> str:
         return json.dumps(asdict(self))
@@ -274,6 +278,17 @@ class MockGenerator:
         beta_theta = round(beta / (theta + eps), 4)
         beta_alpha_theta = round(beta / (alpha + theta + eps), 4)
 
+        # Keep absolute values (µV²/Hz-like) — scale up so they land in a
+        # realistic Neurosity range (~0.5-10 µV²/Hz for healthy EEG).
+        abs_scale = 4.0
+        bp_abs = {
+            "delta": round(delta * abs_scale, 4),
+            "theta": round(theta * abs_scale, 4),
+            "alpha": round(alpha * abs_scale, 4),
+            "beta":  round(beta  * abs_scale, 4),
+            "gamma": round(gamma * abs_scale, 4),
+        }
+
         # Normalize to sum to 1
         total = delta + theta + alpha + beta + gamma
         delta, theta, alpha, beta, gamma = (
@@ -303,6 +318,7 @@ class MockGenerator:
             baseline_ratio=1.5,
             focused_threshold=1.3,
             lost_threshold=1.1,
+            band_powers_absolute=bp_abs,
         )
 
 
@@ -552,10 +568,6 @@ class CrownEngineLSL:
 
         # Band powers (median across all 8 channels)
         bp = compute_band_powers(filtered, SAMPLING_RATE, WELCH_NPERSEG)
-        logger.info(
-            "[BAND] δ=%.4f θ=%.4f α=%.4f β=%.4f γ=%.4f",
-            bp["delta"], bp["theta"], bp["alpha"], bp["beta"], bp["gamma"]
-        )
 
         # Normalize band powers to proportions (sum to 1)
         total = sum(bp.values())
@@ -604,6 +616,7 @@ class CrownEngineLSL:
             baseline_ratio=round(self._baseline_ratio, 4),
             focused_threshold=round(self._focused_threshold, 4),
             lost_threshold=round(self._lost_threshold, 4),
+            band_powers_absolute={k: round(v, 4) for k, v in bp.items()},
         )
 
     def _classify(self, raw_ratio: float) -> AttentionLevel:
@@ -742,12 +755,11 @@ class AttentionServer:
             reset = "\033[0m"
             c = level_color.get(state.level, "")
             logger.info(
-                "%4d | %s%8s%s | focus=%.3f | "
-                "δ=%.3f θ=%.3f α=%.3f β=%.3f γ=%.3f | "
-                "β/(α+θ)=%.2f",
-                tick, c, state.level, reset, state.focus_score,
-                state.delta, state.theta, state.alpha, state.beta, state.gamma,
+                "%4d | %s%8s%s | β/(α+θ)=%.3f | focused≥%.3f  lost≥%.3f",
+                tick, c, state.level, reset,
                 state.beta_alpha_theta,
+                state.focused_threshold,
+                state.lost_threshold,
             )
 
             if self._clients:

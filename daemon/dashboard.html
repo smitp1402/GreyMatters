@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Crown Raw Feed — Python Daemon</title>
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --panel: #1c1b1b;
+    --panel-hi: #2a2a2a;
+    --panel-lo: #0e0e0e;
+    --border: rgba(65, 71, 84, 0.3);
+    --text: #e5e2e1;
+    --muted: #8b90a0;
+    --primary: #acc7ff;
+    --focused: #43a047;
+    --drifting: #ffa000;
+    --lost: #e53935;
+    --delta: #ab47bc;
+    --theta: #7e57c2;
+    --alpha: #42a5f5;
+    --beta: #66bb6a;
+    --gamma: #ffca28;
+    --mono: 'Consolas', 'JetBrains Mono', 'Menlo', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--primary);
+  }
+  h1 .sub { color: var(--muted); font-weight: 400; font-size: 14px; margin-left: 8px; }
+
+  .status {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .status.connected { color: var(--focused); border-color: var(--focused); }
+  .status.connecting { color: var(--drifting); border-color: var(--drifting); }
+  .status.disconnected { color: var(--lost); border-color: var(--lost); }
+
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .row {
+    display: grid;
+    gap: 16px;
+  }
+  .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .row-2-3 { grid-template-columns: 2fr 1fr; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--muted);
+  }
+  .panel-body { padding: 16px; }
+
+  /* Stat tiles */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--border); }
+  .stat { padding: 16px; background: var(--panel); }
+  .stat .label { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: 2px; color: var(--muted); }
+  .stat .value { font-family: var(--mono); font-size: 22px; font-weight: 700; margin-top: 6px; }
+
+  /* Band bars */
+  .band { display: grid; grid-template-columns: 100px 70px 1fr 80px; gap: 12px; align-items: center; padding: 10px 0; }
+  .band .name { font-family: var(--mono); font-size: 13px; font-weight: 700; }
+  .band .hz { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .band .bar-wrap { background: var(--panel-lo); border-radius: 4px; height: 16px; overflow: hidden; position: relative; }
+  .band .bar { height: 100%; width: 0%; border-radius: 4px; transition: width 0.4s ease; }
+  .band .val { font-family: var(--mono); font-size: 13px; font-weight: 600; text-align: right; }
+
+  .band.delta .name, .band.delta .val { color: var(--delta); }
+  .band.theta .name, .band.theta .val { color: var(--theta); }
+  .band.alpha .name, .band.alpha .val { color: var(--alpha); }
+  .band.beta  .name, .band.beta  .val { color: var(--beta); }
+  .band.gamma .name, .band.gamma .val { color: var(--gamma); }
+  .band.delta .bar { background: var(--delta); }
+  .band.theta .bar { background: var(--theta); }
+  .band.alpha .bar { background: var(--alpha); }
+  .band.beta  .bar { background: var(--beta); }
+  .band.gamma .bar { background: var(--gamma); }
+
+  /* Ratios */
+  .kv { display: flex; justify-content: space-between; padding: 6px 0; font-family: var(--mono); font-size: 12px; }
+  .kv .k { color: var(--muted); letter-spacing: 1px; font-weight: 700; }
+  .kv .v { color: var(--text); font-weight: 700; }
+  .kv.emphasize .v { color: var(--primary); font-size: 15px; }
+  .kv.lost .k { color: var(--lost); }
+  .kv.focused .k { color: var(--focused); }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+
+  /* Channels */
+  .channels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .ch { padding: 10px 12px; border-radius: 6px; border: 1px solid; }
+  .ch.good { background: rgba(67,160,71,0.08); border-color: rgba(67,160,71,0.4); }
+  .ch.mid  { background: rgba(255,160,0,0.08);  border-color: rgba(255,160,0,0.4); }
+  .ch.bad  { background: rgba(229,57,53,0.08);  border-color: rgba(229,57,53,0.4); }
+  .ch .label { font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 1.5px; }
+  .ch .q { font-family: var(--mono); font-size: 14px; font-weight: 700; margin-top: 4px; color: var(--text); }
+  .ch.good .label { color: var(--focused); }
+  .ch.mid  .label { color: var(--drifting); }
+  .ch.bad  .label { color: var(--lost); }
+
+  /* Log */
+  .log {
+    background: var(--panel-lo);
+    padding: 12px;
+    max-height: 320px;
+    overflow-y: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .log .row-line { display: block; color: var(--muted); margin-bottom: 2px; }
+  .log .row-line .tick { color: var(--muted); }
+  .log .row-line .ts { color: var(--muted); }
+  .log .row-line .lvl-focused  { color: var(--focused); font-weight: 700; }
+  .log .row-line .lvl-drifting { color: var(--drifting); font-weight: 700; }
+  .log .row-line .lvl-lost     { color: var(--lost); font-weight: 700; }
+  .log .row-line .b-delta { color: var(--delta); }
+  .log .row-line .b-theta { color: var(--theta); }
+  .log .row-line .b-alpha { color: var(--alpha); }
+  .log .row-line .b-beta  { color: var(--beta); }
+  .log .row-line .b-gamma { color: var(--gamma); }
+
+  .empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+
+  /* Off-head banner */
+  .offhead-banner {
+    display: none;
+    padding: 12px 18px;
+    background: rgba(229, 57, 53, 0.12);
+    border: 1px solid var(--lost);
+    border-radius: 8px;
+    color: var(--lost);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+    align-items: center;
+    gap: 12px;
+  }
+  .offhead-banner.on { display: flex; }
+  .offhead-banner .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--lost);
+    animation: pulse 1s infinite ease-in-out;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+  }
+  body.offhead main > section:not(.offhead-banner):not(.keep-lit) { opacity: 0.5; }
+  body.offhead .band .bar { opacity: 0.4; }
+
+  /* Axis labels on band panel */
+  .axis {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0 2px 184px; /* align with bar start */
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Crown Raw Feed <span class="sub">Python daemon → WebSocket live view</span></h1>
+    <div id="status" class="status disconnected">DISCONNECTED</div>
+  </header>
+
+  <main>
+    <!-- Off-head banner -->
+    <section class="offhead-banner keep-lit" id="offhead"><span class="dot"></span>CROWN NOT ON HEAD — BARS BELOW ARE NOISE, NOT BRAIN ACTIVITY</section>
+
+    <!-- Stat row -->
+    <section class="panel">
+      <div class="stats">
+        <div class="stat"><div class="label">SESSION</div><div class="value" id="s-session" style="color: var(--primary)">—</div></div>
+        <div class="stat"><div class="label">LEVEL</div><div class="value" id="s-level">—</div></div>
+        <div class="stat"><div class="label">FOCUS</div><div class="value" id="s-focus" style="color: var(--primary)">—</div></div>
+        <div class="stat"><div class="label">β/(α+θ)</div><div class="value" id="s-ratio" style="color: var(--primary)">—</div></div>
+        <div class="stat"><div class="label">BASELINE</div><div class="value" id="s-baseline" style="color: var(--muted)">—</div></div>
+      </div>
+    </section>
+
+    <div class="row row-2-3">
+      <!-- Bands -->
+      <section class="panel">
+        <div class="panel-header">ABSOLUTE POWER BY BAND — µV²/Hz (0-20 scale, like Neurosity console)</div>
+        <div class="panel-body" id="bands">
+          <div class="band delta"><div class="name">δ DELTA</div><div class="hz">2–4 Hz</div>  <div class="bar-wrap"><div class="bar" data-band="delta"></div></div><div class="val" data-val="delta">—</div></div>
+          <div class="band theta"><div class="name">θ THETA</div><div class="hz">4–8 Hz</div>  <div class="bar-wrap"><div class="bar" data-band="theta"></div></div><div class="val" data-val="theta">—</div></div>
+          <div class="band alpha"><div class="name">α ALPHA</div><div class="hz">8–12 Hz</div> <div class="bar-wrap"><div class="bar" data-band="alpha"></div></div><div class="val" data-val="alpha">—</div></div>
+          <div class="band beta"> <div class="name">β BETA</div> <div class="hz">12–30 Hz</div><div class="bar-wrap"><div class="bar" data-band="beta"></div></div> <div class="val" data-val="beta">—</div></div>
+          <div class="band gamma"><div class="name">γ GAMMA</div><div class="hz">30–45 Hz</div><div class="bar-wrap"><div class="bar" data-band="gamma"></div></div><div class="val" data-val="gamma">—</div></div>
+          <div class="axis"><span>0</span><span>5</span><span>10</span><span>15</span><span>20 µV²/Hz</span></div>
+        </div>
+      </section>
+
+      <!-- Ratios -->
+      <section class="panel">
+        <div class="panel-header">FOCUS RATIOS &amp; THRESHOLDS</div>
+        <div class="panel-body">
+          <div class="kv"><span class="k">θ / α</span><span class="v" id="r-ta">—</span></div>
+          <div class="kv"><span class="k">β / θ</span><span class="v" id="r-bt">—</span></div>
+          <div class="kv emphasize"><span class="k">β / (α+θ)</span><span class="v" id="r-bat">—</span></div>
+          <hr>
+          <div class="kv"><span class="k">BASELINE</span><span class="v" id="r-baseline">—</span></div>
+          <div class="kv focused"><span class="k">FOCUSED ≥</span><span class="v" id="r-ftresh">—</span></div>
+          <div class="kv lost"><span class="k">LOST &lt;</span><span class="v" id="r-ltresh">—</span></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Channels -->
+    <section class="panel">
+      <div class="panel-header">SIGNAL QUALITY — CROWN 8-CHANNEL (CP3 C3 F5 PO3 PO4 F6 C4 CP4)</div>
+      <div class="panel-body">
+        <div class="channels" id="channels">
+          <div class="empty">Waiting for channel data…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Log -->
+    <section class="panel">
+      <div class="panel-header">DAEMON BROADCAST LOG — latest <span id="log-count">0</span> of 200</div>
+      <div class="panel-body" style="padding: 0">
+        <div class="log" id="log"><div class="empty">Waiting for ticks…</div></div>
+      </div>
+    </section>
+  </main>
+
+<script>
+(() => {
+  const WS_URL = 'ws://localhost:8765';
+  const MAX_LOG = 200;
+  const ABS_SCALE_MAX = 20;         // µV²/Hz — matches Neurosity console y-axis
+  const OFFHEAD_ZERO_CHANNELS = 5;  // ≥ this many 0% channels → off-head
+  let tick = 0;
+  let ws = null;
+  let offheadCounter = 0;
+
+  const $ = (id) => document.getElementById(id);
+  const setText = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+
+  function setStatus(kind, text) {
+    const el = $('status');
+    el.className = 'status ' + kind;
+    el.textContent = text;
+  }
+
+  function fmt(x, d = 3) {
+    return (typeof x === 'number' && isFinite(x)) ? x.toFixed(d) : '—';
+  }
+
+  function updateBands(s) {
+    // Prefer absolute powers (µV²/Hz) with a fixed 0-20 scale — matches the
+    // Neurosity console. Falls back to normalized shares if daemon doesn't
+    // provide absolute values (older daemon version).
+    const abs = s.band_powers_absolute || null;
+    ['delta','theta','alpha','beta','gamma'].forEach(k => {
+      const v = abs ? (abs[k] ?? 0) : (s[k] ?? 0);
+      const maxScale = abs ? ABS_SCALE_MAX : 1.0;
+      const bar = document.querySelector(`[data-band="${k}"]`);
+      const val = document.querySelector(`[data-val="${k}"]`);
+      if (bar) bar.style.width = Math.min(100, (v / maxScale) * 100).toFixed(1) + '%';
+      if (val) val.textContent = fmt(v, abs ? 2 : 4) + (abs ? ' µV²/Hz' : '');
+    });
+  }
+
+  function checkOffHead(s) {
+    const sq = s.signal_quality || {};
+    const zeros = Object.values(sq).filter(q => q <= 1).length;
+    const hit = zeros >= OFFHEAD_ZERO_CHANNELS;
+    offheadCounter = hit ? offheadCounter + 1 : 0;
+    const on = offheadCounter >= 3;
+    document.getElementById('offhead').classList.toggle('on', on);
+    document.body.classList.toggle('offhead', on);
+  }
+
+  function updateChannels(sq) {
+    const container = $('channels');
+    if (!sq || !Object.keys(sq).length) return;
+    const frag = document.createDocumentFragment();
+    for (const [label, q] of Object.entries(sq)) {
+      const cls = q >= 80 ? 'good' : q >= 50 ? 'mid' : 'bad';
+      const div = document.createElement('div');
+      div.className = 'ch ' + cls;
+      div.innerHTML = `<div class="label">${label}</div><div class="q">${q.toFixed(1)}%</div>`;
+      frag.appendChild(div);
+    }
+    container.innerHTML = '';
+    container.appendChild(frag);
+  }
+
+  function appendLog(s) {
+    const log = $('log');
+    if (log.firstElementChild && log.firstElementChild.classList.contains('empty')) {
+      log.innerHTML = '';
+    }
+    const t = new Date();
+    const ts = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}:${String(t.getSeconds()).padStart(2,'0')}`;
+    const line = document.createElement('span');
+    line.className = 'row-line';
+    line.innerHTML =
+      `<span class="tick">${String(tick).padStart(4,' ')}</span> | ` +
+      `<span class="ts">${ts}</span> | ` +
+      `<span class="lvl-${s.level}">${s.level.toUpperCase().padEnd(8,' ')}</span> | ` +
+      `focus=${fmt(s.focus_score)} | ` +
+      `<span class="b-delta">δ=${fmt(s.delta)}</span> ` +
+      `<span class="b-theta">θ=${fmt(s.theta)}</span> ` +
+      `<span class="b-alpha">α=${fmt(s.alpha)}</span> ` +
+      `<span class="b-beta">β=${fmt(s.beta)}</span> ` +
+      `<span class="b-gamma">γ=${fmt(s.gamma)}</span> ` +
+      `| β/(α+θ)=${fmt(s.beta_alpha_theta, 2)}`;
+    log.insertBefore(line, log.firstChild);
+    while (log.childElementCount > MAX_LOG) log.removeChild(log.lastChild);
+    setText('log-count', Math.min(tick, MAX_LOG));
+  }
+
+  function levelColor(lvl) {
+    return lvl === 'focused' ? 'var(--focused)'
+      : lvl === 'drifting' ? 'var(--drifting)'
+      : 'var(--lost)';
+  }
+
+  function onMessage(ev) {
+    let s;
+    try { s = JSON.parse(ev.data); } catch { return; }
+    if (!s || typeof s.focus_score === 'undefined') return;
+
+    tick++;
+
+    setText('s-session', s.session_id ?? '—');
+    const lvlEl = $('s-level');
+    lvlEl.textContent = (s.level ?? '—').toUpperCase();
+    lvlEl.style.color = levelColor(s.level);
+
+    setText('s-focus', fmt(s.focus_score));
+    setText('s-ratio', fmt(s.beta_alpha_theta));
+    setText('s-baseline', fmt(s.baseline_ratio));
+
+    setText('r-ta',  fmt(s.theta_alpha, 4));
+    setText('r-bt',  fmt(s.beta_theta, 4));
+    setText('r-bat', fmt(s.beta_alpha_theta, 4));
+    setText('r-baseline', fmt(s.baseline_ratio, 4));
+    setText('r-ftresh', fmt(s.focused_threshold, 4));
+    setText('r-ltresh', fmt(s.lost_threshold, 4));
+
+    updateBands(s);
+    updateChannels(s.signal_quality);
+    checkOffHead(s);
+    appendLog(s);
+  }
+
+  function connect() {
+    setStatus('connecting', 'CONNECTING…');
+    try {
+      ws = new WebSocket(WS_URL);
+    } catch (e) {
+      setStatus('disconnected', 'WS ERROR');
+      setTimeout(connect, 3000);
+      return;
+    }
+
+    ws.addEventListener('open', () => setStatus('connected', 'CONNECTED'));
+    ws.addEventListener('message', onMessage);
+    ws.addEventListener('close', () => {
+      setStatus('disconnected', 'DISCONNECTED — RETRYING');
+      setTimeout(connect, 3000);
+    });
+    ws.addEventListener('error', () => {
+      try { ws.close(); } catch {}
+    });
+  }
+
+  connect();
+})();
+</script>
+</body>
+</html>
