@@ -1,0 +1,10 @@
+# Dependencies for focus_engine_sdk.py (Neurosity SDK path).
+# Kept separate from requirements.txt so LSL-only installs stay lean.
+#
+# Install alongside the base requirements:
+#   pip install -r requirements.txt
+#   pip install -r requirements-sdk.txt
+
+neurosity>=2.0.0
+python-dotenv>=1.0.0
+websockets>=11.0.0
