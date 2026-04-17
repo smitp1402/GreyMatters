@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Raw → Bands (Welch's PSD)</title>
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --panel: #1c1b1b;
+    --panel-hi: #2a2a2a;
+    --panel-lo: #0e0e0e;
+    --border: rgba(65, 71, 84, 0.3);
+    --text: #e5e2e1;
+    --muted: #8b90a0;
+    --primary: #acc7ff;
+    --focused: #43a047;
+    --drifting: #ffa000;
+    --lost: #e53935;
+    --delta: #ab47bc;
+    --theta: #7e57c2;
+    --alpha: #42a5f5;
+    --beta: #66bb6a;
+    --gamma: #ffca28;
+    --mono: 'Consolas', 'JetBrains Mono', 'Menlo', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--primary);
+  }
+  h1 .sub { color: var(--muted); font-weight: 400; font-size: 14px; margin-left: 8px; }
+
+  .status {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .status.connected    { color: var(--focused);  border-color: var(--focused); }
+  .status.connecting   { color: var(--drifting); border-color: var(--drifting); }
+  .status.disconnected { color: var(--lost);     border-color: var(--lost); }
+
+  main {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .row { display: grid; gap: 16px; }
+  .row-2  { grid-template-columns: 1fr 1fr; }
+  .row-23 { grid-template-columns: 2fr 1fr; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--muted);
+  }
+  .panel-body { padding: 16px; }
+
+  /* Stats row */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--border); }
+  .stat  { padding: 16px; background: var(--panel); }
+  .stat .label { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: 2px; color: var(--muted); }
+  .stat .value { font-family: var(--mono); font-size: 22px; font-weight: 700; margin-top: 6px; color: var(--primary); }
+  .stat .hint  { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+  .engage-value.low    { color: var(--lost); }
+  .engage-value.medium { color: var(--drifting); }
+  .engage-value.high   { color: var(--focused); }
+
+  /* Band bars */
+  .band { display: grid; grid-template-columns: 110px 80px 1fr 150px; gap: 12px; align-items: center; padding: 10px 0; }
+  .band .name { font-family: var(--mono); font-size: 13px; font-weight: 700; }
+  .band .hz   { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .band .bar-wrap { background: var(--panel-lo); border-radius: 4px; height: 16px; overflow: hidden; position: relative; }
+  .band .bar  { height: 100%; width: 0%; border-radius: 4px; transition: width 0.4s ease; }
+  .band .val  { font-family: var(--mono); font-size: 12px; font-weight: 600; text-align: right; color: var(--muted); }
+  .band .val .abs { color: var(--text); }
+
+  .band.delta .name, .band.delta .val .abs { color: var(--delta); }
+  .band.theta .name, .band.theta .val .abs { color: var(--theta); }
+  .band.alpha .name, .band.alpha .val .abs { color: var(--alpha); }
+  .band.beta  .name, .band.beta  .val .abs { color: var(--beta); }
+  .band.gamma .name, .band.gamma .val .abs { color: var(--gamma); }
+  .band.delta .bar { background: var(--delta); }
+  .band.theta .bar { background: var(--theta); }
+  .band.alpha .bar { background: var(--alpha); }
+  .band.beta  .bar { background: var(--beta); }
+  .band.gamma .bar { background: var(--gamma); }
+
+  .axis {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0 2px 202px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* Ratios */
+  .kv { display: flex; justify-content: space-between; padding: 8px 0; font-family: var(--mono); font-size: 12px; border-bottom: 1px solid var(--border); }
+  .kv:last-child { border-bottom: none; }
+  .kv .k { color: var(--muted); letter-spacing: 1px; font-weight: 700; }
+  .kv .v { color: var(--text); font-weight: 700; }
+  .kv.emphasize .v { color: var(--primary); font-size: 14px; }
+
+  /* Per-channel matrix */
+  table.ch-matrix { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; }
+  table.ch-matrix th, table.ch-matrix td {
+    padding: 6px 8px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+  }
+  table.ch-matrix th { color: var(--muted); letter-spacing: 1.2px; font-weight: 700; }
+  table.ch-matrix th:first-child, table.ch-matrix td:first-child { text-align: left; color: var(--muted); }
+  table.ch-matrix td.heat {
+    position: relative;
+    color: var(--text);
+  }
+  table.ch-matrix td.heat::before {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    background: currentColor;
+    opacity: 0.08;
+    border-radius: 3px;
+    z-index: 0;
+  }
+  table.ch-matrix td.heat span { position: relative; z-index: 1; }
+  table.ch-matrix td.h-delta { color: var(--delta); }
+  table.ch-matrix td.h-theta { color: var(--theta); }
+  table.ch-matrix td.h-alpha { color: var(--alpha); }
+  table.ch-matrix td.h-beta  { color: var(--beta); }
+  table.ch-matrix td.h-gamma { color: var(--gamma); }
+
+  /* Log */
+  .log {
+    background: var(--panel-lo);
+    padding: 12px;
+    max-height: 280px;
+    overflow-y: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .log .row-line { display: block; color: var(--muted); margin-bottom: 2px; }
+  .log .row-line .b-delta { color: var(--delta); }
+  .log .row-line .b-theta { color: var(--theta); }
+  .log .row-line .b-alpha { color: var(--alpha); }
+  .log .row-line .b-beta  { color: var(--beta); }
+  .log .row-line .b-gamma { color: var(--gamma); }
+  .log .row-line .e-low    { color: var(--lost);     font-weight: 700; }
+  .log .row-line .e-medium { color: var(--drifting); font-weight: 700; }
+  .log .row-line .e-high   { color: var(--focused);  font-weight: 700; }
+
+  .empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Raw → Bands <span class="sub">Welch's PSD + Pope's engagement index · ws://localhost:8766</span></h1>
+    <div id="status" class="status disconnected">DISCONNECTED</div>
+  </header>
+
+  <main>
+    <!-- Stat row -->
+    <section class="panel">
+      <div class="stats">
+        <div class="stat">
+          <div class="label">ENGAGEMENT</div>
+          <div class="value engage-value" id="s-engage">—</div>
+          <div class="hint">β / (α + θ)</div>
+        </div>
+        <div class="stat">
+          <div class="label">θ / β RATIO</div>
+          <div class="value" id="s-tbr">—</div>
+          <div class="hint">lower = more focused</div>
+        </div>
+        <div class="stat">
+          <div class="label">WINDOW</div>
+          <div class="value" id="s-window">—</div>
+          <div class="hint">PSD rolling buffer</div>
+        </div>
+        <div class="stat">
+          <div class="label">SAMPLES</div>
+          <div class="value" id="s-samples">—</div>
+          <div class="hint">per channel</div>
+        </div>
+        <div class="stat">
+          <div class="label">UPDATES</div>
+          <div class="value" id="s-ticks">0</div>
+          <div class="hint">ticks received</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bands + ratios -->
+    <section class="row row-23">
+      <div class="panel">
+        <div class="panel-header">FREQUENCY BANDS — MEAN ACROSS 8 CHANNELS</div>
+        <div class="panel-body">
+          <div class="band delta">
+            <div class="name">δ DELTA</div><div class="hz">1–4 Hz</div>
+            <div class="bar-wrap"><div class="bar" data-band="delta"></div></div>
+            <div class="val"><span class="abs" data-abs="delta">—</span> &nbsp; <span data-rel="delta">—</span></div>
+          </div>
+          <div class="band theta">
+            <div class="name">θ THETA</div><div class="hz">4–8 Hz</div>
+            <div class="bar-wrap"><div class="bar" data-band="theta"></div></div>
+            <div class="val"><span class="abs" data-abs="theta">—</span> &nbsp; <span data-rel="theta">—</span></div>
+          </div>
+          <div class="band alpha">
+            <div class="name">α ALPHA</div><div class="hz">8–13 Hz</div>
+            <div class="bar-wrap"><div class="bar" data-band="alpha"></div></div>
+            <div class="val"><span class="abs" data-abs="alpha">—</span> &nbsp; <span data-rel="alpha">—</span></div>
+          </div>
+          <div class="band beta">
+            <div class="name">β BETA</div><div class="hz">13–30 Hz</div>
+            <div class="bar-wrap"><div class="bar" data-band="beta"></div></div>
+            <div class="val"><span class="abs" data-abs="beta">—</span> &nbsp; <span data-rel="beta">—</span></div>
+          </div>
+          <div class="band gamma">
+            <div class="name">γ GAMMA</div><div class="hz">30–45 Hz</div>
+            <div class="bar-wrap"><div class="bar" data-band="gamma"></div></div>
+            <div class="val"><span class="abs" data-abs="gamma">—</span> &nbsp; <span data-rel="gamma">—</span></div>
+          </div>
+          <div class="axis"><span>0%</span><span>50%</span><span>100%</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">DERIVED RATIOS</div>
+        <div class="panel-body">
+          <div class="kv emphasize"><span class="k">ENGAGEMENT β/(α+θ)</span><span class="v" id="r-engage">—</span></div>
+          <div class="kv"><span class="k">θ / β</span><span class="v" id="r-tbr">—</span></div>
+          <div class="kv"><span class="k">α / β</span><span class="v" id="r-ab">—</span></div>
+          <div class="kv"><span class="k">(α + θ) / β</span><span class="v" id="r-inv">—</span></div>
+          <div class="kv"><span class="k">TOTAL POWER</span><span class="v" id="r-total">—</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Per-channel matrix -->
+    <section class="panel">
+      <div class="panel-header">PER-CHANNEL ABSOLUTE POWER (μV²)</div>
+      <div class="panel-body">
+        <table class="ch-matrix" id="matrix">
+          <thead>
+            <tr>
+              <th>BAND</th>
+              <th>CP3</th><th>C3</th><th>F5</th><th>PO3</th>
+              <th>PO4</th><th>F6</th><th>C4</th><th>CP4</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Log -->
+    <section class="panel">
+      <div class="panel-header">LIVE STREAM</div>
+      <div class="log" id="log"><div class="empty">WAITING FOR DATA…</div></div>
+    </section>
+  </main>
+
+<script>
+  const WS_URL = 'ws://localhost:8766';
+  const CHANNELS = ['CP3', 'C3', 'F5', 'PO3', 'PO4', 'F6', 'C4', 'CP4'];
+  const BANDS = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
+
+  const statusEl = document.getElementById('status');
+  const logEl    = document.getElementById('log');
+  const matrixBody = document.querySelector('#matrix tbody');
+
+  // Build per-channel matrix skeleton once.
+  BANDS.forEach(band => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${band.toUpperCase()}</td>` +
+      CHANNELS.map(ch => `<td class="heat h-${band}" data-mx="${band}-${ch}"><span>—</span></td>`).join('');
+    matrixBody.appendChild(tr);
+  });
+
+  let tickCount = 0;
+
+  function setStatus(text, cls) {
+    statusEl.textContent = text;
+    statusEl.className = 'status ' + cls;
+  }
+
+  function fmt(n, digits = 2) {
+    if (n === null || n === undefined || Number.isNaN(n)) return '—';
+    return Number(n).toFixed(digits);
+  }
+
+  function engageBucket(v) {
+    // Rough visual heuristic only — real classification needs per-user baseline.
+    if (v < 0.3) return 'low';
+    if (v < 0.6) return 'medium';
+    return 'high';
+  }
+
+  function handleSnapshot(s) {
+    tickCount += 1;
+    document.getElementById('s-ticks').textContent = String(tickCount);
+
+    // Header stats
+    const eng = s.engagement_index ?? 0;
+    const engEl = document.getElementById('s-engage');
+    engEl.textContent = fmt(eng);
+    engEl.classList.remove('low', 'medium', 'high');
+    engEl.classList.add(engageBucket(eng));
+
+    document.getElementById('s-tbr').textContent    = fmt(s.theta_beta_ratio);
+    document.getElementById('s-window').textContent = fmt(s.window_sec, 1) + 's';
+    document.getElementById('s-samples').textContent = s.sample_count ?? '—';
+
+    // Ratios panel
+    const abs = s.absolute || {};
+    const total = BANDS.reduce((acc, b) => acc + (abs[b] || 0), 0);
+    const alpha = abs.alpha || 0;
+    const beta  = abs.beta  || 0;
+    const theta = abs.theta || 0;
+
+    document.getElementById('r-engage').textContent = fmt(s.engagement_index);
+    document.getElementById('r-tbr').textContent    = fmt(s.theta_beta_ratio);
+    document.getElementById('r-ab').textContent     = fmt(beta > 0 ? alpha / beta : 0);
+    document.getElementById('r-inv').textContent    = fmt(beta > 0 ? (alpha + theta) / beta : 0);
+    document.getElementById('r-total').textContent  = fmt(total, 1);
+
+    // Bands — bars use RELATIVE %, labels show ABSOLUTE + %.
+    const rel = s.relative || {};
+    BANDS.forEach(band => {
+      const relPct = (rel[band] || 0) * 100;
+      document.querySelector(`[data-band="${band}"]`).style.width = `${relPct}%`;
+      document.querySelector(`[data-abs="${band}"]`).textContent = fmt(abs[band], 2);
+      document.querySelector(`[data-rel="${band}"]`).textContent = `${relPct.toFixed(1)}%`;
+    });
+
+    // Per-channel matrix
+    const pc = s.per_channel || {};
+    BANDS.forEach(band => {
+      const row = pc[band] || {};
+      // Find max in this band row for heat coloring.
+      const maxVal = Math.max(1e-6, ...CHANNELS.map(ch => row[ch] || 0));
+      CHANNELS.forEach(ch => {
+        const cell = document.querySelector(`[data-mx="${band}-${ch}"]`);
+        if (!cell) return;
+        const val = row[ch] || 0;
+        cell.querySelector('span').textContent = fmt(val, 2);
+        // Cap at 1.0 — use currentColor opacity via CSS var injection.
+        cell.style.setProperty('--intensity', (val / maxVal).toFixed(2));
+        cell.style.backgroundColor = '';
+        cell.style.opacity = 0.35 + 0.65 * (val / maxVal);
+      });
+    });
+
+    // Log line
+    if (logEl.querySelector('.empty')) logEl.innerHTML = '';
+    const ts = new Date(s.timestamp * 1000).toLocaleTimeString();
+    const engClass = engageBucket(eng);
+    const line = document.createElement('span');
+    line.className = 'row-line';
+    line.innerHTML =
+      `<span class="ts">${ts}</span>  ` +
+      `engage=<span class="e-${engClass}">${fmt(eng)}</span>  ` +
+      `<span class="b-delta">δ=${fmt(abs.delta)}</span> ` +
+      `<span class="b-theta">θ=${fmt(abs.theta)}</span> ` +
+      `<span class="b-alpha">α=${fmt(abs.alpha)}</span> ` +
+      `<span class="b-beta">β=${fmt(abs.beta)}</span> ` +
+      `<span class="b-gamma">γ=${fmt(abs.gamma)}</span>`;
+    logEl.prepend(line);
+    // Trim log to most recent 200 lines.
+    while (logEl.childElementCount > 200) logEl.removeChild(logEl.lastChild);
+  }
+
+  let ws;
+  let reconnectTimer;
+
+  function connect() {
+    setStatus('CONNECTING', 'connecting');
+    ws = new WebSocket(WS_URL);
+    ws.onopen    = () => setStatus('CONNECTED', 'connected');
+    ws.onclose   = () => { setStatus('DISCONNECTED', 'disconnected'); scheduleReconnect(); };
+    ws.onerror   = () => { setStatus('DISCONNECTED', 'disconnected'); };
+    ws.onmessage = (ev) => {
+      try {
+        const snap = JSON.parse(ev.data);
+        handleSnapshot(snap);
+      } catch (err) {
+        console.error('Bad message:', err, ev.data);
+      }
+    };
+  }
+
+  function scheduleReconnect() {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(connect, 1500);
+  }
+
+  connect();
+</script>
+</body>
+</html>
