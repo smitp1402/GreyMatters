@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'synthetic_alchemist_screen.dart';
+import 'stellar_lifecycle_screen.dart';
 
 /// Registry mapping topic-specific activities to widgets.
 ///
@@ -24,6 +25,13 @@ class ActivityRegistry {
           sectionIndex: sectionIndex,
           onComplete: onComplete,
         );
+      case 'stellar_lifecycle_interactive':
+        return StellarLifecycleScreen(
+          subject: subject,
+          topicId: topicId,
+          sectionIndex: sectionIndex,
+          onComplete: onComplete,
+        );
       default:
         return null;
     }
@@ -34,6 +42,9 @@ class ActivityRegistry {
   static String? activityForTopic(String subject, String topicId) {
     if (subject == 'chemistry' && topicId == 'periodic_table') {
       return 'synthetic_alchemist';
+    }
+    if (subject == 'astronomy' && topicId == 'stellar_lifecycle') {
+      return 'stellar_lifecycle_interactive';
     }
     return null;
   }

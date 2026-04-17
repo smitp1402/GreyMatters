@@ -1,0 +1,7 @@
+{
+  "id": "astronomy",
+  "name": "Astronomy",
+  "icon": "auto_awesome",
+  "topicOrder": ["stellar_lifecycle"],
+  "unlockMode": "open"
+}
