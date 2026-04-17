@@ -61,4 +61,6 @@ flutter:
     - assets/curriculum/biology/cell_structure/
     - assets/curriculum/biology/cell_division/
     - assets/curriculum/biology/dna_replication/
+    - assets/curriculum/astronomy/
+    - assets/curriculum/astronomy/stellar_lifecycle/
     - assets/images/

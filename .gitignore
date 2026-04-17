@@ -54,3 +54,15 @@ Interaction/
 
 # How to run (local reference)
 HOW_TO_RUN.md
+
+# Claude Code local workspace
+.claude/
+
+# Local drift log (our edits vs original)
+document-drift.md
+
+# Local dev/test entry points (scratch launchers, interaction previews)
+lib/dev/
+
+# Local PowerShell session setup (adds Flutter to PATH for this session only)
+dev-env.ps1

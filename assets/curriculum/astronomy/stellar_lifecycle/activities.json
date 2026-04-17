@@ -1,0 +1,11 @@
+{
+  "topicId": "stellar_lifecycle",
+  "activities": [
+    {
+      "id": "stellar_lifecycle_interactive",
+      "name": "Life of a Star",
+      "description": "Push cosmic dust to form a protostar, ignite fusion, choose a starting mass (Sun-like, Massive, Supermassive), scrub through the star's life on a timeline, then trigger the finale to see its death. Mass determines the remnant: white dwarf, neutron star, or black hole. Return to the mass picker to explore alternate paths.",
+      "driftTrigger": "moderate"
+    }
+  ]
+}

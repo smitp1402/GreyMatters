@@ -54,6 +54,21 @@
           "prereqs": ["cell_division"]
         }
       ]
+    },
+    {
+      "id": "astronomy",
+      "name": "Astronomy",
+      "icon": "auto_awesome",
+      "color": "#1A1F3A",
+      "topics": [
+        {
+          "id": "stellar_lifecycle",
+          "name": "The Life and Death of Stars",
+          "grade": "",
+          "estimatedMinutes": 12,
+          "prereqs": []
+        }
+      ]
     }
   ]
 }
