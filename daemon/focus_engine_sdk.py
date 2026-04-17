@@ -29,7 +29,10 @@ Usage:
     python focus_engine_sdk.py                              # real Crown via SDK
     python focus_engine_sdk.py --mock                       # offline mock data
     python focus_engine_sdk.py --smooth-window=7            # 7s rolling average
-    python focus_engine_sdk.py --lost-offset=0.12 --focused-offset=0.25
+
+Classification thresholds (derived from 30s calibration):
+    lost_threshold  = clamp(resting − 0.5 × resting_std, 0.15, 0.32)
+    focus_threshold = clamp(resting + 0.12,              0.30, 0.52)
 
 Rollback: just run attention_engine_lsl.py instead. Zero state shared.
 """
@@ -43,6 +46,7 @@ import logging
 import math
 import os
 import random
+import statistics
 import sys
 import threading
 import time
@@ -69,6 +73,7 @@ logger = logging.getLogger("greymatter.sdk_daemon")
 
 WS_PORT = 8765  # Same port as LSL engine — run one daemon at a time.
 EMIT_RATE_HZ = 1.0  # Match LSL engine's broadcast cadence.
+LOG_EVERY_N_TICKS = 5  # Console logs every 5s; WebSocket broadcast stays at EMIT_RATE_HZ.
 
 # Neurosity SDK emits focus() and brainwaves_power_by_band() at ~4 Hz.
 # Used to convert smooth-window seconds → buffer sample count.
@@ -80,9 +85,20 @@ STALENESS_THRESHOLD_SEC = 3.0
 
 # Defaults — all overridable via CLI flags.
 DEFAULT_RESTING = 0.5
-DEFAULT_LOST_OFFSET = 0.15
-DEFAULT_FOCUSED_OFFSET = 0.20
+DEFAULT_RESTING_STD = 0.05
 DEFAULT_SMOOTH_WINDOW_SEC = 5.0
+
+# Threshold formula (see /implement Q1–Q6 decision notes):
+#   lost_threshold  = resting − LOST_STD_MULTIPLIER × resting_std
+#   focus_threshold = resting + FOCUS_OFFSET_FROM_RESTING
+# Both thresholds are clamped to keep the Lost zone from collapsing when
+# calibration std is tiny (SDK probability is already heavily smoothed).
+LOST_STD_MULTIPLIER = 0.5
+FOCUS_OFFSET_FROM_RESTING = 0.12
+LOST_THRESHOLD_MIN = 0.15
+LOST_THRESHOLD_MAX = 0.32
+FOCUS_THRESHOLD_MIN = 0.30
+FOCUS_THRESHOLD_MAX = 0.52
 
 # Crown 8-channel layout: CP3, C3, F5, PO3, PO4, F6, C4, CP4.
 # SDK power-by-band payloads arrive as 8-element lists in this order.
@@ -315,13 +331,10 @@ class CrownEngineSDK:
         self,
         *,
         smooth_window_sec: float,
-        lost_offset: float,
-        focused_offset: float,
     ) -> None:
         self._producer: Optional[SDKProducer] = None
         self._resting: float = DEFAULT_RESTING
-        self._lost_offset = lost_offset
-        self._focused_offset = focused_offset
+        self._resting_std: float = DEFAULT_RESTING_STD
         self._smooth_window_sec = smooth_window_sec
         # Keeps last successful emission so disconnects can re-broadcast it
         # instead of going silent (per Q8 design decision).
@@ -356,12 +369,13 @@ class CrownEngineSDK:
 
         bands_normalized, bands_absolute = self._producer.get_band_snapshot()
 
-        lost_threshold = self._resting - self._lost_offset
-        focused_threshold = self._resting + self._focused_offset
+        lost_threshold, focused_threshold = _compute_thresholds(
+            self._resting, self._resting_std
+        )
 
         if smoothed < lost_threshold:
             level = AttentionLevel.lost
-        elif smoothed > focused_threshold:
+        elif smoothed >= focused_threshold:
             level = AttentionLevel.focused
         else:
             level = AttentionLevel.drifting
@@ -416,12 +430,19 @@ class CrownEngineSDK:
         mean = sum(samples) / len(samples)
         # Clamp to a sane range in case the SDK emitted weird values.
         self._resting = float(max(0.05, min(0.95, mean)))
+        # Population std dev (samples ARE the population for this calibration).
+        self._resting_std = (
+            float(statistics.pstdev(samples)) if len(samples) >= 2 else 0.0
+        )
+        lost_th, focus_th = _compute_thresholds(self._resting, self._resting_std)
         logger.info(
-            "Calibration done: %d samples, resting=%.3f (lost<%.3f, focused>%.3f)",
+            "Calibration done: %d samples, resting=%.3f std=%.3f "
+            "(lost<%.3f, focused≥%.3f)",
             len(samples),
             self._resting,
-            self._resting - self._lost_offset,
-            self._resting + self._focused_offset,
+            self._resting_std,
+            lost_th,
+            focus_th,
         )
         return self._resting
 
@@ -458,8 +479,8 @@ class MockGenerator:
         self,
         session_id: str,
         resting: float,
-        lost_offset: float,
-        focused_offset: float,
+        lost_threshold: float,
+        focused_threshold: float,
     ) -> AttentionState:
         self._tick += 1.0
         t = self._tick % self._cycle
@@ -480,11 +501,9 @@ class MockGenerator:
 
         focus = max(0.0, min(1.0, base + self._rng.gauss(0, 0.03)))
 
-        lost_threshold = resting - lost_offset
-        focused_threshold = resting + focused_offset
         if focus < lost_threshold:
             level = AttentionLevel.lost
-        elif focus > focused_threshold:
+        elif focus >= focused_threshold:
             level = AttentionLevel.focused
         else:
             level = AttentionLevel.drifting
@@ -556,14 +575,10 @@ class AttentionServer:
         demo: bool,
         session_id: str,
         smooth_window_sec: float,
-        lost_offset: float,
-        focused_offset: float,
     ) -> None:
         self._mock = mock
         self._demo = demo
         self._smooth_window_sec = smooth_window_sec
-        self._lost_offset = lost_offset
-        self._focused_offset = focused_offset
 
         self._clients: Set[WebSocketServerProtocol] = set()
         self._session_id = session_id
@@ -574,6 +589,7 @@ class AttentionServer:
 
         # Mock-mode resting value (updated by mock-mode "calibrate" command).
         self._mock_resting: float = DEFAULT_RESTING
+        self._mock_resting_std: float = DEFAULT_RESTING_STD
 
     async def start(self) -> None:
         if self._mock:
@@ -582,8 +598,6 @@ class AttentionServer:
         else:
             self._crown = CrownEngineSDK(
                 smooth_window_sec=self._smooth_window_sec,
-                lost_offset=self._lost_offset,
-                focused_offset=self._focused_offset,
             )
             try:
                 self._crown.connect()
@@ -684,24 +698,26 @@ class AttentionServer:
                 continue
             tick += 1
 
-            level_color = {
-                "focused": "\033[92m",
-                "drifting": "\033[93m",
-                "lost": "\033[91m",
-            }
-            reset = "\033[0m"
-            c = level_color.get(state.level, "")
-            logger.info(
-                "%4d | %s%8s%s | focus=%.3f | resting=%.3f  lost<%.3f  focused>%.3f",
-                tick,
-                c,
-                state.level,
-                reset,
-                state.focus_score,
-                state.baseline_ratio,
-                state.lost_threshold,
-                state.focused_threshold,
-            )
+            # Log every 5s to keep console readable; broadcast still runs at EMIT_RATE_HZ.
+            if tick % LOG_EVERY_N_TICKS == 0:
+                level_color = {
+                    "focused": "\033[92m",
+                    "drifting": "\033[93m",
+                    "lost": "\033[91m",
+                }
+                reset = "\033[0m"
+                c = level_color.get(state.level, "")
+                logger.info(
+                    "%4d | %s%8s%s | focus=%.3f | resting=%.3f  lost<%.3f  focused>%.3f",
+                    tick,
+                    c,
+                    state.level,
+                    reset,
+                    state.focus_score,
+                    state.baseline_ratio,
+                    state.lost_threshold,
+                    state.focused_threshold,
+                )
 
             if self._clients:
                 payload = state.to_json()
@@ -718,11 +734,14 @@ class AttentionServer:
 
     def _compute(self) -> Optional[AttentionState]:
         if self._mock_gen is not None:
+            lost_th, focus_th = _compute_thresholds(
+                self._mock_resting, self._mock_resting_std
+            )
             return self._mock_gen.next(
                 self._session_id,
                 self._mock_resting,
-                self._lost_offset,
-                self._focused_offset,
+                lost_th,
+                focus_th,
             )
         if self._crown is not None:
             return self._crown.compute(self._session_id)
@@ -733,6 +752,15 @@ class AttentionServer:
 
 def _now_ts() -> float:
     return datetime.now(timezone.utc).timestamp()
+
+
+def _compute_thresholds(resting: float, resting_std: float) -> tuple[float, float]:
+    """Derive (lost_threshold, focus_threshold) from a calibrated baseline."""
+    raw_lost = resting - LOST_STD_MULTIPLIER * resting_std
+    raw_focus = resting + FOCUS_OFFSET_FROM_RESTING
+    lost = max(LOST_THRESHOLD_MIN, min(LOST_THRESHOLD_MAX, raw_lost))
+    focus = max(FOCUS_THRESHOLD_MIN, min(FOCUS_THRESHOLD_MAX, raw_focus))
+    return lost, focus
 
 
 # ── Entry Point ──────────────────────────────────────────────────────────
@@ -754,18 +782,6 @@ def main() -> None:
         default=DEFAULT_SMOOTH_WINDOW_SEC,
         help=f"Rolling-average window in seconds (default {DEFAULT_SMOOTH_WINDOW_SEC})",
     )
-    parser.add_argument(
-        "--lost-offset",
-        type=float,
-        default=DEFAULT_LOST_OFFSET,
-        help=f"Distance below resting classified as 'lost' (default {DEFAULT_LOST_OFFSET})",
-    )
-    parser.add_argument(
-        "--focused-offset",
-        type=float,
-        default=DEFAULT_FOCUSED_OFFSET,
-        help=f"Distance above resting classified as 'focused' (default {DEFAULT_FOCUSED_OFFSET})",
-    )
     args = parser.parse_args()
 
     server = AttentionServer(
@@ -773,8 +789,6 @@ def main() -> None:
         demo=args.demo,
         session_id=args.session_id,
         smooth_window_sec=args.smooth_window,
-        lost_offset=args.lost_offset,
-        focused_offset=args.focused_offset,
     )
     try:
         asyncio.run(server.start())

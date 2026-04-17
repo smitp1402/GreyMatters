@@ -1,12 +1,12 @@
 // lib/student/screens/calibration_screen.dart
 
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/services/attention_stream.dart';
 import '../../core/services/websocket_client.dart';
 
 /// Screen 3 — 30-second baseline calibration.
@@ -102,15 +102,24 @@ class _CalibrationScreenState extends State<CalibrationScreen>
   }
 
   void _onComplete() async {
-    setState(() {
-      _phase = _CalibrationPhase.complete;
-      _baselineValue = 1.0 + (Random().nextDouble() * 0.5); // simulated
-    });
-
+    setState(() => _phase = _CalibrationPhase.complete);
     _completeAnim.forward();
     await _tts.speak("Calibration complete. Baseline established.");
 
-    // Auto-advance after 2 seconds
+    // Wait for the daemon to broadcast an AttentionState carrying the
+    // real post-calibration baseline (mean β/(α+θ) over the 30s window).
+    try {
+      final state = await AttentionStream.instance.stream
+          .firstWhere((s) => s.baselineRatio > 0.0)
+          .timeout(const Duration(seconds: 3));
+      if (mounted) {
+        setState(() => _baselineValue = state.baselineRatio);
+      }
+    } catch (_) {
+      // Timeout or daemon unreachable — keep the default shown.
+    }
+
+    // Hold on the result briefly, then auto-advance.
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
       context.go('/student/session-ready');

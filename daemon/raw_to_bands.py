@@ -38,23 +38,27 @@ Usage:
 from __future__ import annotations
 
 import asyncio
+import collections
 import csv
 import json
 import logging
+import math
 import os
 import random
+import statistics
 import sys
 import threading
 import time
 from argparse import ArgumentParser
 from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import websockets
 from scipy.integrate import trapezoid
-from scipy.signal import welch
+from scipy.signal import butter, filtfilt, iirnotch, welch
 
 
 # ── Logging ──────────────────────────────────────────────────────────────
@@ -80,9 +84,32 @@ DEFAULT_SAMPLE_RATE_HZ = 256.0
 # LSL/SDK focus engines so raw_to_bands can run side-by-side for A/B study.
 DEFAULT_WS_PORT = 8766
 
-# Standard clinical EEG band boundaries (Hz).
+# Drift detection defaults:
+#   - threshold:         engagement index below which a tick counts as "below"
+#   - consecutive secs:  below-threshold run must last this long to trigger
+# Wall-clock seconds so tuning doesn't break when --print-interval changes.
+DEFAULT_ENGAGEMENT_THRESHOLD = 0.5
+DEFAULT_CONSECUTIVE_SECONDS = 10.0
+# Visual history length (ticks) emitted to the dashboard for the strip view.
+DEFAULT_HISTORY_TICKS = 30
+
+# Personalized baseline defaults.
+# Threshold formula: threshold = mean_engagement − std_multiplier × std_engagement
+# Higher multiplier → looser threshold (less sensitive to drift).
+# Lower multiplier → stricter threshold (fires on smaller dips).
+DEFAULT_BASELINE_PATH = Path(__file__).parent / "baseline.json"
+DEFAULT_BASELINE_STD_MULTIPLIER = 1.0
+DEFAULT_CALIBRATION_SECONDS = 60.0
+# Floor so a very flat baseline doesn't produce an impossibly low threshold.
+BASELINE_THRESHOLD_FLOOR = 0.05
+
+# EEG band boundaries (Hz), matching Science of Focus Detection spec:
+#   - Delta is 2-4 Hz (not textbook 0.5-4) — sub-2 Hz on dry electrodes is
+#     dominated by motion + sweat drift + cardiac pulsation, not brain.
+#   - Gamma is 30-45 Hz (not textbook 30-80) — above 45 Hz on consumer EEG
+#     is EMG-dominated; Neurosity also caps at 45 Hz on-device.
 BAND_RANGES: dict[str, tuple[float, float]] = {
-    "delta": (1.0, 4.0),
+    "delta": (2.0, 4.0),
     "theta": (4.0, 8.0),
     "alpha": (8.0, 13.0),
     "beta":  (13.0, 30.0),
@@ -90,18 +117,57 @@ BAND_RANGES: dict[str, tuple[float, float]] = {
 }
 BAND_NAMES: tuple[str, ...] = tuple(BAND_RANGES.keys())
 
+# Signal-processing pipeline parameters (per Science of Focus Detection spec):
+#   2-45 Hz Butterworth bandpass removes DC drift, cardiac, sweat, EMG and
+#   line-noise harmonics. 50 Hz + 60 Hz notches strip both European and
+#   North American mains hum.
+BANDPASS_LOW_HZ = 2.0
+BANDPASS_HIGH_HZ = 45.0
+BANDPASS_ORDER = 4
+NOTCH_FREQS_HZ: tuple[float, ...] = (50.0, 60.0)
+NOTCH_Q = 30.0
+
 
 # ── Immutable snapshot returned by the analyzer ──────────────────────────
+
+@dataclass(frozen=True)
+class DriftState:
+    """Drift classification for a single tick.
+
+    - `classification` is one of "focused" / "drifting" / "lost".
+      · focused  = engagement ≥ threshold, no active trigger
+      · drifting = below threshold, but not yet enough to trigger
+      · lost     = trigger fired (5+ consecutive OR 10s sustained)
+    - `trigger_reason` is "", "consecutive", or "sustained" — empty when
+      not triggered. Frontend uses it to pick banner text.
+    - `recent_engagement` is the last N engagement values (oldest→newest)
+      so the dashboard can paint a rolling strip without tracking state.
+    - `recent_below` is the parallel below/above flag list for the strip.
+    """
+    threshold: float
+    below_threshold: bool
+    consecutive_below: int
+    rolling_avg_engagement: float
+    rolling_below_count: int
+    rolling_window_ticks: int
+    drift_triggered: bool
+    classification: str
+    trigger_reason: str
+    recent_engagement: list[float] = field(default_factory=list)
+    recent_below: list[bool] = field(default_factory=list)
+
 
 @dataclass(frozen=True)
 class BandSnapshot:
     """Band powers computed from one PSD window.
 
-    - `absolute[band]` is the channel-averaged absolute power (μV²/Hz·Hz = μV²).
+    - `absolute[band]` is the median power across channels (μV²).
     - `relative[band]` is absolute[band] / sum(absolute.values()); sums to 1.0.
     - `per_channel[band][ch_label]` holds the raw per-channel absolute power.
-    - `engagement_index` is Pope's β / (α + θ) (NASA adaptive-automation formula).
-    - `theta_beta_ratio` is classic θ / β (Lubar/Monastra attention literature).
+    - `engagement_index` is β / (α + θ), the combined focus index (Pope 1995).
+    - `theta_alpha_ratio` is θ / α — drift indicator (low = focused).
+    - `beta_theta_ratio` is β / θ — engagement indicator (high = focused).
+    - `drift` carries the rolling-window classification (see DriftState).
     """
 
     timestamp: float
@@ -110,11 +176,211 @@ class BandSnapshot:
     absolute: dict[str, float]
     relative: dict[str, float]
     engagement_index: float
-    theta_beta_ratio: float
+    theta_alpha_ratio: float
+    beta_theta_ratio: float
     per_channel: dict[str, dict[str, float]] = field(default_factory=dict)
+    drift: Optional[DriftState] = None
 
     def to_json(self) -> str:
         return json.dumps(asdict(self))
+
+
+# ── Personalized baseline ────────────────────────────────────────────────
+
+@dataclass(frozen=True)
+class Baseline:
+    """Per-user focus baseline derived from a calibration session.
+
+    `derived_threshold` is the value the DriftClassifier uses; the rest is
+    metadata so we can diagnose / recompute / show provenance in the UI.
+    """
+    created_at: float
+    created_at_iso: str
+    duration_seconds: float
+    tick_count: int
+    sample_rate_hz: float
+    window_sec: float
+    print_interval_sec: float
+    mean_engagement: float
+    std_engagement: float
+    min_engagement: float
+    max_engagement: float
+    std_multiplier: float
+    derived_threshold: float
+
+
+def compute_baseline(
+    values: list[float],
+    *,
+    sample_rate_hz: float,
+    window_sec: float,
+    print_interval_sec: float,
+    std_multiplier: float,
+    duration_seconds: float,
+) -> Baseline:
+    """Mean − N × std, floored at BASELINE_THRESHOLD_FLOOR."""
+    if len(values) < 2:
+        raise ValueError(f"need ≥2 engagement values for baseline; got {len(values)}")
+
+    mean = statistics.mean(values)
+    stdev = statistics.pstdev(values)  # population, samples ARE the dataset
+    raw_threshold = mean - std_multiplier * stdev
+    derived = max(BASELINE_THRESHOLD_FLOOR, raw_threshold)
+
+    now = time.time()
+    return Baseline(
+        created_at=now,
+        created_at_iso=datetime.fromtimestamp(now, tz=timezone.utc).isoformat(),
+        duration_seconds=duration_seconds,
+        tick_count=len(values),
+        sample_rate_hz=sample_rate_hz,
+        window_sec=window_sec,
+        print_interval_sec=print_interval_sec,
+        mean_engagement=mean,
+        std_engagement=stdev,
+        min_engagement=min(values),
+        max_engagement=max(values),
+        std_multiplier=std_multiplier,
+        derived_threshold=derived,
+    )
+
+
+def save_baseline(baseline: Baseline, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(asdict(baseline), indent=2), encoding="utf-8")
+
+
+def load_baseline(path: Path) -> Optional[Baseline]:
+    """Read baseline.json. Returns None if missing or malformed (never raises)."""
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return Baseline(**data)
+    except (json.JSONDecodeError, TypeError, KeyError) as exc:
+        logger.warning("Ignoring malformed baseline at %s: %s", path, exc)
+        return None
+
+
+# ── Filter design (cached by sample rate) ────────────────────────────────
+
+_FILTER_CACHE: dict[float, dict[str, tuple[np.ndarray, np.ndarray]]] = {}
+
+
+def _design_filters(sample_rate: float) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+    """Design (b, a) coefficients for bandpass + notches. Cached per fs.
+
+    Returns {"bandpass": (b, a), "notch_50": (b, a), "notch_60": (b, a), ...}.
+    Notch keys are "notch_<freq>".
+    """
+    cached = _FILTER_CACHE.get(sample_rate)
+    if cached is not None:
+        return cached
+
+    nyquist = sample_rate / 2.0
+    lo = BANDPASS_LOW_HZ / nyquist
+    hi = BANDPASS_HIGH_HZ / nyquist
+    b_bp, a_bp = butter(BANDPASS_ORDER, [lo, hi], btype="bandpass")
+
+    filters: dict[str, tuple[np.ndarray, np.ndarray]] = {"bandpass": (b_bp, a_bp)}
+    for freq in NOTCH_FREQS_HZ:
+        if freq >= nyquist:
+            continue  # notch above Nyquist is a no-op (and scipy errors out)
+        b_n, a_n = iirnotch(freq, NOTCH_Q, fs=sample_rate)
+        filters[f"notch_{int(freq)}"] = (b_n, a_n)
+
+    _FILTER_CACHE[sample_rate] = filters
+    return filters
+
+
+def _apply_filters(samples: np.ndarray, sample_rate: float) -> np.ndarray:
+    """Zero-phase bandpass + 50 Hz + 60 Hz notches. Input/output shape preserved.
+
+    Uses scipy.filtfilt so the filter adds no phase lag (matters when the
+    PSD window is only 2-4 seconds — group delay would eat real signal).
+    """
+    filters = _design_filters(sample_rate)
+    out = samples
+    b, a = filters["bandpass"]
+    out = filtfilt(b, a, out, axis=1)
+    for key, (b, a) in filters.items():
+        if key == "bandpass":
+            continue
+        out = filtfilt(b, a, out, axis=1)
+    return out
+
+
+# ── Drift classifier (rolling-window focus state) ────────────────────────
+
+class DriftClassifier:
+    """Single-rule classifier: trigger fires when engagement stays below
+    threshold for `consecutive_trigger_ticks` in a row. Any above-threshold
+    tick resets the counter.
+
+    Keeps a separate history deque (longer) for the UI strip, decoupled from
+    the trigger rule itself.
+    """
+
+    def __init__(
+        self,
+        *,
+        threshold: float,
+        consecutive_trigger_ticks: int,
+        history_ticks: int,
+    ) -> None:
+        if consecutive_trigger_ticks <= 0:
+            raise ValueError("consecutive_trigger_ticks must be > 0")
+
+        self._threshold = threshold
+        self._consecutive_trigger_ticks = consecutive_trigger_ticks
+        self._history: collections.deque[tuple[float, bool]] = collections.deque(
+            maxlen=max(history_ticks, consecutive_trigger_ticks)
+        )
+        self._consecutive_below = 0
+
+    def classify(self, engagement: float) -> DriftState:
+        below = engagement < self._threshold
+        self._history.append((engagement, below))
+
+        if below:
+            self._consecutive_below += 1
+        else:
+            self._consecutive_below = 0
+
+        drift_triggered = self._consecutive_below >= self._consecutive_trigger_ticks
+
+        # Rolling stats on the display history — informational only, NOT used
+        # to decide triggers. Helps the dashboard show "how the window looks".
+        below_count = sum(1 for _, b in self._history if b)
+        avg_engagement = (
+            sum(e for e, _ in self._history) / len(self._history)
+            if self._history
+            else 0.0
+        )
+
+        if drift_triggered:
+            classification = "lost"
+            trigger_reason = "consecutive"
+        elif below:
+            classification = "drifting"
+            trigger_reason = ""
+        else:
+            classification = "focused"
+            trigger_reason = ""
+
+        return DriftState(
+            threshold=self._threshold,
+            below_threshold=below,
+            consecutive_below=self._consecutive_below,
+            rolling_avg_engagement=avg_engagement,
+            rolling_below_count=below_count,
+            rolling_window_ticks=len(self._history),
+            drift_triggered=drift_triggered,
+            classification=classification,
+            trigger_reason=trigger_reason,
+            recent_engagement=[round(e, 3) for e, _ in self._history],
+            recent_below=[b for _, b in self._history],
+        )
 
 
 # ── Rolling buffer (per-channel) ─────────────────────────────────────────
@@ -190,15 +456,16 @@ def compute_bands(
             f"labels has {len(channel_labels)}"
         )
 
-    # DC-remove per channel — otherwise delta power dominates everything.
-    centered = samples - samples.mean(axis=1, keepdims=True)
+    # 2-45 Hz bandpass + 50/60 Hz notches. The 2 Hz high-pass also kills DC,
+    # so no separate mean-subtract step is needed.
+    filtered = _apply_filters(samples, sample_rate)
 
     # nperseg = 1 second window by default; cap at available samples.
     nperseg = int(min(n_samples, sample_rate))
     nperseg = max(64, nperseg)
 
     freqs, psd = welch(
-        centered,
+        filtered,
         fs=sample_rate,
         nperseg=nperseg,
         noverlap=nperseg // 2,
@@ -219,7 +486,8 @@ def compute_bands(
 
         for ch_idx, ch_label in enumerate(channel_labels):
             per_channel[band][ch_label] = float(band_power[ch_idx])
-        absolute[band] = float(band_power.mean())
+        # Median across channels — robust to one bad electrode (per spec).
+        absolute[band] = float(np.median(band_power))
 
     total = sum(absolute.values())
     if total <= 0:
@@ -227,13 +495,13 @@ def compute_bands(
     else:
         relative = {b: absolute[b] / total for b in BAND_NAMES}
 
-    # Pope's engagement index. Guard against divide-by-zero when bands are
-    # silent (e.g. first tick, flat input). Returns 0.0 then.
-    alpha_theta = absolute["alpha"] + absolute["theta"]
-    engagement = absolute["beta"] / alpha_theta if alpha_theta > 0 else 0.0
-    theta_beta = (
-        absolute["theta"] / absolute["beta"] if absolute["beta"] > 0 else 0.0
-    )
+    # Focus ratios — all guarded against /0 in silent edge cases.
+    alpha = absolute["alpha"]
+    beta  = absolute["beta"]
+    theta = absolute["theta"]
+    engagement  = beta / (alpha + theta) if (alpha + theta) > 0 else 0.0
+    theta_alpha = theta / alpha if alpha > 0 else 0.0
+    beta_theta  = beta  / theta if theta > 0 else 0.0
 
     return BandSnapshot(
         timestamp=time.time(),
@@ -242,7 +510,8 @@ def compute_bands(
         absolute=absolute,
         relative=relative,
         engagement_index=engagement,
-        theta_beta_ratio=theta_beta,
+        theta_alpha_ratio=theta_alpha,
+        beta_theta_ratio=beta_theta,
         per_channel=per_channel,
     )
 
@@ -414,7 +683,17 @@ def format_snapshot(snap: BandSnapshot) -> str:
         rel_p = snap.relative[band] * 100.0
         parts.append(f"{band}={abs_p:8.2f} ({rel_p:4.1f}%)")
     parts.append(f"engage={snap.engagement_index:5.2f}")
-    parts.append(f"θ/β={snap.theta_beta_ratio:5.2f}")
+    parts.append(f"θ/α={snap.theta_alpha_ratio:5.2f}")
+    parts.append(f"β/θ={snap.beta_theta_ratio:5.2f}")
+    if snap.drift is not None:
+        d = snap.drift
+        label = d.classification.upper()
+        if d.drift_triggered:
+            label = f"*** {label} *** ({d.trigger_reason})"
+        parts.append(
+            f"[{label}  cons={d.consecutive_below}  "
+            f"below={d.rolling_below_count}/{d.rolling_window_ticks}]"
+        )
     return "  ".join(parts)
 
 
@@ -564,6 +843,133 @@ class WebSocketBroadcaster:
 
 # ── Orchestrator ─────────────────────────────────────────────────────────
 
+def run_calibration(
+    *,
+    mock: bool,
+    window_sec: float,
+    print_interval_sec: float,
+    sample_rate: float,
+    calibrate_seconds: float,
+    std_multiplier: float,
+    baseline_path: Path,
+) -> int:
+    """Run a single focused calibration pass, then write baseline.json and exit.
+
+    No WebSocket broadcast, no CSV — just collects engagement values while
+    the user focuses, then saves the derived threshold.
+    """
+    capacity = int(round(window_sec * sample_rate))
+    buffer = RollingBuffer(n_channels=len(CROWN_CHANNEL_LABELS), capacity=capacity)
+    source: SDKRawSource | MockRawSource = (
+        MockRawSource(buffer, sample_rate=sample_rate) if mock else SDKRawSource(buffer)
+    )
+
+    try:
+        source.connect()
+    except Exception as exc:
+        logger.error("Failed to start source: %s", exc)
+        return 1
+
+    try:
+        logger.info("")
+        logger.info("=" * 62)
+        logger.info("  CALIBRATION — %d second focused recording", int(calibrate_seconds))
+        logger.info("=" * 62)
+        logger.info("")
+        logger.info("  Do a FOCUSED task for %.0f seconds:", calibrate_seconds)
+        logger.info("    • Mental math  (e.g. 47 × 13, then 82 × 19, ...)")
+        logger.info("    • OR read dense technical text")
+        logger.info("  Sit still, eyes open, stay engaged.")
+        logger.info("")
+
+        # Wait for the PSD buffer to fill before any countdown starts.
+        while buffer.snapshot() is None:
+            time.sleep(print_interval_sec)
+
+        for n in (3, 2, 1):
+            logger.info("  Starting in %d...", n)
+            time.sleep(1.0)
+        logger.info("  GO! Focus NOW.")
+        logger.info("")
+
+        values: list[float] = []
+        start = time.time()
+        tick = 0
+
+        while True:
+            elapsed = time.time() - start
+            if elapsed >= calibrate_seconds:
+                break
+            time.sleep(print_interval_sec)
+
+            samples = buffer.snapshot()
+            if samples is None:
+                continue
+
+            snap = compute_bands(
+                samples,
+                sample_rate=sample_rate,
+                channel_labels=CROWN_CHANNEL_LABELS,
+                window_sec=window_sec,
+            )
+            values.append(snap.engagement_index)
+            tick += 1
+
+            # Log every tick — shows elapsed / remaining seconds clearly.
+            remaining = max(0, calibrate_seconds - elapsed)
+            running_mean = statistics.mean(values) if values else 0.0
+            logger.info(
+                "  %5.1fs elapsed / %5.1fs left  ·  tick=%3d  engage=%.2f  "
+                "running mean=%.2f",
+                elapsed, remaining, tick, snap.engagement_index, running_mean,
+            )
+    except KeyboardInterrupt:
+        logger.info("Calibration cancelled by user.")
+        source.disconnect()
+        return 1
+    finally:
+        source.disconnect()
+
+    if len(values) < 5:
+        logger.error(
+            "Too few engagement samples (%d) — calibration failed. "
+            "Check Crown connection + signal quality.", len(values),
+        )
+        return 1
+
+    baseline = compute_baseline(
+        values,
+        sample_rate_hz=sample_rate,
+        window_sec=window_sec,
+        print_interval_sec=print_interval_sec,
+        std_multiplier=std_multiplier,
+        duration_seconds=calibrate_seconds,
+    )
+    save_baseline(baseline, baseline_path)
+
+    logger.info("")
+    logger.info("=" * 62)
+    logger.info("  BASELINE SAVED → %s", baseline_path)
+    logger.info("=" * 62)
+    logger.info("  ticks collected:   %d", baseline.tick_count)
+    logger.info("  mean engagement:   %.3f", baseline.mean_engagement)
+    logger.info("  std deviation:     %.3f", baseline.std_engagement)
+    logger.info(
+        "  range:             %.3f … %.3f",
+        baseline.min_engagement, baseline.max_engagement,
+    )
+    logger.info(
+        "  formula:           mean − %.1f × std",
+        baseline.std_multiplier,
+    )
+    logger.info("  YOUR THRESHOLD:    %.3f", baseline.derived_threshold)
+    logger.info("")
+    logger.info("  Next normal run will auto-load this threshold.")
+    logger.info("  Override any time with --drift-threshold=X or --no-baseline.")
+    logger.info("")
+    return 0
+
+
 def run(
     *,
     mock: bool,
@@ -573,6 +979,9 @@ def run(
     duration_sec: Optional[float],
     csv_path: Optional[Path],
     ws_port: Optional[int],
+    drift_threshold: float,
+    drift_consecutive_seconds: float,
+    drift_history_ticks: int,
 ) -> int:
     capacity = int(round(window_sec * sample_rate))
     buffer = RollingBuffer(n_channels=len(CROWN_CHANNEL_LABELS), capacity=capacity)
@@ -594,6 +1003,21 @@ def run(
         csv_writer = CSVWriter(csv_path)
         csv_writer.open()
         logger.info("Writing CSV to %s", csv_path)
+
+    # Convert seconds → ticks using the current print cadence. Ceil so a
+    # fractional configuration still covers the requested wall-clock time.
+    step = max(print_interval_sec, 1e-6)
+    consecutive_trigger_ticks = max(1, int(math.ceil(drift_consecutive_seconds / step)))
+
+    drift_classifier = DriftClassifier(
+        threshold=drift_threshold,
+        consecutive_trigger_ticks=consecutive_trigger_ticks,
+        history_ticks=drift_history_ticks,
+    )
+    logger.info(
+        "Drift rule: threshold=%.2f · consecutive %.1fs (%d ticks) below → trigger",
+        drift_threshold, drift_consecutive_seconds, consecutive_trigger_ticks,
+    )
 
     broadcaster: Optional[WebSocketBroadcaster] = None
     if ws_port is not None:
@@ -634,6 +1058,22 @@ def run(
                 channel_labels=CROWN_CHANNEL_LABELS,
                 window_sec=window_sec,
             )
+            drift_state = drift_classifier.classify(snap.engagement_index)
+            # Re-pack the snapshot with drift state attached. BandSnapshot is
+            # frozen so we use dataclasses.replace-style construction via dict.
+            snap_with_drift = BandSnapshot(
+                timestamp=snap.timestamp,
+                sample_count=snap.sample_count,
+                window_sec=snap.window_sec,
+                absolute=snap.absolute,
+                relative=snap.relative,
+                engagement_index=snap.engagement_index,
+                theta_alpha_ratio=snap.theta_alpha_ratio,
+                beta_theta_ratio=snap.beta_theta_ratio,
+                per_channel=snap.per_channel,
+                drift=drift_state,
+            )
+            snap = snap_with_drift
             tick += 1
             logger.info("#%04d  %s", tick, format_snapshot(snap))
             if csv_writer is not None:
@@ -685,6 +1125,61 @@ def main() -> None:
             f"(default {DEFAULT_WS_PORT}; pass 0 to disable)"
         ),
     )
+    # Default is None (sentinel) so we can distinguish "user explicitly set
+    # a threshold" from "fall back to baseline or default". Explicit
+    # --drift-threshold wins over any baseline.
+    parser.add_argument(
+        "--drift-threshold", type=float, default=None,
+        help=(
+            f"Engagement value below which a tick counts as 'below'. "
+            f"When unset: loads from baseline if present, else "
+            f"{DEFAULT_ENGAGEMENT_THRESHOLD}."
+        ),
+    )
+    parser.add_argument(
+        "--drift-consecutive-seconds", type=float, default=DEFAULT_CONSECUTIVE_SECONDS,
+        help=(
+            f"Consecutive below-threshold wall-clock seconds needed to "
+            f"trigger drift (default {DEFAULT_CONSECUTIVE_SECONDS}). "
+            f"Always interpreted as seconds — independent of --print-interval."
+        ),
+    )
+    parser.add_argument(
+        "--drift-history-ticks", type=int, default=DEFAULT_HISTORY_TICKS,
+        help=(
+            f"Number of recent engagement values to emit for the dashboard "
+            f"strip view (default {DEFAULT_HISTORY_TICKS})"
+        ),
+    )
+    # Personalized baseline flags
+    parser.add_argument(
+        "--calibrate-seconds", type=float, default=None,
+        metavar="N",
+        help=(
+            f"Run a {int(DEFAULT_CALIBRATION_SECONDS)}-second (or N-second) "
+            f"focused calibration, derive threshold from your own engagement, "
+            f"save to --baseline-path, then exit."
+        ),
+    )
+    parser.add_argument(
+        "--baseline-path", type=str, default=str(DEFAULT_BASELINE_PATH),
+        help=(
+            f"Path to baseline.json (default {DEFAULT_BASELINE_PATH}). "
+            f"Written by --calibrate-seconds, read on normal runs."
+        ),
+    )
+    parser.add_argument(
+        "--baseline-std-multiplier", type=float, default=DEFAULT_BASELINE_STD_MULTIPLIER,
+        help=(
+            f"threshold = mean − N × std. Lower N = stricter / fires sooner. "
+            f"(default {DEFAULT_BASELINE_STD_MULTIPLIER})"
+        ),
+    )
+    parser.add_argument(
+        "--no-baseline", action="store_true",
+        help="Ignore any existing baseline.json; use --drift-threshold or default.",
+    )
+
     args = parser.parse_args()
 
     if args.window <= 0.25:
@@ -693,6 +1188,53 @@ def main() -> None:
     if args.print_interval <= 0:
         logger.error("--print-interval must be positive")
         sys.exit(2)
+
+    baseline_path = Path(args.baseline_path)
+
+    # ── Calibration mode takes over and exits ────────────────────────
+    if args.calibrate_seconds is not None:
+        if args.calibrate_seconds < 10:
+            logger.error("--calibrate-seconds must be ≥ 10 (need enough data)")
+            sys.exit(2)
+        code = run_calibration(
+            mock=args.mock,
+            window_sec=args.window,
+            print_interval_sec=args.print_interval,
+            sample_rate=args.sample_rate,
+            calibrate_seconds=args.calibrate_seconds,
+            std_multiplier=args.baseline_std_multiplier,
+            baseline_path=baseline_path,
+        )
+        sys.exit(code)
+
+    # ── Resolve effective threshold: explicit > baseline > default ───
+    loaded_baseline: Optional[Baseline] = None
+    if args.drift_threshold is not None:
+        effective_threshold = args.drift_threshold
+        threshold_source = f"CLI override (--drift-threshold={args.drift_threshold})"
+    elif args.no_baseline:
+        effective_threshold = DEFAULT_ENGAGEMENT_THRESHOLD
+        threshold_source = f"default ({DEFAULT_ENGAGEMENT_THRESHOLD}), --no-baseline"
+    else:
+        loaded_baseline = load_baseline(baseline_path)
+        if loaded_baseline is not None:
+            effective_threshold = loaded_baseline.derived_threshold
+            age_days = (time.time() - loaded_baseline.created_at) / 86400.0
+            threshold_source = (
+                f"baseline {baseline_path} "
+                f"(mean={loaded_baseline.mean_engagement:.3f}, "
+                f"std={loaded_baseline.std_engagement:.3f}, "
+                f"{age_days:.1f} days old)"
+            )
+        else:
+            effective_threshold = DEFAULT_ENGAGEMENT_THRESHOLD
+            threshold_source = (
+                f"default ({DEFAULT_ENGAGEMENT_THRESHOLD}) — no baseline at "
+                f"{baseline_path}. Run --calibrate-seconds={int(DEFAULT_CALIBRATION_SECONDS)} "
+                f"to personalize."
+            )
+
+    logger.info("Threshold source: %s", threshold_source)
 
     csv_path = Path(args.csv) if args.csv else None
     ws_port: Optional[int] = args.ws_port if args.ws_port and args.ws_port > 0 else None
@@ -705,6 +1247,9 @@ def main() -> None:
         duration_sec=args.duration,
         csv_path=csv_path,
         ws_port=ws_port,
+        drift_threshold=effective_threshold,
+        drift_consecutive_seconds=args.drift_consecutive_seconds,
+        drift_history_ticks=args.drift_history_ticks,
     )
     sys.exit(code)
 

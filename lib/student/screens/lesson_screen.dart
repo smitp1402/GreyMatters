@@ -57,14 +57,13 @@ class _LessonScreenState extends State<LessonScreen>
   bool _debugExpanded = false;
   bool _eegDebugVisible = false;
 
-  // Latest state + rolling buffer of readings (parallel to _recentLevels) for
+  // Latest state + rolling buffer of readings (parallel to _recentScores) for
   // the EEG debug overlay: shows ratio + verdict per window.
   AttentionState? _latestState;
   final List<AttentionState> _recentReadings = [];
 
   // Session
   final _sessionStart = DateTime.now();
-  int _driftCount = 0;
   final _scrollController = ScrollController();
   late final AnimationController _pauseAnim;
 
@@ -101,13 +100,20 @@ class _LessonScreenState extends State<LessonScreen>
     }
   }
 
-  // Rolling window for drift detection — prevents false triggers from
-  // momentary dips. Drift is confirmed only when 5+ of the last 10
-  // readings are below threshold (drifting or lost).
+  // Drift trigger (new rule):
+  //   1. Keep the last 10 seconds of focus scores (1Hz broadcast → 10 values).
+  //   2. Each tick, compute the rolling 10s average.
+  //   3. Classify that average against the daemon's lost_threshold.
+  //   4. If the average stays in the Lost zone for 20 consecutive seconds,
+  //      switch content (launch an intervention).
+  //   5. Any tick where the average is NOT in Lost resets the counter.
+  //
+  // This replaces the old "5 of 10 drift labels + 4s confirm" rule. Drifting
+  // no longer triggers anything — only sustained Lost on the smoothed average.
   static const int _driftWindowSize = 10;
-  static const int _driftConfirmCount = 5;
-  final List<AttentionLevel> _recentLevels = [];
-  bool _driftConfirmed = false;
+  static const int _sustainedLostThresholdSec = 20;
+  final List<double> _recentScores = [];
+  int _lostStreakSeconds = 0;
 
   void _startPacingEngine() {
     _attentionSub = AttentionStream.instance.stream.listen((state) {
@@ -122,52 +128,49 @@ class _LessonScreenState extends State<LessonScreen>
       // active intervention activity. The activity has its own UI flow and
       // EEG readings there shouldn't feed the pacing engine.
       if (_showingIntervention) {
-        // Still trigger a rebuild so the debug panel shows the live ratio.
         if (_eegDebugVisible) setState(() {});
         return;
       }
 
-      // Maintain rolling window of last N readings
-      _recentLevels.add(state.level);
+      // Rolling window of focus scores (1Hz → 10 entries = 10 seconds).
+      _recentScores.add(state.focusScore);
       _recentReadings.add(state);
-      if (_recentLevels.length > _driftWindowSize) {
-        _recentLevels.removeAt(0);
+      if (_recentScores.length > _driftWindowSize) {
+        _recentScores.removeAt(0);
         _recentReadings.removeAt(0);
       }
 
-      // Count how many of the last N readings are drifting or lost
-      final driftCount = _recentLevels
-          .where((l) => l == AttentionLevel.drifting || l == AttentionLevel.lost)
-          .length;
-
-      if (!_paused && driftCount >= _driftConfirmCount) {
-        _driftConfirmed = true;
-        _onDriftDetected();
-      }
-      if (_paused &&
-          driftCount < _driftConfirmCount &&
-          state.level == AttentionLevel.focused) {
-        _driftConfirmed = false;
-        _onFocusRecovered();
+      // Need a full window before the classifier can fire.
+      if (_recentScores.length < _driftWindowSize) {
+        if (_eegDebugVisible) setState(() {});
+        return;
       }
 
-      // Keep the debug overlay live.
+      final avg = _recentScores.reduce((a, b) => a + b) / _recentScores.length;
+      final inLost = avg < state.lostThreshold;
+
+      if (inLost) {
+        _lostStreakSeconds++;
+        if (!_paused && _lostStreakSeconds >= _sustainedLostThresholdSec) {
+          _onSustainedLost();
+        }
+      } else {
+        _lostStreakSeconds = 0;
+        if (_paused) _onFocusRecovered();
+      }
+
       if (_eegDebugVisible) setState(() {});
     });
   }
 
-  void _onDriftDetected() {
-    if (_paused) return; // Already in drift state
-    setState(() { _paused = true; _driftCount++; _driftSeconds = 0; });
-    _pauseAnim.forward();
-    _driftTimer?.cancel();
-    _driftTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-      setState(() => _driftSeconds++);
-      if (_driftSeconds >= 4 && !_showingIntervention && !_interventionEngine.isActive) {
-        _launchIntervention();
-      }
+  void _onSustainedLost() {
+    if (_paused) return;
+    setState(() {
+      _paused = true;
+      _driftSeconds = _lostStreakSeconds;
     });
+    _pauseAnim.forward();
+    _launchIntervention();
   }
 
   void _launchIntervention() {
@@ -195,8 +198,8 @@ class _LessonScreenState extends State<LessonScreen>
     _driftTimer?.cancel();
     _pauseAnim.reverse();
     _interventionEngine.reset();
-    _recentLevels.clear();
-    _driftConfirmed = false;
+    _recentScores.clear();
+    _lostStreakSeconds = 0;
     setState(() { _paused = false; _showingIntervention = false; _currentFormat = null; });
   }
 
@@ -446,10 +449,12 @@ class _LessonScreenState extends State<LessonScreen>
 
   Widget _buildEegDebugPanel() {
     final state = _latestState;
-    final driftCount = _recentLevels
-        .where((l) => l == AttentionLevel.drifting || l == AttentionLevel.lost)
-        .length;
-    final willTrigger = driftCount >= _driftConfirmCount;
+    final windowAvg = _recentScores.isEmpty
+        ? null
+        : _recentScores.reduce((a, b) => a + b) / _recentScores.length;
+    final avgInLost =
+        windowAvg != null && state != null && windowAvg < state.lostThreshold;
+    final willTrigger = _lostStreakSeconds >= _sustainedLostThresholdSec;
 
     return Positioned(
       left: 16,
@@ -534,7 +539,7 @@ class _LessonScreenState extends State<LessonScreen>
 
             const SizedBox(height: 10),
             Text(
-              'ROLLING WINDOW [${_recentLevels.length}/$_driftWindowSize]',
+              'ROLLING WINDOW [${_recentScores.length}/$_driftWindowSize]',
               style: TextStyle(
                 fontFamily: 'Consolas',
                 fontSize: 9,
@@ -552,8 +557,15 @@ class _LessonScreenState extends State<LessonScreen>
             _buildWindowChips(),
 
             const SizedBox(height: 10),
-            _debugKV('DRIFT COUNT', '$driftCount / $_driftConfirmCount'),
-            _debugKV('DRIFT TIMER', _paused ? '${_driftSeconds}s' : 'inactive'),
+            _debugKV(
+              'WINDOW AVG',
+              windowAvg == null ? '—' : windowAvg.toStringAsFixed(3),
+              valueColor: avgInLost ? AppColors.lost : AppColors.onSurface,
+            ),
+            _debugKV(
+              'LOST STREAK',
+              '${_lostStreakSeconds}s / ${_sustainedLostThresholdSec}s',
+            ),
             _debugKV(
               'INTERVENTION',
               _showingIntervention && _currentFormat != null
@@ -566,8 +578,8 @@ class _LessonScreenState extends State<LessonScreen>
             _debugKV(
               'WILL TRIGGER?',
               willTrigger
-                  ? 'YES — ≥$_driftConfirmCount drifting'
-                  : 'NO — need ${_driftConfirmCount - driftCount} more',
+                  ? 'YES — avg in Lost for ${_sustainedLostThresholdSec}s'
+                  : 'NO — need ${_sustainedLostThresholdSec - _lostStreakSeconds}s more',
               valueColor: willTrigger ? AppColors.lost : AppColors.focused,
             ),
           ],
@@ -716,12 +728,19 @@ class _LessonScreenState extends State<LessonScreen>
     );
   }
 
-  // Small colored squares — one per window slot (compact view, from image 2).
+  // Small colored squares — one per window slot (compact view).
+  // Each slot is classified independently against the daemon's thresholds so
+  // the strip is a visual aid; actual trigger decisions use the average.
   Widget _buildWindowSquares() {
+    final state = _latestState;
     return Row(
       children: List.generate(_driftWindowSize, (i) {
-        final filled = i < _recentLevels.length;
-        final color = filled ? _levelColor(_recentLevels[i]) : AppColors.outline;
+        final filled = i < _recentScores.length;
+        final level = (filled && state != null)
+            ? _classifyScore(_recentScores[i], state)
+            : null;
+        final color =
+            level != null ? _levelColor(level) : AppColors.outline;
         return Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -740,6 +759,12 @@ class _LessonScreenState extends State<LessonScreen>
         );
       }),
     );
+  }
+
+  AttentionLevel _classifyScore(double score, AttentionState state) {
+    if (score < state.lostThreshold) return AttentionLevel.lost;
+    if (score >= state.focusedThreshold) return AttentionLevel.focused;
+    return AttentionLevel.drifting;
   }
 
   Widget _buildWindowChips() {

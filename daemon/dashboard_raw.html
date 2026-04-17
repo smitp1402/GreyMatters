@@ -104,6 +104,46 @@
   .engage-value.medium { color: var(--drifting); }
   .engage-value.high   { color: var(--focused); }
 
+  /* Fill bars under stat values (engagement, β/θ) */
+  .stat-bar-wrap {
+    position: relative;
+    height: 7px;
+    background: var(--panel-lo);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .stat-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 3px;
+    transition: width 0.35s ease, background 0.35s ease;
+    background: var(--primary);
+  }
+  .stat-bar-fill.above { background: var(--focused); }
+  .stat-bar-fill.below { background: var(--drifting); }
+  .stat-bar-fill.lost  { background: var(--lost); }
+  /* Threshold tick mark — shown only on the engagement bar */
+  .stat-bar-threshold {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    background: var(--text);
+    opacity: 0.75;
+    pointer-events: none;
+  }
+  .stat-bar-scale {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 3px;
+    letter-spacing: 0.5px;
+  }
+
   /* Band bars */
   .band { display: grid; grid-template-columns: 110px 80px 1fr 150px; gap: 12px; align-items: center; padding: 10px 0; }
   .band .name { font-family: var(--mono); font-size: 13px; font-weight: 700; }
@@ -198,6 +238,114 @@
     font-size: 12px;
     letter-spacing: 2px;
   }
+
+  /* ── Drift detection panel (simplified) ─────────────────── */
+
+  /* One big centered status: FOCUSED / DRIFTING / LOST */
+  .state-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 20px 22px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--panel-lo);
+    transition: border-color 0.3s ease, background 0.3s ease;
+  }
+  .state-card .label {
+    font-family: var(--mono);
+    font-size: 44px;
+    font-weight: 700;
+    letter-spacing: 6px;
+    color: var(--muted);
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .state-card .sublabel {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-top: 10px;
+    text-transform: uppercase;
+  }
+  .state-card.focused  { border-color: var(--focused);  background: rgba(67,160,71,0.08); }
+  .state-card.focused  .label { color: var(--focused); }
+  .state-card.drifting { border-color: var(--drifting); background: rgba(255,160,0,0.08); }
+  .state-card.drifting .label { color: var(--drifting); }
+  .state-card.lost     { border-color: var(--lost);     background: rgba(229,57,53,0.15); animation: trigger-flash 1.2s infinite ease-in-out; }
+  .state-card.lost     .label { color: var(--lost); }
+
+  /* Trigger overlay appears INSIDE the state card when active */
+  .state-card .trigger {
+    display: none;
+    margin-top: 14px;
+    padding: 8px 14px;
+    border: 1.5px solid var(--lost);
+    border-radius: 6px;
+    background: var(--lost);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+  }
+  .state-card.lost .trigger { display: inline-block; }
+
+  /* Rolling-window strip — row of cells, newest on the right */
+  .strip-wrap { margin-top: 14px; }
+  .strip-header {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .strip-header .rule { color: var(--text); font-weight: 700; letter-spacing: 1px; }
+  .strip {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(14px, 1fr);
+    gap: 2px;
+    height: 32px;
+    padding: 3px;
+    background: var(--panel-lo);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .strip .cell {
+    background: var(--panel-hi);
+    border-radius: 2px;
+  }
+  .strip .cell.above    { background: var(--focused); }
+  .strip .cell.below    { background: var(--drifting); }
+  .strip .cell.trigger  { background: var(--lost); box-shadow: 0 0 8px var(--lost); }
+
+  .strip-legend {
+    display: flex;
+    gap: 14px;
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  .strip-legend .sw {
+    display: inline-block;
+    width: 10px; height: 10px; border-radius: 2px;
+    margin-right: 5px;
+    vertical-align: -1px;
+  }
+  .strip-legend .sw.above   { background: var(--focused); }
+  .strip-legend .sw.below   { background: var(--drifting); }
+  .strip-legend .sw.trigger { background: var(--lost); }
+  @keyframes trigger-flash {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.4); }
+    50%      { box-shadow: 0 0 24px 4px rgba(229, 57, 53, 0.5); }
+  }
 </style>
 </head>
 <body>
@@ -207,18 +355,52 @@
   </header>
 
   <main>
+    <!-- Drift classification panel (simplified) -->
+    <section class="panel">
+      <div class="panel-header">FOCUS STATE</div>
+      <div class="panel-body">
+        <div class="state-card focused" id="state-card">
+          <div class="label" id="state-label">FOCUSED</div>
+          <div class="sublabel" id="state-sub">engagement ≥ threshold</div>
+          <div class="trigger" id="state-trigger">TRIGGER · —</div>
+        </div>
+
+        <div class="strip-wrap">
+          <div class="strip-header">
+            <span>ROLLING WINDOW · OLDEST → NEWEST</span>
+            <span class="rule" id="strip-rule">TRIGGER AFTER 10s BELOW THRESHOLD</span>
+          </div>
+          <div class="strip" id="strip"></div>
+          <div class="strip-legend">
+            <span><span class="sw above"></span>above threshold</span>
+            <span><span class="sw below"></span>below threshold</span>
+            <span><span class="sw trigger"></span>trigger fired</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Stat row -->
     <section class="panel">
       <div class="stats">
         <div class="stat">
           <div class="label">ENGAGEMENT</div>
           <div class="value engage-value" id="s-engage">—</div>
+          <div class="stat-bar-wrap">
+            <div class="stat-bar-fill" id="s-engage-bar"></div>
+            <div class="stat-bar-threshold" id="s-engage-thr"></div>
+          </div>
+          <div class="stat-bar-scale"><span>0</span><span>threshold</span><span id="s-engage-max">1.5</span></div>
           <div class="hint">β / (α + θ)</div>
         </div>
         <div class="stat">
-          <div class="label">θ / β RATIO</div>
-          <div class="value" id="s-tbr">—</div>
-          <div class="hint">lower = more focused</div>
+          <div class="label">β / θ RATIO</div>
+          <div class="value" id="s-btr">—</div>
+          <div class="stat-bar-wrap">
+            <div class="stat-bar-fill" id="s-btr-bar"></div>
+          </div>
+          <div class="stat-bar-scale"><span>0</span><span>1.0</span><span id="s-btr-max">2.0</span></div>
+          <div class="hint">higher = more focused</div>
         </div>
         <div class="stat">
           <div class="label">WINDOW</div>
@@ -244,7 +426,7 @@
         <div class="panel-header">FREQUENCY BANDS — MEAN ACROSS 8 CHANNELS</div>
         <div class="panel-body">
           <div class="band delta">
-            <div class="name">δ DELTA</div><div class="hz">1–4 Hz</div>
+            <div class="name">δ DELTA</div><div class="hz">2–4 Hz</div>
             <div class="bar-wrap"><div class="bar" data-band="delta"></div></div>
             <div class="val"><span class="abs" data-abs="delta">—</span> &nbsp; <span data-rel="delta">—</span></div>
           </div>
@@ -273,13 +455,22 @@
       </div>
 
       <div class="panel">
-        <div class="panel-header">DERIVED RATIOS</div>
+        <div class="panel-header">FOCUS RATIOS (SPEC)</div>
         <div class="panel-body">
-          <div class="kv emphasize"><span class="k">ENGAGEMENT β/(α+θ)</span><span class="v" id="r-engage">—</span></div>
-          <div class="kv"><span class="k">θ / β</span><span class="v" id="r-tbr">—</span></div>
-          <div class="kv"><span class="k">α / β</span><span class="v" id="r-ab">—</span></div>
-          <div class="kv"><span class="k">(α + θ) / β</span><span class="v" id="r-inv">—</span></div>
+          <div class="kv emphasize">
+            <span class="k">COMBINED FOCUS β/(α+θ)</span>
+            <span class="v" id="r-engage">—</span>
+          </div>
+          <div class="kv">
+            <span class="k">DRIFT θ/α <span style="color:var(--muted);font-weight:400">· low = focused</span></span>
+            <span class="v" id="r-tar">—</span>
+          </div>
+          <div class="kv">
+            <span class="k">ENGAGEMENT β/θ <span style="color:var(--muted);font-weight:400">· high = focused</span></span>
+            <span class="v" id="r-btr">—</span>
+          </div>
           <div class="kv"><span class="k">TOTAL POWER</span><span class="v" id="r-total">—</span></div>
+          <div class="kv"><span class="k">SIGNAL PIPELINE</span><span class="v" style="font-size:10px;color:var(--muted)">2-45 Hz BP · 50/60 Hz notch · median</span></div>
         </div>
       </div>
     </section>
@@ -344,9 +535,67 @@
     return 'high';
   }
 
+  function renderDrift(drift) {
+    const card      = document.getElementById('state-card');
+    const label     = document.getElementById('state-label');
+    const sub       = document.getElementById('state-sub');
+    const triggerEl = document.getElementById('state-trigger');
+    const stripEl   = document.getElementById('strip');
+
+    if (!drift) {
+      label.textContent = '—';
+      sub.textContent = 'waiting for data…';
+      card.className = 'state-card';
+      stripEl.innerHTML = '';
+      return;
+    }
+
+    const cls = drift.classification || 'focused';
+    label.textContent = cls.toUpperCase();
+    card.className = 'state-card ' + cls;
+
+    // Sub-label: short story of why this state
+    const consec = drift.consecutive_below ?? 0;
+    const below  = drift.rolling_below_count ?? 0;
+    const wsize  = drift.rolling_window_ticks ?? 0;
+    const thr    = drift.threshold ?? 0.5;
+    if (drift.drift_triggered) {
+      sub.textContent = `${consec} consecutive ticks below ${fmt(thr)}`;
+      triggerEl.textContent = 'TRIGGER · 10s BELOW THRESHOLD';
+    } else if (cls === 'drifting') {
+      sub.textContent = `below threshold · consecutive count: ${consec}`;
+      triggerEl.textContent = '';
+    } else {
+      sub.textContent = `engagement ≥ ${fmt(thr)}`;
+      triggerEl.textContent = '';
+    }
+
+    // Rolling window strip
+    const values = drift.recent_engagement || [];
+    const belows = drift.recent_below || [];
+    const triggered = !!drift.drift_triggered;
+    stripEl.innerHTML = '';
+    for (let i = 0; i < values.length; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      const wasBelow = belows[i];
+      if (i === values.length - 1 && triggered) {
+        cell.classList.add('trigger');
+      } else if (wasBelow) {
+        cell.classList.add('below');
+      } else {
+        cell.classList.add('above');
+      }
+      cell.title = `engage=${fmt(values[i])} ${wasBelow ? '(below)' : '(above)'}`;
+      stripEl.appendChild(cell);
+    }
+  }
+
   function handleSnapshot(s) {
     tickCount += 1;
     document.getElementById('s-ticks').textContent = String(tickCount);
+
+    renderDrift(s.drift);
 
     // Header stats
     const eng = s.engagement_index ?? 0;
@@ -355,21 +604,39 @@
     engEl.classList.remove('low', 'medium', 'high');
     engEl.classList.add(engageBucket(eng));
 
-    document.getElementById('s-tbr').textContent    = fmt(s.theta_beta_ratio);
+    // Engagement fill bar (scale auto-expands to max seen).
+    const thr = s.drift?.threshold ?? 0.5;
+    const engMax = Math.max(1.5, thr * 1.6, eng * 1.2);
+    const engBar = document.getElementById('s-engage-bar');
+    engBar.style.width = `${Math.min(100, (eng / engMax) * 100)}%`;
+    engBar.classList.remove('above', 'below', 'lost');
+    if (s.drift?.drift_triggered) engBar.classList.add('lost');
+    else if (eng < thr)           engBar.classList.add('below');
+    else                          engBar.classList.add('above');
+    // Threshold tick at threshold/max of the bar
+    document.getElementById('s-engage-thr').style.left = `${(thr / engMax) * 100}%`;
+    document.getElementById('s-engage-max').textContent = fmt(engMax, 1);
+
+    // β/θ fill bar (scale 0 → 2.0, clip anything higher).
+    const btr = s.beta_theta_ratio ?? 0;
+    document.getElementById('s-btr').textContent = fmt(btr);
+    const btrMax = 2.0;
+    const btrBar = document.getElementById('s-btr-bar');
+    btrBar.style.width = `${Math.min(100, (btr / btrMax) * 100)}%`;
+    btrBar.classList.remove('above', 'below');
+    // β/θ > 1 → beta dominates theta → engaged. Color accordingly.
+    btrBar.classList.add(btr >= 1 ? 'above' : 'below');
+
     document.getElementById('s-window').textContent = fmt(s.window_sec, 1) + 's';
     document.getElementById('s-samples').textContent = s.sample_count ?? '—';
 
     // Ratios panel
     const abs = s.absolute || {};
     const total = BANDS.reduce((acc, b) => acc + (abs[b] || 0), 0);
-    const alpha = abs.alpha || 0;
-    const beta  = abs.beta  || 0;
-    const theta = abs.theta || 0;
 
     document.getElementById('r-engage').textContent = fmt(s.engagement_index);
-    document.getElementById('r-tbr').textContent    = fmt(s.theta_beta_ratio);
-    document.getElementById('r-ab').textContent     = fmt(beta > 0 ? alpha / beta : 0);
-    document.getElementById('r-inv').textContent    = fmt(beta > 0 ? (alpha + theta) / beta : 0);
+    document.getElementById('r-tar').textContent    = fmt(s.theta_alpha_ratio);
+    document.getElementById('r-btr').textContent    = fmt(s.beta_theta_ratio);
     document.getElementById('r-total').textContent  = fmt(total, 1);
 
     // Bands — bars use RELATIVE %, labels show ABSOLUTE + %.
@@ -405,8 +672,13 @@
     const engClass = engageBucket(eng);
     const line = document.createElement('span');
     line.className = 'row-line';
+    const driftLabel = s.drift
+      ? (s.drift.drift_triggered
+          ? `<span class="e-low">*** ${s.drift.classification.toUpperCase()} ***</span>`
+          : `<span class="e-${s.drift.classification === 'focused' ? 'high' : 'medium'}">${s.drift.classification.toUpperCase()}</span>`)
+      : '';
     line.innerHTML =
-      `<span class="ts">${ts}</span>  ` +
+      `<span class="ts">${ts}</span>  ${driftLabel}  ` +
       `engage=<span class="e-${engClass}">${fmt(eng)}</span>  ` +
       `<span class="b-delta">δ=${fmt(abs.delta)}</span> ` +
       `<span class="b-theta">θ=${fmt(abs.theta)}</span> ` +
