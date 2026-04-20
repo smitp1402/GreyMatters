@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="400" height="500">
+  <!-- ======================================================
+       Neurosity Crown — profile / side elevation.
+       Silhouette reads as a spring whose middle has been
+       stretched flat: top and bottom edges keep their
+       coiled ribbing, the central band sits smooth.
+       ====================================================== -->
+
+  <defs>
+    <!-- Ambient cyan halo behind the device -->
+    <radialGradient id="halo" cx="50%" cy="50%" r="55%">
+      <stop offset="0%"  stop-color="#00E5FF" stop-opacity="0.22"/>
+      <stop offset="60%" stop-color="#00E5FF" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#00E5FF" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Middle band gradient — brushed ice-blue surface -->
+    <linearGradient id="band" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#1B2540"/>
+      <stop offset="15%"  stop-color="#3F5A87"/>
+      <stop offset="45%"  stop-color="#C9E5FF"/>
+      <stop offset="60%"  stop-color="#7FD4FF"/>
+      <stop offset="85%"  stop-color="#3F5A87"/>
+      <stop offset="100%" stop-color="#1B2540"/>
+    </linearGradient>
+
+    <!-- Specular highlight across the smooth middle -->
+    <linearGradient id="specular" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"  stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="45%" stop-color="#FFFFFF" stop-opacity="0.45"/>
+      <stop offset="55%" stop-color="#FFFFFF" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Soft inner shadow below each coil -->
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.5"/>
+    </filter>
+  </defs>
+
+  <!-- Page background -->
+  <rect width="400" height="500" fill="#0A0E1A"/>
+
+  <!-- Halo -->
+  <circle cx="200" cy="250" r="210" fill="url(#halo)"/>
+
+  <!-- ==============================================================
+       TOP COILED SECTION — 5 overlapping ellipses representing the
+       spring's tight coils viewed from the side. Each coil is
+       slightly offset horizontally to imply the helical wind.
+       ============================================================== -->
+  <g fill="none" stroke="#7FD4FF" stroke-width="2" stroke-linecap="round">
+    <!-- Back-of-coil traces (dimmer, imply the hidden half of the helix) -->
+    <g stroke="#3F5A87" stroke-width="1.2" stroke-dasharray="2 3" opacity="0.7">
+      <path d="M 105 138 Q 200 112 295 138"/>
+      <path d="M 105 158 Q 200 132 295 158"/>
+      <path d="M 105 178 Q 200 152 295 178"/>
+      <path d="M 105 198 Q 200 172 295 198"/>
+    </g>
+    <!-- Front-of-coil traces (bright, visible half) -->
+    <path d="M 105 138 Q 200 164 295 138"/>
+    <path d="M 105 158 Q 200 184 295 158"/>
+    <path d="M 105 178 Q 200 204 295 178"/>
+    <path d="M 105 198 Q 200 224 295 198"/>
+    <path d="M 105 218 Q 200 244 295 218"/>
+  </g>
+
+  <!-- ==============================================================
+       SMOOTH MIDDLE BAND — the stretched section of the spring.
+       Flat vertical rails tied to the inner edges of the last top
+       coil and the first bottom coil, with a brushed gradient fill
+       and a specular highlight stripe.
+       ============================================================== -->
+  <g>
+    <!-- Main flat band -->
+    <rect x="102" y="230" width="196" height="60" rx="4" fill="url(#band)"/>
+    <!-- Top inner rim shadow — suggests the band recesses into the coils above -->
+    <rect x="102" y="230" width="196" height="4" fill="#0A0E1A" opacity="0.55"/>
+    <!-- Bottom inner rim shadow -->
+    <rect x="102" y="286" width="196" height="4" fill="#0A0E1A" opacity="0.55"/>
+    <!-- Specular band across the middle -->
+    <rect x="108" y="252" width="184" height="3" fill="url(#specular)" opacity="0.85"/>
+    <!-- Eight electrode indicators along the band -->
+    <g fill="#00E5FF">
+      <circle cx="124" cy="260" r="2.6"/>
+      <circle cx="148" cy="260" r="2.6"/>
+      <circle cx="172" cy="260" r="2.6"/>
+      <circle cx="196" cy="260" r="2.6"/>
+      <circle cx="220" cy="260" r="2.6"/>
+      <circle cx="244" cy="260" r="2.6"/>
+      <circle cx="268" cy="260" r="2.6"/>
+      <circle cx="292" cy="260" r="2.6"/>
+    </g>
+    <!-- Glow halos on electrodes -->
+    <g fill="#00E5FF" opacity="0.22">
+      <circle cx="124" cy="260" r="7"/>
+      <circle cx="148" cy="260" r="7"/>
+      <circle cx="172" cy="260" r="7"/>
+      <circle cx="196" cy="260" r="7"/>
+      <circle cx="220" cy="260" r="7"/>
+      <circle cx="244" cy="260" r="7"/>
+      <circle cx="268" cy="260" r="7"/>
+      <circle cx="292" cy="260" r="7"/>
+    </g>
+  </g>
+
+  <!-- ==============================================================
+       BOTTOM COILED SECTION — mirror of the top. Same 5 coils,
+       pointing the opposite way so the spring looks symmetrical.
+       ============================================================== -->
+  <g fill="none" stroke="#7FD4FF" stroke-width="2" stroke-linecap="round">
+    <g stroke="#3F5A87" stroke-width="1.2" stroke-dasharray="2 3" opacity="0.7">
+      <path d="M 105 362 Q 200 388 295 362"/>
+      <path d="M 105 342 Q 200 368 295 342"/>
+      <path d="M 105 322 Q 200 348 295 322"/>
+      <path d="M 105 302 Q 200 328 295 302"/>
+    </g>
+    <path d="M 105 302 Q 200 276 295 302"/>
+    <path d="M 105 322 Q 200 296 295 322"/>
+    <path d="M 105 342 Q 200 316 295 342"/>
+    <path d="M 105 362 Q 200 336 295 362"/>
+    <path d="M 105 382 Q 200 356 295 382"/>
+  </g>
+
+  <!-- ==============================================================
+       Outline strokes on the left and right edges to unify the
+       three sections into a single silhouette.
+       ============================================================== -->
+  <g stroke="#00E5FF" stroke-width="1.5" fill="none" opacity="0.65">
+    <path d="M 105 138 L 105 382"/>
+    <path d="M 295 138 L 295 382"/>
+  </g>
+
+  <!-- ==============================================================
+       Label + signal line (matches the app's Cryo-Lattice HUD).
+       ============================================================== -->
+  <g>
+    <line x1="140" y1="446" x2="180" y2="446" stroke="#00E5FF" stroke-width="1.5"/>
+    <text x="190" y="450"
+          font-family="Consolas, monospace"
+          font-size="10"
+          font-weight="700"
+          letter-spacing="3.2"
+          fill="#00E5FF">NEUROSITY · CROWN</text>
+    <line x1="292" y1="446" x2="332" y2="446" stroke="#00E5FF" stroke-width="1.5"/>
+  </g>
+
+  <!-- Channel map annotation under the band -->
+  <text x="200" y="475"
+        text-anchor="middle"
+        font-family="Consolas, monospace"
+        font-size="9"
+        letter-spacing="2.0"
+        fill="#6D7B98">8 CH · CP3 · C3 · F5 · PO3 · PO4 · F6 · C4 · CP4</text>
+</svg>
