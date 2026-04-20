@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import '../../core/config/feature_flags.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/models/attention_state.dart';
@@ -121,6 +122,16 @@ class _LessonScreenState extends State<LessonScreen>
       // Broadcast to Supabase Realtime for teacher monitoring
       SessionManager.instance.onAttentionState(state);
 
+      // Demo-mode shortcut: when the EEG trigger is off, each space press
+      // is treated as if the rolling window + 4-second sustain timer have
+      // already cleared. One press to drifting/lost fires the intervention
+      // instantly; one press to focused recovers. Bypasses the cooldown
+      // gate too — we want presses to always respond.
+      if (!FeatureFlags.useEegTrigger) {
+        _handleDemoAttention(state.level);
+        return;
+      }
+
       // Skip window updates during cooldown after transitions
       if (_cooldownUntil != null && DateTime.now().isBefore(_cooldownUntil!)) {
         return;
@@ -160,6 +171,40 @@ class _LessonScreenState extends State<LessonScreen>
         _showGoodJobAndResume();
       }
     });
+  }
+
+  /// Demo-only path — responds to a single spacebar press by bypassing
+  /// ONLY the 5-of-10 rolling-window barrier. The rest of the drift flow
+  /// (pause, 4-second sustain timer, then intervention) runs normally so
+  /// the presentation still shows the drift screen / countdown / intervention
+  /// sequence the way the real EEG pipeline would.
+  void _handleDemoAttention(AttentionLevel level) {
+    final isDrift = level == AttentionLevel.drifting ||
+        level == AttentionLevel.lost;
+
+    if (isDrift) {
+      // If we're already paused (entered drift on a previous press, now
+      // press took us from drifting → lost), don't restart the timer —
+      // let the existing 4s countdown continue toward intervention. The
+      // current level display will update naturally on the next rebuild.
+      if (_paused || _showingIntervention) return;
+
+      // Pre-fill the rolling window so any debug panel looking at the
+      // count displays the "enough drift samples" state consistently.
+      _recentLevels
+        ..clear()
+        ..addAll(List<AttentionLevel>.filled(_driftConfirmCount, level));
+      _driftConfirmed = true;
+      // Run the normal drift-detected path — same pause, same 4s timer,
+      // same intervention launch. The "drift screen" UX is preserved.
+      _onDriftDetected();
+    } else {
+      // level == focused → recover, mirroring the normal focused-recovery
+      // path (closes intervention, clears window, sets a cooldown).
+      if (_paused || _showingIntervention) {
+        _onFocusRecovered();
+      }
+    }
   }
 
   void _onDriftDetected() {
