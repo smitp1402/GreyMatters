@@ -13,6 +13,22 @@ const _teal = Color(0xFF26A69A);
 const _amber = Color(0xFFFFA000);
 const _gridLineColor = Color(0x0ABDC1D7);
 
+// Period 1 + 2 mnemonic, indexed by atomic-number − 1 (matches allElements).
+// Only the first ten elements have a word; taps on atomic numbers beyond
+// this list simply leave the mnemonic bar unlit.
+const _mnemonicWords = <String>[
+  'Happy',   // H   — Hydrogen
+  'Henry',   // He  — Helium
+  'Likes',   // Li  — Lithium
+  'Beer',    // Be  — Beryllium
+  'But',     // B   — Boron
+  'Could',   // C   — Carbon
+  'Not',     // N   — Nitrogen
+  'Obtain',  // O   — Oxygen
+  'Food',    // F   — Fluorine
+  'Nearby',  // Ne  — Neon
+];
+
 // Section-specific recap sentences from the spec
 const _recaps = [
   'The elements you just tapped are in order of atomic number — the same principle Mendeleev used to build the table.',
@@ -70,6 +86,11 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
   Timer? _countdownTimer;
   double _dropX = 0.5; // normalized horizontal position (0.0 to 1.0)
   final _rng = Random();
+
+  // Mnemonic highlight: which word (index into _mnemonicWords) is glowing
+  // right now. −1 means no glow. Set on tap, auto-cleared by _mnemonicTimer.
+  int _mnemonicGlowIndex = -1;
+  Timer? _mnemonicTimer;
 
   // TTS
   final FlutterTts _tts = FlutterTts();
@@ -130,6 +151,17 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
     _tts.speak(_currentElement.name);
     _sessionScore++;
 
+    // Light up the matching mnemonic word. Guarded against out-of-range
+    // so taps on elements beyond Neon (atomic # 10) don't crash.
+    if (_currentIndex < _mnemonicWords.length) {
+      _mnemonicTimer?.cancel();
+      setState(() => _mnemonicGlowIndex = _currentIndex);
+      _mnemonicTimer = Timer(const Duration(milliseconds: 1800), () {
+        if (!mounted) return;
+        setState(() => _mnemonicGlowIndex = -1);
+      });
+    }
+
     Future.delayed(const Duration(milliseconds: 300), () {
       if (!mounted || _gameOver) return;
       setState(() {
@@ -167,6 +199,7 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _mnemonicTimer?.cancel();
     _fallController.dispose();
     _tts.stop();
     super.dispose();
@@ -197,9 +230,62 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
                 ],
               ),
             ),
+            _buildMnemonicBar(),
           ],
         ),
       ),
+    );
+  }
+
+  // ── Mnemonic Bar ─────────────────────────────────────────
+  //
+  // Always-visible reminder of the period 1 + 2 mnemonic across the
+  // bottom of the game screen. Each word corresponds to an element by
+  // atomic number (Happy=H, Henry=He, …, Nearby=Ne). When the student
+  // taps an element that has a mapping (first 10), the matching word
+  // glows amber briefly so they build the H→Happy association
+  // implicitly while catching.
+  Widget _buildMnemonicBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: _teal.withValues(alpha: 0.3))),
+      ),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 10,
+        runSpacing: 4,
+        children: [
+          for (int i = 0; i < _mnemonicWords.length; i++)
+            _buildMnemonicWord(_mnemonicWords[i], i == _mnemonicGlowIndex),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMnemonicWord(String word, bool glow) {
+    return AnimatedDefaultTextStyle(
+      duration: const Duration(milliseconds: 250),
+      style: TextStyle(
+        fontFamily: 'Consolas',
+        fontSize: 14,
+        fontWeight: glow ? FontWeight.w800 : FontWeight.w500,
+        letterSpacing: 1.2,
+        color: glow
+            ? _amber
+            : AppColors.onSurfaceVariant.withValues(alpha: 0.55),
+        shadows: glow
+            ? [
+                Shadow(color: _amber.withValues(alpha: 0.6), blurRadius: 14),
+                Shadow(color: _amber.withValues(alpha: 0.3), blurRadius: 28),
+              ]
+            : const <Shadow>[],
+      ),
+      child: Text(word),
     );
   }
 
