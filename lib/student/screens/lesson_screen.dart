@@ -110,6 +110,16 @@ class _LessonScreenState extends State<LessonScreen>
   final List<AttentionLevel> _recentLevels = [];
   bool _driftConfirmed = false;
 
+  // Dev overwrite — spacebar cycle index for FeatureFlags.useEegTrigger=false.
+  // Press Space on the lesson to advance: focused → drifting → lost → focused.
+  // Nothing else in the app touches this; it's lesson-local state.
+  static const List<AttentionLevel> _demoCycle = <AttentionLevel>[
+    AttentionLevel.focused,
+    AttentionLevel.drifting,
+    AttentionLevel.lost,
+  ];
+  int _demoCycleIndex = 0;
+
   void _startPacingEngine() {
     _attentionSub = AttentionStream.instance.stream.listen((state) {
       if (!mounted) return;
@@ -122,13 +132,12 @@ class _LessonScreenState extends State<LessonScreen>
       // Broadcast to Supabase Realtime for teacher monitoring
       SessionManager.instance.onAttentionState(state);
 
-      // Demo-mode shortcut: when the EEG trigger is off, each space press
-      // is treated as if the rolling window + 4-second sustain timer have
-      // already cleared. One press to drifting/lost fires the intervention
-      // instantly; one press to focused recovers. Bypasses the cooldown
-      // gate too — we want presses to always respond.
+      // Dev overwrite: when the EEG trigger is off, EEG readings from
+      // the daemon are consumed (so HUD + session recording still see
+      // them) but they do NOT drive drift detection. The spacebar handler
+      // below is the sole trigger path in this mode. This stays true
+      // even if the Crown is connected + calibrated.
       if (!FeatureFlags.useEegTrigger) {
-        _handleDemoAttention(state.level);
         return;
       }
 
@@ -173,11 +182,24 @@ class _LessonScreenState extends State<LessonScreen>
     });
   }
 
-  /// Demo-only path — responds to a single spacebar press by bypassing
-  /// ONLY the 5-of-10 rolling-window barrier. The rest of the drift flow
-  /// (pause, 4-second sustain timer, then intervention) runs normally so
-  /// the presentation still shows the drift screen / countdown / intervention
-  /// sequence the way the real EEG pipeline would.
+  /// Keyboard handler for the lesson screen. Advances the demo cycle
+  /// (focused → drifting → lost → focused) and routes to the shared
+  /// drift/recovery handler. No-op when the EEG trigger is active —
+  /// in that case the real stream drives state and space does nothing
+  /// here (it's also consumed so Flutter's default button activation
+  /// on Space doesn't fire randomly while reading a lesson).
+  void _onLessonSpacebar() {
+    if (FeatureFlags.useEegTrigger) return;
+    _demoCycleIndex = (_demoCycleIndex + 1) % _demoCycle.length;
+    final next = _demoCycle[_demoCycleIndex];
+    _handleDemoAttention(next);
+  }
+
+  /// Dev-overwrite path — responds to a single spacebar press by
+  /// bypassing ONLY the 5-of-10 rolling-window barrier. The rest of the
+  /// drift flow (pause, 4-second sustain timer, then intervention) runs
+  /// normally so the presentation still shows the drift screen / countdown
+  /// / intervention sequence the way the real EEG pipeline would.
   void _handleDemoAttention(AttentionLevel level) {
     final isDrift = level == AttentionLevel.drifting ||
         level == AttentionLevel.lost;
@@ -382,6 +404,22 @@ class _LessonScreenState extends State<LessonScreen>
     final section = topic.sections[_currentSectionIndex];
     final progress = (_currentSectionIndex + (_checkpointCompleted.containsKey(_currentSectionIndex) ? 1 : 0)) / topic.sections.length;
 
+    // Scoped spacebar binding — only active while this lesson screen is
+    // built. Goes away on navigation, so it can't affect any other screen.
+    // Also overrides Flutter's default button activation on Space for
+    // widgets inside the lesson (buttons still activate on Enter).
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.space): _onLessonSpacebar,
+      },
+      child: Focus(
+        autofocus: true,
+        child: _buildLessonScaffold(topic, section, progress),
+      ),
+    );
+  }
+
+  Widget _buildLessonScaffold(Topic topic, Section section, double progress) {
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: Stack(

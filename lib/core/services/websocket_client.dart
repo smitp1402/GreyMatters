@@ -3,10 +3,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import '../config/feature_flags.dart';
 import '../models/attention_state.dart';
 import 'attention_stream.dart';
-import 'demo_attention_controller.dart';
 
 /// Connection status for the EEG headset daemon link.
 enum HeadsetConnectionStatus {
@@ -56,27 +54,8 @@ class WebSocketClient {
   static const defaultUrl = 'ws://localhost:8765';
 
   /// Connect to the daemon WebSocket server.
-  ///
-  /// When [FeatureFlags.useEegTrigger] is off, this short-circuits: no
-  /// WebSocket is opened, the status is set to "connected", and the
-  /// [DemoAttentionController] emits an initial frame so listeners that
-  /// gate on "first message received" (like the crown-connection screen)
-  /// still advance. Spacebar presses then drive state via the app-root
-  /// keyboard shortcut wired up in [main.dart].
   Future<void> connect([String url = defaultUrl]) async {
     _disposed = false;
-
-    if (!FeatureFlags.useEegTrigger) {
-      // Demo mode — bypass the Crown + daemon entirely. The connection
-      // "succeeds" instantly so the UI can progress to the lesson.
-      _setStatus(HeadsetConnectionStatus.connected);
-      // Defer the emit to the next microtask so subscribers that are
-      // attaching right now (e.g., in initState of the calling screen)
-      // don't miss it.
-      scheduleMicrotask(DemoAttentionController.instance.emitInitial);
-      return;
-    }
-
     _setStatus(HeadsetConnectionStatus.connecting);
     try {
       final channel = WebSocketChannel.connect(Uri.parse(url));

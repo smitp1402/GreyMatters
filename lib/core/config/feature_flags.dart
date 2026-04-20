@@ -7,15 +7,19 @@
 ///
 ///     flutter run -d chrome --dart-define=USE_EEG_TRIGGER=true
 abstract final class FeatureFlags {
-  /// When true (default off), Flutter opens a WebSocket to the EEG daemon
-  /// and drives attention state from live Crown data. When false, the
-  /// daemon is bypassed entirely: attention state is driven by pressing
-  /// the spacebar, which cycles focused → drifting → lost → focused.
+  /// When true, the EEG stream drives drift detection in the lesson screen
+  /// (normal path — 5-of-10 rolling window + 4s sustain → intervention).
   ///
-  /// Kept off until the Crown's dry-electrode contact is reliable enough
-  /// to deliver real signal. Meant as a presentation cheat — the rest of
-  /// the app (HUD, interventions, session recording) sees a normal
-  /// `AttentionState` stream and doesn't care where the states come from.
+  /// When false (default), the lesson screen IGNORES the EEG stream for
+  /// drift decisions and instead uses the spacebar as the sole trigger.
+  /// The EEG stream still flows through normally — the HUD, session
+  /// recording, and every other consumer see real (or mock) Crown data.
+  /// This stays true even if the Crown is connected and calibrated —
+  /// the flag gates the trigger, not the stream.
+  ///
+  /// Meant as a dev overwrite while the Crown's dry-electrode contact
+  /// isn't reliable enough for a real trigger. Connection + calibration
+  /// screens are untouched; only the lesson's drift logic changes.
   ///
   /// Override: `flutter run ... --dart-define=USE_EEG_TRIGGER=true`
   static const bool useEegTrigger = bool.fromEnvironment(
