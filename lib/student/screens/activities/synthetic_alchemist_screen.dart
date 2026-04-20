@@ -3,8 +3,9 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import '../../../core/config/tts_phrase_bank.dart';
 import '../../../core/models/element_data.dart';
+import '../../../core/services/tts_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 
@@ -95,8 +96,13 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
   Color _mnemonicGlowColor = _amber; // seeded, overwritten per tap
   Timer? _mnemonicTimer;
 
-  // TTS
-  final FlutterTts _tts = FlutterTts();
+  // Finale: after the last mnemonic element (Neon / "Nearby") is tapped,
+  // the mnemonic animates to the center of the screen while TTS reads
+  // the full sentence, then we advance to the recap screen.
+  bool _showingFinale = false;
+
+  // TTS — shared prefetch service; no per-screen setup needed.
+  final TtsService _tts = TtsService.instance;
 
   ChemicalElement get _currentElement => allElements[_currentIndex];
   ChemicalElement? get _nextElement =>
@@ -106,7 +112,6 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
   void initState() {
     super.initState();
     _currentIndex = widget.startIndex;
-    _initTts();
 
     _fallController = AnimationController(
       vsync: this,
@@ -121,12 +126,6 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
       setState(() => _remainingSeconds--);
       if (_remainingSeconds <= 0) _endGame(showRecap: true);
     });
-  }
-
-  Future<void> _initTts() async {
-    await _tts.setLanguage('en-US');
-    await _tts.setSpeechRate(0.5);
-    await _tts.setPitch(1.0);
   }
 
   void _onFallComplete(AnimationStatus status) {
@@ -145,13 +144,26 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
   }
 
   void _onTap() {
-    if (_tapped || _missed || _gameOver) return;
+    if (_tapped || _missed || _gameOver || _showingFinale) return;
 
     // Element is clickable anywhere during its fall
 
-    // Correct tap
+    // Remember whether this tap covers the final mnemonic word ("Nearby" /
+    // Neon / atomic #10). Captured BEFORE the async increment so the
+    // post-delay branch knows to run the finale instead of the normal
+    // recap path.
+    final isFinalMnemonicElement =
+        _currentIndex == _mnemonicWords.length - 1;
+
+    // Correct tap — play the pre-fetched element audio by atomic symbol.
+    // Cache miss falls back to flutter_tts inside TtsService. The final
+    // mnemonic element handles its own TTS sequencing (awaits completion
+    // before the finale overlay) so we skip the fire-and-forget speak
+    // here in that branch.
     setState(() => _tapped = true);
-    _tts.speak(_currentElement.name);
+    if (!isFinalMnemonicElement) {
+      _tts.speak(TtsPhraseBank.element(_currentElement.symbol));
+    }
     _sessionScore++;
 
     // Light up the matching mnemonic word in the color of the element's
@@ -178,6 +190,15 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
         _dropX = _rng.nextDouble();
       });
 
+      // When the student completes the period 1+2 mnemonic (just tapped
+      // "Nearby" / Neon), run the centered-mnemonic finale instead of
+      // going straight to the recap. The finale speaks the full sentence
+      // via TTS and then hands off to the normal recap path.
+      if (isFinalMnemonicElement) {
+        _showMnemonicFinale();
+        return;
+      }
+
       if (_currentIndex >= allElements.length ||
           _sessionScore >= widget.targetTaps) {
         _endGame(showRecap: true);
@@ -187,6 +208,47 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
       _fallController.reset();
       _fallController.forward();
     });
+  }
+
+  /// Triggered after the last mnemonic element is caught. First speaks
+  /// the element's name (Neon) and waits for the clip to finish, so the
+  /// student hears the final tile's label before the game view is
+  /// replaced. Then animates the mnemonic to the centre of the screen,
+  /// scales it up, and speaks the full sentence. The student advances
+  /// to the recap screen by tapping NEXT in the overlay — no time
+  /// pressure, they can re-read the mapping as long as they want.
+  Future<void> _showMnemonicFinale() async {
+    // Freeze the falling-element game during the finale so nothing
+    // visually competes with the centered mnemonic. The fall animation
+    // keeps the just-caught Neon visible where it was.
+    _fallController.stop();
+    _countdownTimer?.cancel();
+    _mnemonicTimer?.cancel();
+
+    // 1) Speak "Neon" first and wait for the clip to end. The element
+    //    is cached from the startup prefetch so this plays instantly
+    //    and resolves when playback completes. The index was already
+    //    incremented by the _onTap post-delay block, so the last
+    //    mnemonic element's symbol is `_mnemonicWords.length - 1`.
+    final lastIdx = _mnemonicWords.length - 1;
+    if (lastIdx < allElements.length) {
+      await _tts.speakAndWait(TtsPhraseBank.element(allElements[lastIdx].symbol));
+    }
+
+    if (!mounted) return;
+
+    // 2) Bring up the finale overlay.
+    setState(() {
+      _showingFinale = true;
+      // Clear the single-word glow — the centered overlay renders ALL
+      // words at full brightness while the sentence plays.
+      _mnemonicGlowIndex = -1;
+    });
+
+    // 3) Speak the full mnemonic. `speak()` is fire-and-forget on the
+    //    audio bus; the student controls when to leave the finale via
+    //    the NEXT button in `_buildFinaleNextButton`.
+    await _tts.speak(TtsPhraseBank.mnemonicPeriod12);
   }
 
   void _endGame({bool showRecap = false}) {
@@ -224,22 +286,190 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
   Widget _buildGameScreen() {
     return Container(
       color: AppColors.surface,
-      child: CustomPaint(
-        painter: _GridPainter(),
-        child: Column(
-          children: [
-            _buildTopBar(),
-            Expanded(
-              child: Row(
+      child: Stack(
+        children: [
+          CustomPaint(
+            painter: _GridPainter(),
+            child: Column(
+              children: [
+                _buildTopBar(),
+                Expanded(
+                  child: Row(
+                    children: [
+                      _buildQueuePanel(),
+                      Expanded(child: _buildPlayArea()),
+                      _buildInfoPanel(),
+                    ],
+                  ),
+                ),
+                _buildMnemonicBar(),
+              ],
+            ),
+          ),
+          // Mnemonic finale overlay — always mounted so the fade in/out
+          // animates implicitly; IgnorePointer blocks interaction when
+          // hidden so it doesn't trap taps during gameplay.
+          IgnorePointer(
+            ignoring: !_showingFinale,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeOut,
+              opacity: _showingFinale ? 1.0 : 0.0,
+              child: _buildMnemonicFinaleOverlay(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Full-screen scrim + centered, scaled-up mnemonic. Appears on top
+  /// of the game when `_showingFinale` is true. Each word is rendered
+  /// in its element's family color, with the element's atomic symbol
+  /// shown beneath so the student sees the mapping explicitly (Happy→H,
+  /// Henry→He, etc.). A NEXT button lets them advance to the recap when
+  /// they're ready rather than being rushed through on a timer.
+  Widget _buildMnemonicFinaleOverlay() {
+    return Container(
+      color: AppColors.surface.withValues(alpha: 0.94),
+      alignment: Alignment.center,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0.7, end: 1.0),
+        duration: const Duration(milliseconds: 700),
+        curve: Curves.easeOutCubic,
+        builder: (context, scale, child) {
+          return Transform.scale(scale: scale, child: child);
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 48),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'MNEMONIC UNLOCKED',
+                style: TextStyle(
+                  fontFamily: 'Consolas',
+                  fontSize: 13,
+                  letterSpacing: 4.0,
+                  fontWeight: FontWeight.w700,
+                  color: _teal.withValues(alpha: 0.7),
+                ),
+              ),
+              const SizedBox(height: 28),
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.start,
+                spacing: 22,
+                runSpacing: 18,
                 children: [
-                  _buildQueuePanel(),
-                  Expanded(child: _buildPlayArea()),
-                  _buildInfoPanel(),
+                  for (int i = 0; i < _mnemonicWords.length; i++)
+                    _buildFinaleWord(_mnemonicWords[i], i),
                 ],
               ),
+              const SizedBox(height: 44),
+              _buildFinaleNextButton(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Word + element symbol + full element name stack, all in the
+  /// element's family color. Renders three lines: the mnemonic word
+  /// big and glowing; the symbol (H, He, …) as a mid-size label;
+  /// the full name (Hydrogen, Helium, …) smaller + italic underneath.
+  Widget _buildFinaleWord(String word, int index) {
+    // Period 1+2 elements align 1-to-1 with mnemonic indices (H at 0,
+    // He at 1, …, Ne at 9). Out-of-range falls back to amber just in
+    // case the mnemonic list grows ahead of the elements list.
+    final hasElement = index < allElements.length;
+    final color = hasElement
+        ? familyColor(allElements[index].family)
+        : _amber;
+    final symbol = hasElement ? allElements[index].symbol : '';
+    final name = hasElement ? allElements[index].name : '';
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          word,
+          style: TextStyle(
+            fontFamily: 'Consolas',
+            fontSize: 38,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 2.0,
+            color: color,
+            shadows: [
+              Shadow(color: color.withValues(alpha: 0.55), blurRadius: 22),
+              Shadow(color: color.withValues(alpha: 0.25), blurRadius: 44),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        // Atomic symbol — mid-size label in the same family color.
+        Text(
+          symbol,
+          style: TextStyle(
+            fontFamily: 'Consolas',
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.5,
+            color: color.withValues(alpha: 0.75),
+          ),
+        ),
+        const SizedBox(height: 2),
+        // Full element name — serif italic, smaller still, so it reads
+        // as the expanded-form caption under the symbol.
+        Text(
+          name,
+          style: TextStyle(
+            fontFamily: 'Georgia',
+            fontSize: 13,
+            fontStyle: FontStyle.italic,
+            color: color.withValues(alpha: 0.55),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// "NEXT" button at the bottom of the finale. Taps advance to the
+  /// standard recap screen via `_endGame(showRecap: true)`. Wrapped in
+  /// `IgnorePointer`-free space (the overlay's IgnorePointer already
+  /// releases taps when `_showingFinale` is true).
+  Widget _buildFinaleNextButton() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          if (_gameOver) return;
+          _endGame(showRecap: true);
+        },
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border: Border.all(color: _teal, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: _teal.withValues(alpha: 0.25),
+                blurRadius: 20,
+              ),
+            ],
+          ),
+          child: Text(
+            'NEXT  →',
+            style: TextStyle(
+              fontFamily: 'Consolas',
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 4.0,
+              color: _teal,
             ),
-            _buildMnemonicBar(),
-          ],
+          ),
         ),
       ),
     );

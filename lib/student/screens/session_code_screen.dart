@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/services/profile_manager.dart';
+import '../../core/services/tts_service.dart';
 import '../../core/services/session_manager.dart';
 import '../../core/services/websocket_client.dart';
 import '../../core/theme/app_colors.dart';
@@ -25,7 +25,7 @@ class _SessionCodeScreenState extends State<SessionCodeScreen>
     with SingleTickerProviderStateMixin {
   String _sessionCode = '------';
   late final AnimationController _fadeIn;
-  final FlutterTts _tts = FlutterTts();
+  final TtsService _tts = TtsService.instance;
   bool _copied = false;
 
   static const _nato = {
@@ -90,7 +90,7 @@ class _SessionCodeScreenState extends State<SessionCodeScreen>
 
       if (mounted) {
         setState(() => _sessionCode = code);
-        _initTts();
+        _speakCode();
       }
     } catch (e, stack) {
       debugPrint('[SessionCode] ERROR starting session: $e');
@@ -98,15 +98,19 @@ class _SessionCodeScreenState extends State<SessionCodeScreen>
     }
   }
 
-  Future<void> _initTts() async {
-    await _tts.setLanguage('en-US');
-    await _tts.setSpeechRate(0.35);
-    await _tts.setPitch(0.8);
-
-    // Read the code using NATO phonetic
+  Future<void> _speakCode() async {
+    // Session-code readout is dynamic (session code is generated per
+    // run), so it can't be pre-fetched. Goes through TtsService with an
+    // override text; TtsService will fall straight to flutter_tts since
+    // there's no cache entry for this phrase ID.
     await Future.delayed(const Duration(milliseconds: 500));
-    final phonetic = _sessionCode.split('').map((c) => _nato[c] ?? c).join(', ');
-    await _tts.speak('Your session code is $phonetic. Share it with your teacher.');
+    final phonetic =
+        _sessionCode.split('').map((c) => _nato[c] ?? c).join(', ');
+    await _tts.speak(
+      'session.code',
+      overrideText:
+          'Your session code is $phonetic. Share it with your teacher.',
+    );
   }
 
   void _copyCode() async {

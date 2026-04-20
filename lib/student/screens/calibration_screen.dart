@@ -3,7 +3,8 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import '../../core/config/tts_phrase_bank.dart';
+import '../../core/services/tts_service.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -34,7 +35,7 @@ class _CalibrationScreenState extends State<CalibrationScreen>
   late final AnimationController _dotPulse;
   late final AnimationController _ringExpand;
   late final AnimationController _completeAnim;
-  final FlutterTts _tts = FlutterTts();
+  final TtsService _tts = TtsService.instance;
 
   @override
   void initState() {
@@ -55,20 +56,14 @@ class _CalibrationScreenState extends State<CalibrationScreen>
       duration: const Duration(milliseconds: 600),
     );
 
-    _initTts();
-    // Don't auto-start — show preparation screen first
+    // TtsService is configured once at app startup; no per-screen setup.
+    // Don't auto-start calibration — show preparation screen first.
     _speakPrep();
   }
 
   Future<void> _speakPrep() async {
     await Future.delayed(const Duration(milliseconds: 500));
-    await _tts.speak("Prepare for calibration. Sit comfortably and relax.");
-  }
-
-  Future<void> _initTts() async {
-    await _tts.setLanguage('en-US');
-    await _tts.setSpeechRate(0.4);
-    await _tts.setPitch(0.8);
+    await _tts.speak(TtsPhraseBank.calibrationPrepare);
   }
 
   void _startCalibration() async {
@@ -78,7 +73,7 @@ class _CalibrationScreenState extends State<CalibrationScreen>
     });
 
     _ringExpand.forward();
-    await _tts.speak("Focus on the dot. Breathe normally. Calibration begins now.");
+    await _tts.speak(TtsPhraseBank.calibrationBegin);
 
     // Send calibrate command to daemon
     WebSocketClient.instance.send('{"command":"calibrate","duration":$_duration}');
@@ -108,7 +103,7 @@ class _CalibrationScreenState extends State<CalibrationScreen>
     });
 
     _completeAnim.forward();
-    await _tts.speak("Calibration complete. Baseline established.");
+    await _tts.speak(TtsPhraseBank.calibrationComplete);
 
     // Auto-advance after 2 seconds
     await Future.delayed(const Duration(seconds: 2));

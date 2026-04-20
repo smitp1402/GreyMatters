@@ -3,7 +3,8 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import '../../core/config/tts_phrase_bank.dart';
+import '../../core/services/tts_service.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -30,7 +31,7 @@ class _CrownConnectionScreenState extends State<CrownConnectionScreen>
   _ConnectionState _state = _ConnectionState.idle;
   late final AnimationController _pulseController;
   late final AnimationController _glowController;
-  final FlutterTts _tts = FlutterTts();
+  final TtsService _tts = TtsService.instance;
   StreamSubscription<AttentionState>? _streamSub;
   bool _firstMessageReceived = false;
 
@@ -50,14 +51,7 @@ class _CrownConnectionScreenState extends State<CrownConnectionScreen>
       duration: const Duration(milliseconds: 800),
     );
 
-    _initTts();
-  }
-
-  Future<void> _initTts() async {
-    await _tts.setLanguage('en-US');
-    await _tts.setSpeechRate(0.4);
-    await _tts.setPitch(0.8);
-    await _tts.setVolume(1.0);
+    // TtsService is configured once at app startup; no per-screen setup.
   }
 
   @override
@@ -71,7 +65,7 @@ class _CrownConnectionScreenState extends State<CrownConnectionScreen>
 
   Future<void> _startConnection() async {
     setState(() => _state = _ConnectionState.searching);
-    await _tts.speak("Let's connect your headset");
+    await _tts.speak(TtsPhraseBank.crownSearch);
 
     try {
       // Connect to daemon WebSocket
@@ -119,7 +113,7 @@ class _CrownConnectionScreenState extends State<CrownConnectionScreen>
     });
 
     _glowController.forward();
-    await _tts.speak("Neural link established. Preparing calibration.");
+    await _tts.speak(TtsPhraseBank.crownConnected);
 
     // Auto-advance to debug stream after 2 seconds
     await Future.delayed(const Duration(seconds: 2));
