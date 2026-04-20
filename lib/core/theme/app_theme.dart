@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_spacing.dart';
 
-/// NeuroLearn "Cognitive Sanctuary" design system.
+/// GreyMatters "Cryo-Lattice" design system.
 ///
-/// Dark-first theme matching the Stitch UI design references.
-/// Uses Inter-style (system sans-serif) for headlines/labels and
-/// serif for body text / editorial content.
+/// Dark-first, medical-instrument aesthetic: obsidian blue-black base,
+/// ice-pale surface content, electric cyan accent for focused/primary
+/// states. Label type uses wide tracking and all-caps to read like a
+/// heads-up display; body copy stays in a warm italic serif so the
+/// lesson reader feels editorial, not sterile.
 abstract final class AppTheme {
   // ---------- Dark theme (primary) ----------
   static ThemeData get dark => ThemeData(
@@ -55,13 +57,13 @@ abstract final class AppTheme {
           centerTitle: false,
           titleTextStyle: TextStyle(
             fontFamily: 'Segoe UI',
-            fontSize: 18,
+            fontSize: 15,
             fontWeight: FontWeight.w700,
             color: AppColors.primary,
-            letterSpacing: 1.2,
+            letterSpacing: 3.2,
           ),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: AppColors.surfaceContainerHigh,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -74,6 +76,8 @@ abstract final class AppTheme {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryContainer,
             foregroundColor: AppColors.onPrimaryContainer,
+            shadowColor: AppColors.accentGlow,
+            elevation: 6,
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.xl,
               vertical: AppSpacing.lg,
@@ -84,8 +88,8 @@ abstract final class AppTheme {
             textStyle: const TextStyle(
               fontFamily: 'Segoe UI',
               fontWeight: FontWeight.w800,
-              fontSize: 14,
-              letterSpacing: 2.0,
+              fontSize: 13,
+              letterSpacing: 2.5,
             ),
           ),
         ),
@@ -113,19 +117,22 @@ abstract final class AppTheme {
           fillColor: AppColors.surfaceContainerLowest,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            borderSide: BorderSide.none,
+            borderSide: const BorderSide(color: AppColors.outlineVariant, width: 0.5),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            borderSide: BorderSide.none,
+            borderSide: const BorderSide(color: AppColors.outlineVariant, width: 0.5),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            borderSide: const BorderSide(color: AppColors.primary, width: 1),
+            // Cyan on focus — the signature move
+            borderSide: const BorderSide(color: AppColors.tertiary, width: 1.4),
           ),
           hintStyle: const TextStyle(
-            color: AppColors.surfaceContainerHighest,
-            fontSize: 14,
+            color: AppColors.outline,
+            fontFamily: 'Consolas',
+            fontSize: 13,
+            letterSpacing: 0.5,
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.lg,
@@ -148,30 +155,36 @@ abstract final class AppTheme {
           color: AppColors.onSurfaceVariant,
         ),
         textTheme: const TextTheme(
+          // Oversized HUD-style headline. Wide tracking to read like a
+          // station readout rather than a consumer title.
           headlineLarge: TextStyle(
             fontFamily: 'Segoe UI',
-            fontWeight: FontWeight.w900,
-            fontSize: 32,
-            letterSpacing: 3.0,
-            color: AppColors.primary,
+            fontWeight: FontWeight.w200,
+            fontSize: 36,
+            letterSpacing: 6.0,
+            color: AppColors.onSurface,
           ),
+          // Editorial title — italic serif against the clinical chrome.
           headlineMedium: TextStyle(
-            fontFamily: 'Georgia', // serif, close to Newsreader
-            fontWeight: FontWeight.w600,
-            fontSize: 28,
+            fontFamily: 'Georgia',
+            fontWeight: FontWeight.w500,
+            fontSize: 30,
             fontStyle: FontStyle.italic,
             color: AppColors.onSurface,
+            height: 1.15,
           ),
           headlineSmall: TextStyle(
             fontFamily: 'Segoe UI',
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             fontSize: 22,
+            letterSpacing: 0.5,
             color: AppColors.onSurface,
           ),
           titleLarge: TextStyle(
             fontFamily: 'Segoe UI',
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             fontSize: 18,
+            letterSpacing: 0.3,
             color: AppColors.onSurface,
           ),
           titleMedium: TextStyle(
@@ -191,20 +204,21 @@ abstract final class AppTheme {
             fontFamily: 'Georgia',
             fontSize: 14,
             color: AppColors.onSurfaceVariant,
-            height: 1.5,
+            height: 1.55,
           ),
+          // Labels are monospace — HUD readout aesthetic.
           labelLarge: TextStyle(
-            fontFamily: 'Segoe UI',
+            fontFamily: 'Consolas',
             fontWeight: FontWeight.w700,
-            fontSize: 12,
-            letterSpacing: 2.0,
+            fontSize: 11,
+            letterSpacing: 2.8,
             color: AppColors.outline,
           ),
           labelSmall: TextStyle(
-            fontFamily: 'Segoe UI',
+            fontFamily: 'Consolas',
             fontWeight: FontWeight.w700,
             fontSize: 10,
-            letterSpacing: 3.0,
+            letterSpacing: 3.2,
             color: AppColors.outline,
           ),
         ),

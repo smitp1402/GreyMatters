@@ -1,6 +1,6 @@
 // lib/core/theme/app_spacing.dart
 
-/// Consistent spacing scale used throughout NeuroLearn.
+/// Consistent spacing scale used throughout Grey Matters.
 ///
 /// Based on a 4px grid. Use these constants instead of magic numbers
 /// to keep spacing consistent across all screens.

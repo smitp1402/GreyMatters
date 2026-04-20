@@ -2,77 +2,93 @@
 
 import 'package:flutter/material.dart';
 
-/// NeuroLearn "Cognitive Sanctuary" colour palette.
+/// GreyMatters "Cryo-Lattice" palette.
 ///
-/// Derived from the Stitch design system — dark theme with blue primary,
-/// gold tertiary accent, and layered surface containers.
+/// Dark-first aesthetic — obsidian blue-black base, ice-pale content, a
+/// single electric-cyan accent that pulses where attention lives. Designed
+/// to feel like a medical-grade neural instrument: clean, clinical, with
+/// a single sharp color carrying all the energy.
 abstract final class AppColors {
-  // -- Primary (blue cognitive focus) --
-  static const primary = Color(0xFFACC7FF);
-  static const primaryContainer = Color(0xFF468FFF);
-  static const onPrimary = Color(0xFF002F67);
-  static const onPrimaryContainer = Color(0xFF00285A);
-  static const primaryFixed = Color(0xFFD7E2FF);
-  static const primaryFixedDim = Color(0xFFACC7FF);
+  // -- Primary (ice-electric blue) --
+  static const primary = Color(0xFF7FD4FF);          // pale electric ice
+  static const primaryContainer = Color(0xFF0077FF); // pure electric blue
+  static const onPrimary = Color(0xFF001633);
+  static const onPrimaryContainer = Color(0xFFD7E8FF);
+  static const primaryFixed = Color(0xFFCCE9FF);
+  static const primaryFixedDim = Color(0xFF7FD4FF);
 
-  // -- Secondary (muted blue-gray) --
-  static const secondary = Color(0xFFB7C8E1);
-  static const secondaryContainer = Color(0xFF3A4A5F);
-  static const onSecondary = Color(0xFF213145);
-  static const onSecondaryContainer = Color(0xFFA9BAD3);
+  // -- Secondary (cool silver-blue) --
+  static const secondary = Color(0xFFB8C7DB);
+  static const secondaryContainer = Color(0xFF2A3B52);
+  static const onSecondary = Color(0xFF1A2435);
+  static const onSecondaryContainer = Color(0xFFC2D3EA);
 
-  // -- Tertiary (gold accent) --
-  static const tertiary = Color(0xFFFBBC00);
-  static const tertiaryContainer = Color(0xFFB88900);
-  static const onTertiary = Color(0xFF402D00);
+  // -- Tertiary (neon cyan accent — replaces former gold) --
+  static const tertiary = Color(0xFF00E5FF);
+  static const tertiaryContainer = Color(0xFF0099A8);
+  static const onTertiary = Color(0xFF002A30);
+  static const onTertiaryContainer = Color(0xFFCBF7FF);
 
-  // -- Surface layers (dark, layered) --
-  static const surface = Color(0xFF131313);
-  static const surfaceDim = Color(0xFF131313);
-  static const surfaceBright = Color(0xFF393939);
-  static const surfaceContainerLowest = Color(0xFF0E0E0E);
-  static const surfaceContainerLow = Color(0xFF1C1B1B);
-  static const surfaceContainer = Color(0xFF201F1F);
-  static const surfaceContainerHigh = Color(0xFF2A2A2A);
-  static const surfaceContainerHighest = Color(0xFF353534);
-  static const surfaceVariant = Color(0xFF353534);
+  // -- Surface layers (obsidian blue-black, cool containers) --
+  static const surface = Color(0xFF0A0E1A);                   // page base
+  static const surfaceDim = Color(0xFF060912);
+  static const surfaceBright = Color(0xFF2A3249);
+  static const surfaceContainerLowest = Color(0xFF05080F);
+  static const surfaceContainerLow = Color(0xFF111829);
+  static const surfaceContainer = Color(0xFF151D30);
+  static const surfaceContainerHigh = Color(0xFF1B2540);
+  static const surfaceContainerHighest = Color(0xFF222D4C);
+  static const surfaceVariant = Color(0xFF222D4C);
 
   // -- On-surface text --
-  static const onSurface = Color(0xFFE5E2E1);
-  static const onSurfaceVariant = Color(0xFFC1C6D7);
-  static const onBackground = Color(0xFFE5E2E1);
+  static const onSurface = Color(0xFFE5ECF7);        // slightly cooler white
+  static const onSurfaceVariant = Color(0xFFB8C7DB); // pale silver-blue
+  static const onBackground = Color(0xFFE5ECF7);
 
-  // -- Outlines --
-  static const outline = Color(0xFF8B90A0);
-  static const outlineVariant = Color(0xFF414754);
+  // -- Outlines (cool steel-silver) --
+  static const outline = Color(0xFF6D7B98);
+  static const outlineVariant = Color(0xFF2A3449);
 
   // -- Inverse --
-  static const inverseSurface = Color(0xFFE5E2E1);
-  static const inverseOnSurface = Color(0xFF313030);
-  static const inversePrimary = Color(0xFF005CBD);
+  static const inverseSurface = Color(0xFFE5ECF7);
+  static const inverseOnSurface = Color(0xFF131A2A);
+  static const inversePrimary = Color(0xFF005BCE);
 
-  // -- Error --
-  static const error = Color(0xFFFFB4AB);
-  static const errorContainer = Color(0xFF93000A);
-  static const onError = Color(0xFF690005);
-  static const onErrorContainer = Color(0xFFFFDAD6);
+  // -- Error (sci-fi hot-pink, more distinctive than fire-engine red) --
+  static const error = Color(0xFFFF7AAD);
+  static const errorContainer = Color(0xFF8F0044);
+  static const onError = Color(0xFF32001A);
+  static const onErrorContainer = Color(0xFFFFD7E6);
 
   // -- Attention level indicators --
-  static const focused = Color(0xFF43A047);
-  static const drifting = Color(0xFFFFA000);
-  static const lost = Color(0xFFE53935);
+  // "Focused" shares the tertiary cyan so the primary-accent reads as
+  // "you are doing the thing we want you to do." Drifting amber is a
+  // softer gold; lost becomes hot pink for a tech feel.
+  static const focused = Color(0xFF00E5FF);
+  static const drifting = Color(0xFFFFB74D);
+  static const lost = Color(0xFFFF4A8D);
 
-  // -- Band power bars --
-  static const delta = Color(0xFFAB47BC); // purple — slow waves
+  // -- Band powers (semantic, unchanged) --
+  static const delta = Color(0xFFAB47BC);
   static const theta = Color(0xFF7E57C2);
   static const alpha = Color(0xFF42A5F5);
   static const beta = Color(0xFF66BB6A);
   static const gamma = Color(0xFFFFCA28);
 
   // -- Semantic --
-  static const success = Color(0xFF388E3C);
+  static const success = Color(0xFF00E5FF);          // success = focused cyan
 
   // -- Glass panel --
-  static const glassBackground = Color(0x66353534); // 40% opacity
-  static const glassBorder = Color(0x33414754);     // 20% opacity
+  static const glassBackground = Color(0x66151D30);  // 40% container
+  static const glassBorder = Color(0x332A3449);      // 20% outlineVariant
+
+  // -- Cryo-Lattice signature: cyan glow for BoxShadow/halo effects --
+  static const accentGlow = Color(0x4000E5FF);        // 25% cyan
+  static const accentGlowStrong = Color(0x8000E5FF);  // 50% cyan
+  static const primaryGlow = Color(0x337FD4FF);       // 20% ice blue
+
+  // -- Gradient endpoints commonly composed across screens --
+  static const gradientTop = Color(0xFF0A0E1A);
+  static const gradientMid = Color(0xFF0C1324);
+  static const gradientBottom = Color(0xFF07091A);
 }
