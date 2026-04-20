@@ -88,8 +88,11 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
   final _rng = Random();
 
   // Mnemonic highlight: which word (index into _mnemonicWords) is glowing
-  // right now. −1 means no glow. Set on tap, auto-cleared by _mnemonicTimer.
+  // right now and in what color. −1 index means no glow. The color is
+  // captured at tap time from the element's family so the word shines in
+  // the same hue as the falling tile the student just caught.
   int _mnemonicGlowIndex = -1;
+  Color _mnemonicGlowColor = _amber; // seeded, overwritten per tap
   Timer? _mnemonicTimer;
 
   // TTS
@@ -151,11 +154,16 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
     _tts.speak(_currentElement.name);
     _sessionScore++;
 
-    // Light up the matching mnemonic word. Guarded against out-of-range
-    // so taps on elements beyond Neon (atomic # 10) don't crash.
+    // Light up the matching mnemonic word in the color of the element's
+    // family so the word shares the hue of the tile the student caught.
+    // Guarded against out-of-range so taps on elements beyond Neon
+    // (atomic # 10) don't crash.
     if (_currentIndex < _mnemonicWords.length) {
       _mnemonicTimer?.cancel();
-      setState(() => _mnemonicGlowIndex = _currentIndex);
+      setState(() {
+        _mnemonicGlowIndex = _currentIndex;
+        _mnemonicGlowColor = familyColor(_currentElement.family);
+      });
       _mnemonicTimer = Timer(const Duration(milliseconds: 1800), () {
         if (!mounted) return;
         setState(() => _mnemonicGlowIndex = -1);
@@ -268,20 +276,21 @@ class _SyntheticAlchemistScreenState extends State<SyntheticAlchemistScreen>
   }
 
   Widget _buildMnemonicWord(String word, bool glow) {
+    final highlight = _mnemonicGlowColor;
     return AnimatedDefaultTextStyle(
       duration: const Duration(milliseconds: 250),
       style: TextStyle(
         fontFamily: 'Consolas',
-        fontSize: 14,
-        fontWeight: glow ? FontWeight.w800 : FontWeight.w500,
-        letterSpacing: 1.2,
+        fontSize: 20,
+        fontWeight: glow ? FontWeight.w800 : FontWeight.w600,
+        letterSpacing: 1.4,
         color: glow
-            ? _amber
-            : AppColors.onSurfaceVariant.withValues(alpha: 0.55),
+            ? highlight
+            : AppColors.onSurfaceVariant.withValues(alpha: 0.6),
         shadows: glow
             ? [
-                Shadow(color: _amber.withValues(alpha: 0.6), blurRadius: 14),
-                Shadow(color: _amber.withValues(alpha: 0.3), blurRadius: 28),
+                Shadow(color: highlight.withValues(alpha: 0.65), blurRadius: 18),
+                Shadow(color: highlight.withValues(alpha: 0.35), blurRadius: 32),
               ]
             : const <Shadow>[],
       ),
