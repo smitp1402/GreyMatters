@@ -1,6 +1,6 @@
 // lib/core/services/supabase_config.dart
 
-/// Supabase configuration for NeuroLearn.
+/// Supabase configuration for Grey Matters.
 ///
 /// The publishable key is safe to include in client code —
 /// RLS policies control actual data access.

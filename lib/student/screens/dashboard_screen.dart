@@ -7,6 +7,7 @@ import '../../core/data/supabase_db.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/services/profile_manager.dart';
+import '../../core/widgets/cryo_signal.dart';
 
 /// Home dashboard — powered by Supabase computed views.
 ///
@@ -90,32 +91,51 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final name = _summary?['name'] as String? ?? ProfileManager.instance.name ?? 'Scholar';
     final bestSubject = _summary?['best_subject_today'] as String?;
     final tagline = bestSubject != null
-        ? 'YOUR FOCUS IS PEAKING IN ${bestSubject.toUpperCase()} TODAY.'
-        : 'START A SESSION TO SEE YOUR FOCUS INSIGHTS.';
+        ? 'FOCUS PEAKING · ${bestSubject.toUpperCase()}'
+        : 'SESSION · INITIALIZE TO BEGIN';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Signal line + HUD eyebrow identifying this as the student console.
+        Row(
+          children: [
+            const CryoSignalLine(width: 44),
+            const SizedBox(width: 12),
+            Text(
+              'STUDENT CONSOLE · ACTIVE',
+              style: TextStyle(
+                fontFamily: 'Consolas',
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 3.2,
+                color: AppColors.tertiary.withValues(alpha: 0.85),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
         Text(
           'Welcome back, $name.',
           style: const TextStyle(
             fontFamily: 'Georgia',
             fontStyle: FontStyle.italic,
             fontSize: 44,
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w500,
             color: AppColors.onSurface,
-            height: 1.2,
+            height: 1.15,
+            letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Text(
           tagline,
           style: TextStyle(
-            fontFamily: 'Segoe UI',
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 1.5,
-            color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
+            fontFamily: 'Consolas',
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 2.5,
+            color: AppColors.onSurfaceVariant.withValues(alpha: 0.85),
           ),
         ),
       ],

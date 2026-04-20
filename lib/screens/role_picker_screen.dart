@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../core/services/profile_manager.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
+import '../core/widgets/cryo_signal.dart';
 
 /// Auth-style role picker — "Cognitive Sanctuary" login screen.
 ///
@@ -82,19 +83,19 @@ class _RolePickerScreenState extends State<RolePickerScreen>
           // Brainwave background decoration
           const _BrainwaveBackground(),
 
-          // Bottom gradient glow
+          // Bottom gradient glow — cyan accent rising from the base.
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            height: MediaQuery.of(context).size.height * 0.33,
+            height: MediaQuery.of(context).size.height * 0.38,
             child: Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   colors: [
-                    Color(0x33ACC7FF), // primary at 20%
+                    AppColors.accentGlow,
                     Colors.transparent,
                   ],
                 ),
@@ -145,18 +146,40 @@ class _RolePickerScreenState extends State<RolePickerScreen>
   Widget _buildBrandHeader(BuildContext context) {
     return Column(
       children: [
+        // Signal line + overline status code.
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CryoSignalLine(width: 40),
+            const SizedBox(width: 12),
+            Text(
+              'IDENTITY · INITIALIZE',
+              style: TextStyle(
+                fontFamily: 'Consolas',
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 3.5,
+                color: AppColors.tertiary.withValues(alpha: 0.85),
+              ),
+            ),
+            const SizedBox(width: 12),
+            const CryoSignalLine(width: 40),
+          ],
+        ),
+        const SizedBox(height: 24),
         Text(
-          'NEUROLEARN',
+          'GREY MATTERS',
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                fontSize: 28,
-                letterSpacing: 8.0,
+                fontSize: 30,
+                letterSpacing: 7.0,
+                color: AppColors.onSurface,
               ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Text(
           'Enter the Cognitive Sanctuary',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontSize: 18,
+                fontSize: 17,
               ),
         ),
       ],
@@ -297,9 +320,14 @@ class _RolePickerScreenState extends State<RolePickerScreen>
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.2),
-              blurRadius: 20,
-              spreadRadius: 0,
+              color: AppColors.tertiary.withValues(alpha: 0.5),
+              blurRadius: 28,
+              spreadRadius: -2,
+            ),
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.3),
+              blurRadius: 48,
+              spreadRadius: -4,
             ),
           ],
         ),

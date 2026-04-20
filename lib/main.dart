@@ -29,7 +29,7 @@ class GreyMattersApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'NeuroLearn',
+      title: 'Grey Matters',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       darkTheme: AppTheme.dark,

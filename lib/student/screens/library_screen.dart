@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/cryo_signal.dart';
 
 /// Curated Knowledge library — all topics organized by subject.
 ///
@@ -160,24 +161,32 @@ class _LibraryScreenState extends State<LibraryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'CLINICAL LEARNING RESOURCES',
-                style: TextStyle(
-                  fontFamily: 'Segoe UI',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 2.0,
-                  color: AppColors.primary,
-                ),
+              Row(
+                children: [
+                  const CryoSignalLine(width: 44),
+                  const SizedBox(width: 12),
+                  Text(
+                    'CURRICULUM · INDEX',
+                    style: TextStyle(
+                      fontFamily: 'Consolas',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 3.2,
+                      color: AppColors.tertiary.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               const Text(
                 'Curated Knowledge',
                 style: TextStyle(
                   fontFamily: 'Georgia',
-                  fontSize: 44,
+                  fontSize: 46,
                   fontWeight: FontWeight.w500,
+                  fontStyle: FontStyle.italic,
                   color: AppColors.onSurface,
+                  letterSpacing: -0.5,
                 ),
               ),
             ],

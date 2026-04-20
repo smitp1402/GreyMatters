@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/data/supabase_db.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/cryo_signal.dart';
 
 /// Teacher dashboard — list of all students with performance overview.
 ///
@@ -157,30 +158,57 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
+            // Header — HUD overline + editorial title + live count chip.
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        const CryoSignalLine(width: 40),
+                        const SizedBox(width: 12),
+                        Text(
+                          'COHORT · LIVE MONITOR',
+                          style: TextStyle(
+                            fontFamily: 'Consolas',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 3.2,
+                            color: AppColors.tertiary.withValues(alpha: 0.85),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
                     const Text(
                       'Students',
                       style: TextStyle(
                         fontFamily: 'Georgia',
-                        fontSize: 28,
+                        fontStyle: FontStyle.italic,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.onSurface,
+                        letterSpacing: -0.4,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${_students.length} student${_students.length == 1 ? '' : 's'} '
-                      '· ${_activeSessions.length} active now',
-                      style: TextStyle(
-                        fontFamily: 'Segoe UI',
-                        fontSize: 13,
-                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
-                      ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        CryoStatusPill(
+                          label: '${_students.length} TOTAL',
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        if (_activeSessions.isNotEmpty)
+                          CryoStatusPill(
+                            label: '${_activeSessions.length} LIVE',
+                            color: AppColors.tertiary,
+                            icon: Icons.circle,
+                            filled: true,
+                          ),
+                      ],
                     ),
                   ],
                 ),

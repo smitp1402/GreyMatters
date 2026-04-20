@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
+import '../core/widgets/cryo_signal.dart';
 
-/// Full landing page — "The Cognitive Sanctuary"
+/// Full landing page — "Cryo-Lattice" edition
 class LandingScreen extends StatelessWidget {
   const LandingScreen({super.key});
 
@@ -14,25 +15,25 @@ class LandingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
-      body: Column(
-        children: [
-          // Fixed nav bar
-          _NavBar(),
-          // Scrollable content
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _HeroSection(),
-                  _TechnologySection(),
-                  _InterventionsSection(),
-                  _AudienceSection(),
-                  _Footer(),
-                ],
+      body: CryoBackdrop(
+        child: Column(
+          children: [
+            _NavBar(),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _HeroSection(),
+                    _TechnologySection(),
+                    _InterventionsSection(),
+                    _AudienceSection(),
+                    _Footer(),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -52,7 +53,7 @@ class _NavBar extends StatelessWidget {
       child: Row(
         children: [
           const Text(
-            'NeuroLearn',
+            'Grey Matters',
             style: TextStyle(
               fontFamily: 'Segoe UI',
               fontWeight: FontWeight.w700,
@@ -142,13 +143,13 @@ class _HeroSectionState extends State<_HeroSection>
       height: height,
       child: Stack(
         children: [
-          // Background
+          // Background — obsidian blue-black fade.
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFF0E0E0E), AppColors.surface],
+                colors: [AppColors.gradientTop, AppColors.surface],
               ),
             ),
           ),
@@ -164,18 +165,31 @@ class _HeroSectionState extends State<_HeroSection>
             ),
           ),
 
-          // Radial glow
+          // Dual radial glows — cyan (bottom) + ice-blue (top) so the
+          // hero has two competing cool light sources.
           Center(
             child: Container(
-              width: 500,
-              height: 500,
-              decoration: BoxDecoration(
+              width: 620,
+              height: 620,
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.06),
-                    Colors.transparent,
-                  ],
+                  colors: [AppColors.accentGlow, Colors.transparent],
+                  stops: [0.0, 0.7],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 40,
+            left: 40,
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [AppColors.primaryGlow, Colors.transparent],
                 ),
               ),
             ),
@@ -188,35 +202,58 @@ class _HeroSectionState extends State<_HeroSection>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Signal line + overline eyebrow — HUD brand mark.
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CryoSignalLine(width: 40),
+                      const SizedBox(width: 12),
+                      Text(
+                        'GREY MATTERS · v.1.0',
+                        style: TextStyle(
+                          fontFamily: 'Consolas',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 3.5,
+                          color: AppColors.tertiary.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const CryoSignalLine(width: 40),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
                   Text(
-                    'The Cognitive Sanctuary',
+                    'The Cognitive\nSanctuary',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Georgia',
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                       fontStyle: FontStyle.italic,
-                      fontSize: _fontSize(context, 40, 72),
+                      fontSize: _fontSize(context, 44, 82),
                       color: AppColors.onSurface,
-                      height: 1.1,
+                      height: 1.05,
+                      letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
                   ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 700),
+                    constraints: const BoxConstraints(maxWidth: 680),
                     child: Text(
-                      'Unlock surgical precision in your learning journey with '
-                      'EEG-adaptive feedback loops that stabilize focus and '
-                      'dissolve distraction.',
+                      'An EEG-adaptive instrument for focus. The interface '
+                      'reads your attention in real time and rebuilds itself '
+                      'around the learner — quietly, continuously, with '
+                      'clinical precision.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Georgia',
-                        fontSize: _fontSize(context, 15, 20),
+                        fontSize: _fontSize(context, 15, 19),
                         color: AppColors.onSurfaceVariant,
-                        height: 1.6,
+                        height: 1.65,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 44),
                   _buildButtons(context),
                 ],
               ),
@@ -231,7 +268,7 @@ class _HeroSectionState extends State<_HeroSection>
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Begin Journey
+        // Begin Journey — primary CTA with cyan halo.
         Container(
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -240,8 +277,14 @@ class _HeroSectionState extends State<_HeroSection>
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 24,
+                color: AppColors.tertiary.withValues(alpha: 0.55),
+                blurRadius: 28,
+                spreadRadius: -2,
+              ),
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.35),
+                blurRadius: 48,
+                spreadRadius: -4,
               ),
             ],
           ),
@@ -252,47 +295,33 @@ class _HeroSectionState extends State<_HeroSection>
               borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
               child: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 32, vertical: 18),
-                child: Text(
-                  'Begin Journey',
-                  style: TextStyle(
-                    fontFamily: 'Segoe UI',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    color: AppColors.onPrimary,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'BEGIN JOURNEY',
+                      style: TextStyle(
+                        fontFamily: 'Segoe UI',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        letterSpacing: 3.0,
+                        color: AppColors.onPrimary,
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Icon(Icons.arrow_forward,
+                        size: 16, color: AppColors.onPrimary),
+                  ],
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 24),
-        // View Science
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.4),
-            ),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {},
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 18),
-                child: Text(
-                  'View Science',
-                  style: TextStyle(
-                    fontFamily: 'Segoe UI',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    color: AppColors.onSurface,
-                  ),
-                ),
-              ),
-            ),
-          ),
+        const SizedBox(width: 20),
+        // View Science — secondary, outlined with cyan hint on hover.
+        _OutlineButton(
+          label: 'VIEW SCIENCE',
+          onTap: () {},
         ),
       ],
     );
@@ -824,7 +853,7 @@ class _Footer extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('NeuroLearn',
+                  const Text('Grey Matters',
                       style: TextStyle(
                         fontFamily: 'Segoe UI',
                         fontWeight: FontWeight.w700,
@@ -855,6 +884,71 @@ class _Footer extends StatelessWidget {
                     .toList(),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// Outlined button with cyan hover glow
+// ============================================================
+
+class _OutlineButton extends StatefulWidget {
+  const _OutlineButton({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  State<_OutlineButton> createState() => _OutlineButtonState();
+}
+
+class _OutlineButtonState extends State<_OutlineButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = _hovered
+        ? AppColors.tertiary
+        : AppColors.outlineVariant;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: Border.all(color: borderColor, width: _hovered ? 1.2 : 1),
+          boxShadow: _hovered
+              ? [
+                  BoxShadow(
+                    color: AppColors.accentGlow,
+                    blurRadius: 20,
+                    spreadRadius: -3,
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 18),
+              child: Text(
+                widget.label,
+                style: TextStyle(
+                  fontFamily: 'Segoe UI',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  letterSpacing: 3.0,
+                  color: _hovered ? AppColors.tertiary : AppColors.onSurface,
+                ),
+              ),
+            ),
           ),
         ),
       ),
