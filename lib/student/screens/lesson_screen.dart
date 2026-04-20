@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/models/attention_state.dart';
@@ -974,106 +975,9 @@ class _LessonScreenState extends State<LessonScreen>
   }
 
   Widget _buildVideo(VideoEmbed video) {
-    // Parse start time to seconds for YouTube URL
-    final startParts = video.startTime.split(':');
-    final startSec = startParts.length == 2
-        ? int.tryParse(startParts[0])! * 60 + int.tryParse(startParts[1])!
-        : 0;
-    final youtubeUrl = 'https://www.youtube.com/watch?v=${video.youtubeId}&t=${startSec}s';
-    final thumbUrl = 'https://img.youtube.com/vi/${video.youtubeId}/hqdefault.jpg';
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 28),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // YouTube thumbnail with play button
-          GestureDetector(
-            onTap: () => launchUrl(Uri.parse(youtubeUrl), mode: LaunchMode.externalApplication),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Thumbnail
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Image.network(
-                    thumbUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: AppColors.surfaceContainerLowest,
-                      child: const Center(
-                        child: Icon(Icons.play_circle_outline, size: 64, color: AppColors.outline),
-                      ),
-                    ),
-                  ),
-                ),
-                // Play button overlay
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: AppColors.lost.withValues(alpha: 0.9),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 12),
-                    ],
-                  ),
-                  child: const Icon(Icons.play_arrow, size: 36, color: Colors.white),
-                ),
-                // Duration badge
-                Positioned(
-                  bottom: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(video.duration,
-                        style: const TextStyle(fontFamily: 'Consolas', fontSize: 11, color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Video info
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.play_circle, size: 14, color: AppColors.lost.withValues(alpha: 0.7)),
-                    const SizedBox(width: 6),
-                    Text('VIDEO', style: TextStyle(fontFamily: 'Consolas', fontSize: 10,
-                        fontWeight: FontWeight.w700, letterSpacing: 3.0, color: AppColors.outline)),
-                    const Spacer(),
-                    Text('${video.startTime} → ${video.endTime}',
-                        style: TextStyle(fontFamily: 'Consolas', fontSize: 10,
-                            color: AppColors.outline.withValues(alpha: 0.5))),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(video.title, style: const TextStyle(fontFamily: 'Segoe UI',
-                    fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.onSurface)),
-                if (video.description != null) ...[
-                  const SizedBox(height: 4),
-                  Text(video.description!, style: TextStyle(fontFamily: 'Georgia',
-                      fontSize: 13, color: AppColors.onSurfaceVariant.withValues(alpha: 0.7))),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
+    return _InlineYouTubePlayer(
+      key: ValueKey('${video.youtubeId}_${video.startTime}_${video.endTime}'),
+      video: video,
     );
   }
 
@@ -1290,3 +1194,229 @@ class _LessonScreenState extends State<LessonScreen>
   }
 }
 
+
+// ============================================================
+// Inline YouTube player — shows the thumbnail as a click-to-play
+// poster, then mounts an embedded iframe in the same area. No
+// external window. startTime/endTime on VideoEmbed are NOT passed
+// to the player — they are drift-trigger markers the pacing engine
+// uses elsewhere — so the student can watch the full video freely.
+// ============================================================
+
+class _InlineYouTubePlayer extends StatefulWidget {
+  final VideoEmbed video;
+  const _InlineYouTubePlayer({super.key, required this.video});
+
+  @override
+  State<_InlineYouTubePlayer> createState() => _InlineYouTubePlayerState();
+}
+
+class _InlineYouTubePlayerState extends State<_InlineYouTubePlayer> {
+  YoutubePlayerController? _controller;
+  bool _isPlaying = false;
+
+  void _beginPlayback() {
+    setState(() {
+      _controller = YoutubePlayerController(
+        params: const YoutubePlayerParams(
+          showControls: true,
+          showFullscreenButton: true,
+          strictRelatedVideos: true,
+          showVideoAnnotations: false,
+          enableCaption: false,
+        ),
+      )..loadVideoById(videoId: widget.video.youtubeId);
+      _isPlaying = true;
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller?.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 28),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.25)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: _isPlaying && _controller != null
+                ? YoutubePlayer(controller: _controller!, aspectRatio: 16 / 9)
+                : _Thumbnail(
+                    youtubeId: widget.video.youtubeId,
+                    duration: widget.video.duration,
+                    onPlay: _beginPlayback,
+                  ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.play_circle,
+                        size: 14, color: AppColors.tertiary.withValues(alpha: 0.85)),
+                    const SizedBox(width: 6),
+                    const Text('VIDEO',
+                        style: TextStyle(
+                          fontFamily: 'Consolas',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 3.0,
+                          color: AppColors.outline,
+                        )),
+                    const Spacer(),
+                    // Drift-trigger window — shown for reference, not
+                    // applied to playback.
+                    Icon(Icons.bolt,
+                        size: 10,
+                        color: AppColors.tertiary.withValues(alpha: 0.7)),
+                    const SizedBox(width: 4),
+                    Text(
+                      'DRIFT WINDOW · ${widget.video.startTime} → ${widget.video.endTime}',
+                      style: TextStyle(
+                        fontFamily: 'Consolas',
+                        fontSize: 10,
+                        letterSpacing: 1.5,
+                        color: AppColors.outline.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(widget.video.title,
+                    style: const TextStyle(
+                      fontFamily: 'Segoe UI',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurface,
+                    )),
+                if (widget.video.description != null) ...[
+                  const SizedBox(height: 4),
+                  Text(widget.video.description!,
+                      style: TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 13,
+                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.75),
+                      )),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Click-to-play thumbnail poster. Shows YouTube's hqdefault image with
+/// a cyan play button and a duration badge. On tap, the parent swaps in
+/// the live iframe player.
+class _Thumbnail extends StatelessWidget {
+  final String youtubeId;
+  final String duration;
+  final VoidCallback onPlay;
+
+  const _Thumbnail({
+    required this.youtubeId,
+    required this.duration,
+    required this.onPlay,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final thumbUrl = 'https://img.youtube.com/vi/$youtubeId/hqdefault.jpg';
+    return GestureDetector(
+      onTap: onPlay,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Thumbnail image — falls back to a filler icon if the image
+          // network request fails (e.g., offline).
+          Positioned.fill(
+            child: Image.network(
+              thumbUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                color: AppColors.surfaceContainerLowest,
+                child: const Center(
+                  child: Icon(Icons.play_circle_outline,
+                      size: 64, color: AppColors.outline),
+                ),
+              ),
+            ),
+          ),
+          // Dark vignette so the play button reads cleanly.
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.10),
+                    Colors.black.withValues(alpha: 0.45),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Cyan play button with glow.
+          Container(
+            width: 72,
+            height: 72,
+            decoration: const BoxDecoration(
+              color: AppColors.tertiary,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.accentGlowStrong,
+                  blurRadius: 32,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: const Icon(Icons.play_arrow,
+                size: 40, color: AppColors.onTertiary),
+          ),
+          // Duration badge, bottom-right.
+          Positioned(
+            bottom: 10,
+            right: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.75),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: AppColors.outlineVariant.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Text(
+                duration,
+                style: const TextStyle(
+                  fontFamily: 'Consolas',
+                  fontSize: 11,
+                  letterSpacing: 0.5,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
